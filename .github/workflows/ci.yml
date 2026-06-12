@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Lint + Test (Android)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Tant que le projet Android n'est pas scaffoldé (pas de gradlew), le CI passe sans rien faire.
+      - name: Détecter le projet Gradle
+        id: gradle
+        run: echo "present=$([ -f gradlew ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up JDK 17
+        if: steps.gradle.outputs.present == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle (cache)
+        if: steps.gradle.outputs.present == 'true'
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Lint (Android Lint + ktlint)
+        if: steps.gradle.outputs.present == 'true'
+        run: ./gradlew --no-daemon lintDebug ktlintCheck
+
+      - name: Tests unitaires
+        if: steps.gradle.outputs.present == 'true'
+        run: ./gradlew --no-daemon testDebugUnitTest
