@@ -6,8 +6,9 @@ description: Exécute le cycle complet de développement d'une PR — briefing p
 # Cycle PR
 
 Le cycle de réalisation d'une Pull Request, de bout en bout. Pièce centrale de la pipeline :
-prend une issue `ready-for-agent` (ou une demande directe) et la mène jusqu'au merge, sans jamais
-laisser entrer un commit cassé dans l'historique.
+prend une issue `ready-for-agent` (ou une demande directe) et la mène jusqu'au merge — puis
+répercute la clôture sur les autres issues — sans jamais laisser entrer un commit cassé dans
+l'historique.
 
 Les **règles permanentes** (`.claude/rules/`) s'appliquent en continu : aucun commit cassé,
 pas d'auto-merge, pas de force-push, pas de code mort, format des commits (préfixe EN + description
@@ -190,10 +191,28 @@ filet final pour les findings inter-commits.
 **Jamais d'auto-merge.** Même CI verte + audit propre, toujours attendre un « go » / « merge »
 humain explicite.
 
-## Les 3 idées à retenir
+## Étape 7 — Répercussions sur les autres issues (après le merge)
+
+Le merge **clôt l'issue liée** : la PR et la conversation qui l'a résolue ont pu acter des
+décisions, déplacer un contrat d'interface, déjà faire une partie d'un autre lot, ou rendre une
+hypothèse caduque ailleurs. **Immédiatement après le merge**, lancer le skill `repercussions` — la
+conversation qui a résolu l'issue est **encore en contexte**, c'est le moment où l'analyse est la
+plus riche. Même pour une **demande directe** sans issue liée, faire la passe : le delta mergé
+peut impacter des issues ouvertes.
+
+Il confronte le **delta réel** de la PR à **toutes les autres issues ouvertes** (d'abord le même
+thème, puis un balayage large), présente les issues impactées, et **n'édite/ferme/re-trie qu'après
+un « go » explicite**. C'est le pendant *sortant* de l'auto-challenge *entrant* de l'Étape 1.
+
+Ne pas considérer la PR « terminée » tant que cette passe n'a pas été faite (même si la conclusion
+est « aucune répercussion »).
+
+## Les 4 idées à retenir
 
 1. Le cycle `modif → test → cleanup → test → commit` est **sacré et jamais raccourci** — y compris
    le cleanup sur les commits triviaux.
 2. Tout l'effort de questions se fait **avant** de coder (briefing pré-PR).
 3. **Deux filets de cleanup** : un par commit (regard local), un sur la PR entière avant merge
    (regard global, inter-commits).
+4. La PR n'est **terminée qu'après la passe `repercussions`** : une clôture peut bouleverser les
+   autres issues — on le vérifie pendant que la conversation est encore en contexte.

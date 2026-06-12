@@ -92,6 +92,9 @@ elles, mais les fichiers de travail sont isolés.
 
 - `git worktree list` montre tous les worktrees actifs.
 - Quand une PR passe en review puis est mergée, mettre à jour `PR-PARALLELES.md`.
+- Après chaque merge, la session concernée déroule la passe `repercussions` (Étape 7 de
+  `cycle-pr`) : elle peut ajuster des issues **du lot en cours**. Si une issue en chantier dans un
+  autre worktree est modifiée, relayer le changement à sa session avant qu'elle n'aille plus loin.
 - En cas de conflit de merge entre deux PR du lot (recouvrement sous-estimé) : merger la première,
   puis rebaser la seconde sur `main` à jour avant de la finaliser.
 

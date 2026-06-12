@@ -10,7 +10,8 @@ pas ce fichier** : c'est le skill `cycle-pr` (déroulé pas à pas) et les règl
    `triage` (machine à états, produit un « agent brief »). `interroge-moi` pour lever les doutes.
 2. **Implémenter** — `cycle-pr` sur une issue `ready-for-agent` : briefing pré-PR → TDD
    red-green-refactor → cycle `modif → test → cleanup → test → commit` → auto-review → PR → review
-   → merge. Plusieurs PR en parallèle : `pr-paralleles` (worktrees).
+   → merge → `repercussions` (la clôture est répercutée sur les autres issues). Plusieurs PR en
+   parallèle : `pr-paralleles` (worktrees).
 3. **Valider** — `plan-qa` → `execution-qa` → `bug-vers-issue`.
 
 ## Les règles qui ne se négocient pas

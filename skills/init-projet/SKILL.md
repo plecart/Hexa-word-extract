@@ -39,7 +39,7 @@ Copier les skills de la pipeline depuis `moon-pipeline-dev/skills/` vers **`.cla
 **`.agents/skills/`** du projet (mêmes emplacements que les projets existants) :
 
 `config-pipeline`, `vers-prd`, `vers-issues`, `triage`, `interroge-moi`, `cycle-pr`,
-`pr-paralleles`, `plan-qa`, `execution-qa`, `bug-vers-issue`.
+`repercussions`, `pr-paralleles`, `plan-qa`, `execution-qa`, `bug-vers-issue`.
 
 ### 5. Installer la CLI skills.sh + télécharger les skills publics (sélection à cocher)
 
