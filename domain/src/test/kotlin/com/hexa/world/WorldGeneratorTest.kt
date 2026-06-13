@@ -1,7 +1,9 @@
 package com.hexa.world
 
+import com.hexa.config.Element
 import com.hexa.config.GameConfig
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
@@ -51,6 +53,26 @@ class WorldGeneratorTest : StringSpec({
             val base = GameConfig.BASE_RATES_PER_HOUR[deposit.element.ordinal]
             deposit.ratePerHour shouldBeGreaterThanOrEqualTo 0
             deposit.ratePerHour shouldBeLessThanOrEqualTo base
+        }
+    }
+
+    "les champs des éléments sont indépendants : aucune présence n'en sous-tend une autre" {
+        val presence = cells.map { cell -> generator.contentOf(cell).deposits.map { it.element }.toSet() }
+        // Aux seuils provisoires, les deux éléments les plus rares ne franchissent jamais le bruit
+        // (distribution non uniforme) : leur recalage est explicitement #16. On vérifie donc
+        // l'indépendance sur les champs qui se manifestent, garantie qu'au moins les deux communs
+        // sont là pour que le test ne passe pas à vide.
+        val appearing = Element.entries.filter { element -> presence.any { element in it } }
+        appearing shouldContainAll listOf(Element.CENDRITE, Element.GIVRELIN)
+        // Si deux champs étaient identiques (offsets non distincts), la présence du seuil le plus
+        // haut serait incluse dans celle du plus bas. Exiger les deux sens de non-recouvrement
+        // pour chaque couple prouve que les champs ne se sous-tendent pas.
+        for (a in appearing) {
+            for (b in appearing) {
+                if (a != b) {
+                    presence.any { a in it && b !in it } shouldBe true
+                }
+            }
         }
     }
 })
