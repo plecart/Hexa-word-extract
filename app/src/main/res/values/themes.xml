@@ -1,0 +1,5 @@
+<resources>
+    <!-- Thème de fenêtre minimal sans ActionBar ; le rendu réel est piloté par Compose
+         (HexaTheme). Parent framework pour éviter toute dépendance AppCompat/Material View. -->
+    <style name="Theme.Hexa" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
