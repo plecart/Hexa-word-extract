@@ -39,6 +39,41 @@ déterministe, persistance + récolte hors ligne) sont détaillées dans les sp�
   sdk.dir=/chemin/vers/Android/Sdk
   ```
 
+- **Tokens Mapbox** — la carte passe par le Mapbox Maps SDK, qui réclame **deux** tokens (créés sur
+  [account.mapbox.com/access-tokens](https://account.mapbox.com/access-tokens)), placés dans des
+  fichiers **non versionnés** :
+
+  | Token | Rôle | Fichier (non versionné) | Scope |
+  |---|---|---|---|
+  | Public (`pk.…`) | chargé au runtime par l'app | `local.properties` (racine du dépôt) | scopes publics par défaut |
+  | Secret (`sk.…`) | télécharge le SDK Mapbox au build | `~/.gradle/gradle.properties` (dossier utilisateur, hors dépôt) | `DOWNLOADS:READ` |
+
+  ```properties
+  # local.properties (à la racine du dépôt — ignoré par git)
+  MAPBOX_PUBLIC_TOKEN=pk.votre_token_public
+
+  # ~/.gradle/gradle.properties (dossier utilisateur global — hors dépôt)
+  MAPBOX_DOWNLOADS_TOKEN=sk.votre_token_secret
+  ```
+
+  ⚠️ Un token n'apparaît **jamais** dans un fichier versionné : `local.properties` est dans le
+  `.gitignore` et le token de téléchargement vit hors du dépôt. Mapbox **ne propose aucun plafond de
+  dépense** automatique ; le palier gratuit du Maps SDK Mobile (facturé à l'utilisateur actif
+  mensuel) couvre très largement le développement, et la rotation du token sur le compte Mapbox sert
+  de coupe-circuit en cas de dérive.
+
+- **Style de carte** — un style monochrome sobre dérivé de **Mapbox Standard**, pensé pour que
+  seuls l'avatar et les bâtiments posés par le joueur ressortent : sol plat, pas de bâtiment réel,
+  aucun texte.
+
+  - **Style URL** : `mapbox://styles/pbernier/cmqcpqcwy001m01s4eumxepf8`
+  - **Recette** (reproductible dans Mapbox Studio à partir d'un import *Mapbox Standard*) : thème
+    *Monochrome*, light preset *Day* ; **tous les labels coupés** (lieux, POI, routes, transit) et
+    **frontières administratives** masquées ; **tous les objets 3D coupés** (bâtiments, arbres,
+    landmarks) ; rues et chemins piétons conservés ; eau et espaces verts conservés comme repères.
+  - Repli si les empreintes de bâtiments plates de Standard gênent sous la caméra inclinée :
+    repartir d'un style classique dépourvu de couche `building` (suppression garantie).
+
 Aucune installation de Gradle n'est nécessaire : le wrapper (`./gradlew`) télécharge la version
 attendue.
 
