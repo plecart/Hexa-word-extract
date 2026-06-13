@@ -1,4 +1,6 @@
 pluginManagement {
+    // Plugins de convention partagés (modules Kotlin purs).
+    includeBuild("build-logic")
     repositories {
         google {
             content {

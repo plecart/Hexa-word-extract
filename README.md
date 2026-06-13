@@ -75,6 +75,10 @@ dépendance Android** — le SDK Android n'est pas sur leur classpath. Le géné
 monde viendra s'ajouter dans la couche `:domain` et consommera `:core`, l'ensemble étant
 partageable plus tard avec un serveur.
 
+La configuration commune des modules Kotlin purs (toolchain JVM 17, ktlint, Kotest) est définie
+**une seule fois** dans le plugin de convention `hexa.kotlin-pure-library` (build composite
+`build-logic/`) ; chaque module pur l'applique en une ligne.
+
 ## Pipeline de développement
 
 Le projet suit une pipeline pilotée par les issues (PRD → issues « tranches verticales » → triage →
