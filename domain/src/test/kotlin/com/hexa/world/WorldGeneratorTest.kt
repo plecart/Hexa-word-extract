@@ -75,4 +75,25 @@ class WorldGeneratorTest : StringSpec({
             }
         }
     }
+
+    "les tuiles aux antiméridiens et aux hautes latitudes se génèrent sans erreur, de façon déterministe" {
+        val extremes = buildList {
+            for (lat in listOf(-89.9, -85.0, 85.0, 89.9)) {
+                for (lng in listOf(-180.0, -179.999, 179.999, 180.0)) {
+                    add(locator.cellAt(lat, lng))
+                }
+            }
+        }.distinct()
+        extremes.forEach { cell ->
+            generator.contentOf(cell) shouldBe generator.contentOf(cell)
+        }
+    }
+
+    "l'antiméridien n'introduit pas de couture : +180° et −180° désignent la même tuile et le même contenu" {
+        listOf(-89.0, -45.0, 0.0, 45.0, 89.0).forEach { lat ->
+            val east = locator.cellAt(lat, 180.0)
+            val west = locator.cellAt(lat, -180.0)
+            generator.contentOf(east) shouldBe generator.contentOf(west)
+        }
+    }
 })
