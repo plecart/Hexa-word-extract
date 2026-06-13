@@ -2,6 +2,9 @@
 node_modules/
 .claude/settings.local.json
 
+# IDE
+.idea/
+
 # Android / Gradle
 .gradle/
 build/
