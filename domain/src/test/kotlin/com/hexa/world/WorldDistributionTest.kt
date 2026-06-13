@@ -7,10 +7,6 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.doubles.plusOrMinus
 import io.kotest.matchers.shouldBe
 
-private fun deposit(element: Element, richness: Double = 0.5, rate: Int = 1) = ElementDeposit(element, richness, rate)
-
-private fun tile(vararg deposits: ElementDeposit) = TileContent(deposits.toList())
-
 /**
  * Vérifie l'agrégateur pur [WorldDistribution.measure] sur des contenus forgés à la main — aucune
  * dépendance au générateur ni à H3. Le grand échantillon réel est l'affaire du test statistique.
