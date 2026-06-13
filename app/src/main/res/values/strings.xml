@@ -1,5 +1,3 @@
 <resources>
     <string name="app_name">Hexa</string>
-    <string name="home_version">Version %1$s</string>
-    <string name="home_h3_resolution">Résolution H3 : %1$d</string>
 </resources>

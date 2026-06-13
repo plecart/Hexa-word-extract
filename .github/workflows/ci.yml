@@ -10,6 +10,11 @@ jobs:
     name: Lint + Test (Android)
     runs-on: ubuntu-latest
 
+    # Token secret Mapbox (scope DOWNLOADS:READ) requis pour résoudre le SDK depuis le dépôt
+    # Maven privé lors de la compilation de :app. Défini en secret de dépôt GitHub.
+    env:
+      MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
+
     steps:
       - uses: actions/checkout@v4
 
