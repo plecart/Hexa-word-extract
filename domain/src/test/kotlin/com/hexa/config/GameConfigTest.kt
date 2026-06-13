@@ -24,7 +24,7 @@ class GameConfigTest : StringSpec({
 
     "les seuils de présence et les longueurs d'onde suivent les valeurs d'équilibrage" {
         GameConfig.WAVELENGTHS_M shouldBe listOf(2000, 1500, 1000, 600, 400)
-        GameConfig.PRESENCE_THRESHOLDS shouldBe listOf(0.45, 0.70, 0.85, 0.93, 0.97)
+        GameConfig.PRESENCE_THRESHOLDS shouldBe listOf(0.474, 0.604, 0.698, 0.769, 0.825)
         GameConfig.BASE_RATES_PER_HOUR shouldBe listOf(60, 30, 14, 6, 2)
     }
 
