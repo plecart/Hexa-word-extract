@@ -48,16 +48,30 @@ attendue.
 |---|---|
 | Compiler l'APK de debug | `./gradlew assembleDebug` |
 | Installer sur un appareil/émulateur branché | `./gradlew installDebug` |
-| Chaîne qualité (lint + format + tests) | `./gradlew ktlintCheck lintDebug testDebugUnitTest` |
+| Chaîne qualité (lint + format + tests) | `./gradlew ktlintCheck lintDebug testDebugUnitTest :domain:test` |
 | Formater le code automatiquement | `./gradlew ktlintFormat` |
 
 L'APK généré se trouve sous `app/build/outputs/apk/debug/`. L'application affiche un écran
 d'accueil minimal — placeholder du MVP — qui lit sa version et une constante de
-[`GameConfig`](app/src/main/java/com/hexa/config/GameConfig.kt) pour prouver le câblage
+[`GameConfig`](domain/src/main/kotlin/com/hexa/config/GameConfig.kt) pour prouver le câblage
 build → configuration → UI.
 
 La même chaîne qualité s'exécute sur chaque PR via GitHub Actions
 ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+
+## Architecture des modules
+
+Le projet est découpé en modules Gradle pour rendre **structurelle** (vérifiée par le build, pas
+seulement par discipline) la frontière entre le code Android et le cœur logique réutilisable :
+
+| Module | Type | Rôle | Dépend de |
+|---|---|---|---|
+| `:app` | Android application | Point d'entrée Android, UI Compose, câblage | `:domain` |
+| `:domain` | Kotlin pur (`java-library`) | Modèles et configuration d'équilibrage du jeu ([`GameConfig`](domain/src/main/kotlin/com/hexa/config/GameConfig.kt), [`Element`](domain/src/main/kotlin/com/hexa/config/Element.kt)) | — |
+
+Règle de dépendances : `:app → :domain`, jamais l'inverse. Les modules Kotlin purs n'ont **aucune
+dépendance Android** — le SDK Android n'est pas sur leur classpath. Le générateur procédural du
+monde viendra s'ajouter dans cette couche pure, partageable plus tard avec un serveur.
 
 ## Pipeline de développement
 
