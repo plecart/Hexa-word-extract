@@ -35,4 +35,4 @@ jobs:
 
       - name: Tests unitaires
         if: steps.gradle.outputs.present == 'true'
-        run: ./gradlew --no-daemon testDebugUnitTest :domain:test
+        run: ./gradlew --no-daemon testDebugUnitTest :core:test :domain:test

@@ -22,4 +22,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Hexa"
 include(":app")
+include(":core")
 include(":domain")

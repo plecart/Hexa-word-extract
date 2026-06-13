@@ -48,7 +48,7 @@ attendue.
 |---|---|
 | Compiler l'APK de debug | `./gradlew assembleDebug` |
 | Installer sur un appareil/émulateur branché | `./gradlew installDebug` |
-| Chaîne qualité (lint + format + tests) | `./gradlew ktlintCheck lintDebug testDebugUnitTest :domain:test` |
+| Chaîne qualité (lint + format + tests) | `./gradlew ktlintCheck lintDebug testDebugUnitTest :core:test :domain:test` |
 | Formater le code automatiquement | `./gradlew ktlintFormat` |
 
 L'APK généré se trouve sous `app/build/outputs/apk/debug/`. L'application affiche un écran
@@ -67,11 +67,13 @@ seulement par discipline) la frontière entre le code Android et le cœur logiqu
 | Module | Type | Rôle | Dépend de |
 |---|---|---|---|
 | `:app` | Android application | Point d'entrée Android, UI Compose, câblage | `:domain` |
-| `:domain` | Kotlin pur (`java-library`) | Modèles et configuration d'équilibrage du jeu ([`GameConfig`](domain/src/main/kotlin/com/hexa/config/GameConfig.kt), [`Element`](domain/src/main/kotlin/com/hexa/config/Element.kt)) | — |
+| `:domain` | Kotlin pur | Modèles et configuration d'équilibrage du jeu ([`GameConfig`](domain/src/main/kotlin/com/hexa/config/GameConfig.kt), [`Element`](domain/src/main/kotlin/com/hexa/config/Element.kt)) | — |
+| `:core` | Kotlin pur | Utilitaires génériques sans sémantique métier : géométrie ([`UnitSphere`](core/src/main/kotlin/com/hexa/core/geo/UnitSphere.kt)), bruit procédural | — |
 
 Règle de dépendances : `:app → :domain`, jamais l'inverse. Les modules Kotlin purs n'ont **aucune
 dépendance Android** — le SDK Android n'est pas sur leur classpath. Le générateur procédural du
-monde viendra s'ajouter dans cette couche pure, partageable plus tard avec un serveur.
+monde viendra s'ajouter dans la couche `:domain` et consommera `:core`, l'ensemble étant
+partageable plus tard avec un serveur.
 
 ## Pipeline de développement
 
