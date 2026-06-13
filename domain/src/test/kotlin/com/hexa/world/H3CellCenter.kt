@@ -22,4 +22,7 @@ class H3CellCenter : TileCenterLocator {
 
     /** Index H3 (à [GameConfig.H3_RESOLUTION]) de la tuile contenant la position donnée. */
     fun cellAt(latDeg: Double, lngDeg: Double): Long = h3.latLngToCell(latDeg, lngDeg, GameConfig.H3_RESOLUTION)
+
+    /** Disque de cellules autour d'une cellule centrale : `rings` anneaux (4 anneaux → 61 cellules). */
+    fun disk(center: Long, rings: Int): List<Long> = h3.gridDisk(center, rings)
 }

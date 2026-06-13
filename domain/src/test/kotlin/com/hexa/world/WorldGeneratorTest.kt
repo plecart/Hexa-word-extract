@@ -4,11 +4,14 @@ import com.hexa.config.Element
 import com.hexa.config.GameConfig
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
+import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
 import io.kotest.matchers.shouldBe
+import kotlin.system.measureTimeMillis
 
 /**
  * Réseau de cellules H3 variées couvrant le globe — hautes latitudes (±85°) et antiméridien
@@ -95,5 +98,14 @@ class WorldGeneratorTest : StringSpec({
             val west = locator.cellAt(lat, -180.0)
             generator.contentOf(east) shouldBe generator.contentOf(west)
         }
+    }
+
+    "le contenu d'un gridDisk complet (61 cellules) se génère bien sous la seconde" {
+        val disk = locator.disk(locator.cellAt(48.85, 2.35), rings = 4)
+        disk shouldHaveSize 61
+        disk.forEach { generator.contentOf(it) } // préchauffe la JVM (chargement de classes, JIT)
+
+        val elapsedMillis = measureTimeMillis { disk.forEach { generator.contentOf(it) } }
+        elapsedMillis shouldBeLessThan 500L
     }
 })
