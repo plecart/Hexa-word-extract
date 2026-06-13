@@ -50,6 +50,7 @@ attendue.
 | Installer sur un appareil/émulateur branché | `./gradlew installDebug` |
 | Chaîne qualité (lint + format + tests) | `./gradlew ktlintCheck lintDebug testDebugUnitTest :core:test :domain:test` |
 | Formater le code automatiquement | `./gradlew ktlintFormat` |
+| Mesurer la distribution du monde (rapport mesuré vs cibles + seuils proposés) | `./gradlew :domain:worldDistributionReport` |
 
 L'APK généré se trouve sous `app/build/outputs/apk/debug/`. L'application affiche un écran
 d'accueil minimal — placeholder du MVP — qui lit sa version et une constante de
@@ -67,13 +68,14 @@ seulement par discipline) la frontière entre le code Android et le cœur logiqu
 | Module | Type | Rôle | Dépend de |
 |---|---|---|---|
 | `:app` | Android application | Point d'entrée Android, UI Compose, câblage | `:domain` |
-| `:domain` | Kotlin pur | Modèles et configuration d'équilibrage du jeu ([`GameConfig`](domain/src/main/kotlin/com/hexa/config/GameConfig.kt), [`Element`](domain/src/main/kotlin/com/hexa/config/Element.kt)) | — |
+| `:domain` | Kotlin pur | Configuration d'équilibrage ([`GameConfig`](domain/src/main/kotlin/com/hexa/config/GameConfig.kt), [`Element`](domain/src/main/kotlin/com/hexa/config/Element.kt)) et générateur procédural du monde ([`WorldGenerator`](domain/src/main/kotlin/com/hexa/world/WorldGenerator.kt) : index H3 → contenu de tuile) | `:core` |
 | `:core` | Kotlin pur | Utilitaires génériques sans sémantique métier : géométrie ([`UnitSphere`](core/src/main/kotlin/com/hexa/core/geo/UnitSphere.kt)), bruit procédural | — |
 
-Règle de dépendances : `:app → :domain`, jamais l'inverse. Les modules Kotlin purs n'ont **aucune
-dépendance Android** — le SDK Android n'est pas sur leur classpath. Le générateur procédural du
-monde viendra s'ajouter dans la couche `:domain` et consommera `:core`, l'ensemble étant
-partageable plus tard avec un serveur.
+Règle de dépendances : `:app → :domain → :core`, jamais l'inverse. Les modules Kotlin purs n'ont
+**aucune dépendance Android** — le SDK Android n'est pas sur leur classpath. Le générateur
+procédural du monde vit dans `:domain` et consomme `:core` ; la grille H3 (native) est isolée
+derrière le port [`TileCenterLocator`](domain/src/main/kotlin/com/hexa/world/TileCenterLocator.kt),
+si bien que `:domain` reste partageable plus tard avec un serveur.
 
 La configuration commune des modules Kotlin purs (toolchain JVM 17, ktlint, Kotest) est définie
 **une seule fois** dans le plugin de convention `hexa.kotlin-pure-library` (build composite

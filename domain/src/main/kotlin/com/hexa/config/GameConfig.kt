@@ -22,8 +22,13 @@ object GameConfig {
     /** Longueurs d'onde du bruit de présence, en mètres, par rareté croissante. */
     val WAVELENGTHS_M: List<Int> = listOf(2000, 1500, 1000, 600, 400)
 
-    /** Seuils de présence (probabilité au-dessus de laquelle l'élément apparaît), par rareté. */
-    val PRESENCE_THRESHOLDS: List<Double> = listOf(0.45, 0.70, 0.85, 0.93, 0.97)
+    /**
+     * Seuils de présence (valeur de bruit normalisée au-dessus de laquelle l'élément apparaît), par
+     * rareté. **Recalés empiriquement** (#16) pour viser les fréquences du game design
+     * (~55/30/15/7/3 %) sur la distribution réelle — non uniforme — du bruit ; mesure reproductible
+     * via `./gradlew :domain:worldDistributionReport`.
+     */
+    val PRESENCE_THRESHOLDS: List<Double> = listOf(0.474, 0.604, 0.698, 0.769, 0.825)
 
     /** Taux d'extraction de base, en unités par heure à richesse maximale, par rareté. */
     val BASE_RATES_PER_HOUR: List<Int> = listOf(60, 30, 14, 6, 2)

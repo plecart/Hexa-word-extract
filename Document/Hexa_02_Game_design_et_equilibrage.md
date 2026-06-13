@@ -57,15 +57,15 @@ Une seconde octave de bruit (amplitude 0,25, fréquence ×4) est ajoutée à cha
 
 ### 3.4 Seuils de présence et conséquences
 
-Valeurs provisoires (la distribution du simplex n'étant pas uniforme, les pourcentages sont des ordres de grandeur à mesurer empiriquement sur un échantillon de cellules — premier test d'équilibrage à faire tourner) :
+Seuils **recalés empiriquement** (issue #16) sur un échantillon de ~24 000 cellules : la distribution du simplex n'étant pas uniforme, les seuils sont ajustés pour que la présence mesurée colle aux fréquences visées (mesure reproductible : `./gradlew :domain:worldDistributionReport`). Présence mesurée ci-dessous entre parenthèses ; l'équilibrage fin reste post-MVP.
 
-| Élément | Seuil | Présence visée |
+| Élément | Seuil | Présence visée (mesurée) |
 |---|---|---|
-| Cendrite | 0,45 | ~55 % des tuiles |
-| Givrelin | 0,70 | ~30 % |
-| Lithosève | 0,85 | ~15 % |
-| Échofer | 0,93 | ~7 % |
-| Nyctite | 0,97 | ~3 % |
+| Cendrite | 0,474 | ~55 % des tuiles (55,1 %) |
+| Givrelin | 0,604 | ~30 % (29,7 %) |
+| Lithosève | 0,698 | ~15 % (14,9 %) |
+| Échofer | 0,769 | ~7 % (6,6 %) |
+| Nyctite | 0,825 | ~3 % (2,7 %) |
 
 Conséquences attendues : ~1,1 élément par tuile en moyenne ; environ **un quart des tuiles ne contiennent rien** (souhaité : le vide donne de la valeur au plein) ; une tuile à 4 ou 5 éléments est un événement rarissime (« jackpot » naturel).
 
@@ -115,7 +115,7 @@ Avec la base + 2 extracteurs de départ sur des tuiles moyennes (richesse ~0,5 ;
 H3_RESOLUTION            = 11
 WORLD_SEED               = <constante globale>
 WAVELENGTHS_M            = [2000, 1500, 1000, 600, 400]
-PRESENCE_THRESHOLDS      = [0.45, 0.70, 0.85, 0.93, 0.97]
+PRESENCE_THRESHOLDS      = [0.474, 0.604, 0.698, 0.769, 0.825]   ; recalés empiriquement (#16)
 BASE_RATES_PER_HOUR      = [60, 30, 14, 6, 2]
 RATE_FLOOR               = 0.20
 OCTAVE2_AMPLITUDE        = 0.25   ; OCTAVE2_FREQ_MULT = 4

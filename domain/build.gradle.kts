@@ -15,3 +15,17 @@ dependencies {
     // TileCenterLocator et câblée côté :app.
     testImplementation(libs.uber.h3)
 }
+
+// Commande documentée de mesure empirique : exécute le test statistique sur un grand échantillon et
+// imprime le rapport de distribution (présence mesurée vs cibles, seuils recalés proposés). Toujours
+// ré-exécutée pour refléter l'état courant des constantes de GameConfig.
+tasks.register<Test>("worldDistributionReport") {
+    description = "Mesure la distribution du monde et imprime le rapport (mesuré vs cibles, seuils proposés)."
+    group = "verification"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter { includeTestsMatching("com.hexa.world.WorldDistributionStatisticalTest") }
+    testLogging { showStandardStreams = true }
+    outputs.upToDateWhen { false }
+}
