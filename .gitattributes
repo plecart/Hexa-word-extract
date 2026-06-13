@@ -1,0 +1,13 @@
+# Normalisation des fins de ligne, indépendante du poste.
+* text=auto eol=lf
+
+# Scripts Windows : CRLF obligatoire.
+*.bat text eol=crlf
+
+# Le wrapper Unix doit rester en LF pour s'exécuter sur la CI Linux.
+gradlew text eol=lf
+
+# Binaires : pas de normalisation.
+*.jar binary
+*.png binary
+*.keystore binary
