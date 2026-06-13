@@ -1,4 +1,6 @@
 pluginManagement {
+    // Plugins de convention partagés (modules Kotlin purs).
+    includeBuild("build-logic")
     repositories {
         google {
             content {
@@ -22,3 +24,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Hexa"
 include(":app")
+include(":core")
+include(":domain")

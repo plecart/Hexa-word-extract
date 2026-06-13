@@ -31,16 +31,12 @@ android {
         // Expose VERSION_NAME à l'écran d'accueil pour prouver le câblage du build.
         buildConfig = true
     }
-
-    testOptions {
-        unitTests.all {
-            // Kotest s'exécute sur la plateforme JUnit 5.
-            it.useJUnitPlatform()
-        }
-    }
 }
 
 dependencies {
+    // Modèles et configuration d'équilibrage, hébergés dans le module Kotlin pur :domain.
+    implementation(project(":domain"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
 
@@ -49,7 +45,4 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     debugImplementation(libs.androidx.compose.ui.tooling)
-
-    testImplementation(libs.kotest.runner.junit5)
-    testImplementation(libs.kotest.assertions.core)
 }
