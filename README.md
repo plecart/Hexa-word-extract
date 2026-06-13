@@ -27,6 +27,38 @@ déterministe, persistance + récolte hors ligne) sont détaillées dans les sp�
 | Backend | Firebase Auth (anonyme) + Cloud Firestore |
 | Génération | Bruit simplex 3D en Kotlin, déterministe |
 
+## Build & lancement
+
+### Prérequis
+
+- **JDK 17** (le wrapper Gradle s'attend à `JAVA_HOME` pointant sur un JDK 17).
+- **Android SDK** avec la plateforme `android-35`. Renseigner son emplacement dans un fichier
+  `local.properties` (non versionné) à la racine :
+
+  ```properties
+  sdk.dir=/chemin/vers/Android/Sdk
+  ```
+
+Aucune installation de Gradle n'est nécessaire : le wrapper (`./gradlew`) télécharge la version
+attendue.
+
+### Commandes
+
+| But | Commande |
+|---|---|
+| Compiler l'APK de debug | `./gradlew assembleDebug` |
+| Installer sur un appareil/émulateur branché | `./gradlew installDebug` |
+| Chaîne qualité (lint + format + tests) | `./gradlew ktlintCheck lintDebug testDebugUnitTest` |
+| Formater le code automatiquement | `./gradlew ktlintFormat` |
+
+L'APK généré se trouve sous `app/build/outputs/apk/debug/`. L'application affiche un écran
+d'accueil minimal — placeholder du MVP — qui lit sa version et une constante de
+[`GameConfig`](app/src/main/java/com/hexa/config/GameConfig.kt) pour prouver le câblage
+build → configuration → UI.
+
+La même chaîne qualité s'exécute sur chaque PR via GitHub Actions
+([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+
 ## Pipeline de développement
 
 Le projet suit une pipeline pilotée par les issues (PRD → issues « tranches verticales » → triage →
