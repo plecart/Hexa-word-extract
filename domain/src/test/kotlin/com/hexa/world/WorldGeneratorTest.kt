@@ -11,6 +11,7 @@ import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
 import io.kotest.matchers.shouldBe
+import kotlin.math.roundToInt
 import kotlin.system.measureTimeMillis
 
 /**
@@ -53,8 +54,10 @@ class WorldGeneratorTest : StringSpec({
         deposits.forEach { deposit ->
             deposit.richness shouldBeGreaterThan 0.0
             deposit.richness shouldBeLessThanOrEqualTo 1.0
+            // Vitesse arrondie, entre le plancher (20 % du taux de base) et le taux de base.
             val base = GameConfig.BASE_RATES_PER_HOUR[deposit.element.ordinal]
-            deposit.ratePerHour shouldBeGreaterThanOrEqualTo 0
+            val floor = (base * GameConfig.RATE_FLOOR).roundToInt()
+            deposit.ratePerHour shouldBeGreaterThanOrEqualTo floor
             deposit.ratePerHour shouldBeLessThanOrEqualTo base
         }
     }
