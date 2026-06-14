@@ -1,0 +1,22 @@
+rules_version = '2';
+
+// Règles de sécurité Cloud Firestore du prototype.
+//
+// Principe : chaque joueur n'accède qu'à SON propre document `players/{uid}` et à ses
+// sous-collections. L'auth anonyme fournit l'`uid` ; un joueur ne peut jamais lire ni écrire le
+// document d'un autre.
+//
+// Déploiement : coller ce contenu dans la console Firestore (onglet *Rules*) ou exécuter
+// `firebase deploy --only firestore:rules`. Ce fichier est la source de vérité versionnée.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /players/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      // Sous-collections du joueur (bâtiments, etc.) : même restriction au propriétaire.
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+  }
+}
