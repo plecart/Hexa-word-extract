@@ -89,6 +89,13 @@ déterministe, persistance + récolte hors ligne) sont détaillées dans les sp�
   ⚠️ `google-services.json` n'est **jamais** versionné. En CI, il est reconstitué depuis le secret
   de dépôt **`GOOGLE_SERVICES_JSON`** (contenu encodé en base64).
 
+- **Grille H3 sur Android** — `com.uber:h3` embarque ses binaires natifs comme ressources du
+  classpath (par plateforme), qu'AGP n'empaquette pas. Le build les **extrait vers les `jniLibs`** de
+  l'APK (tâche `extractH3Natives` dans [`app/build.gradle.kts`](app/build.gradle.kts)) et l'app les
+  charge via `H3Core.newSystemInstance()`. ⚠️ La lib ne fournit de `.so` que pour **arm/arm64** : la
+  grille hexagonale ne fonctionne donc **pas sur un émulateur x86/x86_64** (`UnsatisfiedLinkError`) —
+  valider sur un **appareil ARM réel** ou un émulateur arm64.
+
 Aucune installation de Gradle n'est nécessaire : le wrapper (`./gradlew`) télécharge la version
 attendue.
 
@@ -127,9 +134,12 @@ Règle de dépendances : `:app` dépend des modules purs (`:domain`, `:location`
 `:core` ; jamais l'inverse. Les modules Kotlin purs n'ont **aucune dépendance Android** — le SDK
 Android n'est pas sur leur classpath, et `:location` n'a pas non plus le SDK Mapbox : la logique de
 poursuite reste testable hors device. Le générateur
-procédural du monde vit dans `:domain` et consomme `:core` ; la grille H3 (native) est isolée
-derrière le port [`TileCenterLocator`](domain/src/main/kotlin/com/hexa/world/TileCenterLocator.kt),
-si bien que `:domain` reste partageable plus tard avec un serveur.
+procédural du monde vit dans `:domain` et consomme `:core` ; la bibliothèque H3 (native) reste hors
+de `:domain`, derrière le port [`TileCenterLocator`](domain/src/main/kotlin/com/hexa/world/TileCenterLocator.kt),
+si bien que `:domain` reste partageable plus tard avec un serveur. L'**unique** intégration H3 de
+production vit dans `:app` ([`HexGrid`](app/src/main/java/com/hexa/map/HexGrid.kt) / `H3Grid`) : elle
+dessine la grille hexagonale autour du joueur **et** implémente `TileCenterLocator` pour le
+générateur, évitant une seconde intégration native.
 
 La configuration commune des modules Kotlin purs (toolchain JVM 17, ktlint, Kotest) est définie
 **une seule fois** dans le plugin de convention `hexa.kotlin-pure-library` (build composite

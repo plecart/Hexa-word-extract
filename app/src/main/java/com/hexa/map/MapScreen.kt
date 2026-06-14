@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,10 +19,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.google.android.gms.location.LocationServices
+import com.hexa.HexaApplication
 import com.hexa.R
 import com.hexa.location.CameraMode
 import com.hexa.location.ChaseCameraConfig
+import com.hexa.location.PositionSource
 import com.mapbox.android.gestures.MoveGestureDetector
 import com.mapbox.android.gestures.StandardScaleGestureDetector
 import com.mapbox.geojson.Point
@@ -36,6 +38,7 @@ import com.mapbox.maps.plugin.animation.easeTo
 import com.mapbox.maps.plugin.gestures.OnMoveListener
 import com.mapbox.maps.plugin.gestures.OnScaleListener
 import com.mapbox.maps.plugin.gestures.gestures
+import com.uber.h3core.H3Core
 
 /**
  * Durée d'interpolation de la caméra vers chaque nouvelle pose. Proche de la cadence d'échantillonnage
@@ -70,10 +73,19 @@ fun MapScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun ChaseCameraMap(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val viewModel: ChaseCameraViewModel = viewModel(factory = chaseCameraViewModelFactory(context))
+    val positionSource = (context.applicationContext as HexaApplication).sharedPositionSource
+    val viewModel: ChaseCameraViewModel = viewModel(factory = chaseCameraViewModelFactory(context, positionSource))
+    val gridViewModel: HexGridViewModel = viewModel(factory = hexGridViewModelFactory(positionSource))
 
     val camera by viewModel.cameraState.collectAsStateWithLifecycle()
     val mode by viewModel.mode.collectAsStateWithLifecycle()
+    val gridOutlines by gridViewModel.outlines.collectAsStateWithLifecycle()
+
+    // La grille suit le palier d'anneaux du zoom de poursuite courant (et du zoom au pincement, qui
+    // se répercute sur la pose). En mode libre, le dernier zoom de poursuite est conservé.
+    LaunchedEffect(camera?.zoomLevel) {
+        camera?.zoomLevel?.let(gridViewModel::onZoomChanged)
+    }
 
     val viewportState =
         rememberMapViewportState {
@@ -102,6 +114,11 @@ private fun ChaseCameraMap(modifier: Modifier = Modifier) {
                         .build(),
                     MapAnimationOptions.Builder().duration(FOLLOW_EASE_MS).build(),
                 )
+            }
+            // Redessine la grille hexagonale à chaque nouvel ensemble de contours (changement de
+            // cellule ou de palier de zoom) ; la source GeoJSON n'est créée qu'une fois.
+            MapEffect(gridOutlines) { mapView ->
+                mapView.mapboxMap.getStyle { style -> style.showHexGrid(gridOutlines) }
             }
             MapEffect(Unit) { mapView ->
                 mapView.mapboxMap.setBounds(
@@ -146,21 +163,16 @@ private fun ChaseCameraMap(modifier: Modifier = Modifier) {
 }
 
 /**
- * Fabrique le [ChaseCameraViewModel] en câblant les sources concrètes : position GPS filtrée
- * ([FusedLocationSource]) et boussole de l'appareil ([CompassHeadingSource]) pour le cap, avec les
- * réglages de [MapConfig]. La permission de localisation est garantie en amont par
- * [LocationPermissionGate].
+ * Fabrique le [ChaseCameraViewModel] en câblant la position GPS filtrée **partagée**
+ * ([positionSource], cf. [HexaApplication.sharedPositionSource]) et la boussole de l'appareil
+ * ([CompassHeadingSource]) pour le cap, avec les réglages de [MapConfig]. La permission de
+ * localisation est garantie en amont par [LocationPermissionGate].
  */
-private fun chaseCameraViewModelFactory(context: Context) = viewModelFactory {
+private fun chaseCameraViewModelFactory(context: Context, positionSource: PositionSource) = viewModelFactory {
     initializer {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         ChaseCameraViewModel(
-            positionSource = FusedLocationSource(
-                client = LocationServices.getFusedLocationProviderClient(context),
-                intervalMs = MapConfig.GPS_INTERVAL_MS,
-                smoothingFactor = MapConfig.POSITION_SMOOTHING_FACTOR,
-                accuracyThresholdM = MapConfig.ACCURACY_THRESHOLD_M,
-            ),
+            positionSource = positionSource,
             headingSource = CompassHeadingSource(sensorManager),
             config = ChaseCameraConfig(
                 pitchDeg = MapConfig.PITCH,
@@ -170,5 +182,17 @@ private fun chaseCameraViewModelFactory(context: Context) = viewModelFactory {
             ),
             headingSmoothingFactor = MapConfig.HEADING_SMOOTHING_FACTOR,
         )
+    }
+}
+
+/**
+ * Fabrique le [HexGridViewModel] en câblant la **même** position GPS filtrée partagée que la caméra
+ * ([positionSource]) et l'intégration H3 de production ([H3Grid]) : un seul abonnement GPS sert la
+ * caméra et la grille.
+ */
+private fun hexGridViewModelFactory(positionSource: PositionSource) = viewModelFactory {
+    initializer {
+        // Sur Android, H3 se charge depuis les jniLibs via newSystemInstance (cf. [H3Grid]).
+        HexGridViewModel(positionSource = positionSource, grid = H3Grid(h3 = H3Core.newSystemInstance()))
     }
 }

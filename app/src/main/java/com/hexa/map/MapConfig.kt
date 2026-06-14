@@ -67,4 +67,34 @@ object MapConfig {
 
     /** Intervalle souhaité entre deux mises à jour GPS, en millisecondes (cadence piétonne). */
     const val GPS_INTERVAL_MS: Long = 1_000L
+
+    /** Nombre d'anneaux minimal de la grille (zoom le plus rapproché) — 2 anneaux ≈ 19 cellules. */
+    const val GRID_MIN_RINGS: Int = 2
+
+    /** Nombre d'anneaux maximal de la grille (zoom le plus large) — 4 anneaux ≈ 61 cellules. */
+    const val GRID_MAX_RINGS: Int = 4
+
+    /**
+     * Paliers de zoom → nombre d'anneaux de la grille, **ordonnés du plus zoomé au plus large**.
+     * Chaque palier `(zoom plancher, anneaux)` s'applique tant que le zoom reste au-dessus du plancher.
+     * Plus on dézoome, plus on affiche d'anneaux pour garder la grille pleine écran ; la grille n'est
+     * recalculée que lorsque le zoom **franchit** un palier, pas à chaque micro-variation. Les trois
+     * paliers couvrent : `≥ 18` échelle rue (19 cellules), `[16,5 ; 18[` (37 cellules), `[14 ; 16,5[`
+     * échelle quartier (61 cellules).
+     */
+    val GRID_RING_STEPS: List<Pair<Double, Int>> =
+        listOf(
+            18.0 to GRID_MIN_RINGS,
+            16.5 to 3,
+            MIN_ZOOM to GRID_MAX_RINGS,
+        )
+
+    /** Couleur du tracé de la grille — cyan vif, contrasté sur le fond monochrome. **Provisoire**. */
+    const val GRID_LINE_COLOR: String = "#00E5FF"
+
+    /** Épaisseur du tracé de la grille, en points — fin mais lisible. **Provisoire**. */
+    const val GRID_LINE_WIDTH: Double = 1.5
+
+    /** Opacité du tracé de la grille, dans `[0, 1]` — surcouche visible sans masquer la carte. **Provisoire**. */
+    const val GRID_LINE_OPACITY: Double = 0.85
 }

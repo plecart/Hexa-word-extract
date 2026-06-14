@@ -1,0 +1,51 @@
+package com.hexa.map
+
+import com.hexa.config.GameConfig
+import com.hexa.core.geo.LatLng
+import com.hexa.world.TileCenterLocator
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeInstanceOf
+
+/**
+ * [H3Grid] est l'adaptateur de production vers la bibliothèque native H3 d'Uber : il résout la
+ * cellule sous une position, le disque de cellules autour d'elle et le contour à dessiner, et sert
+ * de [TileCenterLocator] au générateur de monde. On vérifie ces conversions sur une cellule réelle —
+ * H3 tourne en test JVM, comme côté `:domain`.
+ */
+class HexGridTest : StringSpec({
+    val grid = H3Grid()
+    val paris = LatLng(48.8566, 2.3522)
+
+    "résout la cellule sous une position, dont le centre retombe dans la même cellule" {
+        val cell = grid.cellAt(paris)
+        grid.cellAt(grid.centerOf(cell)) shouldBe cell
+    }
+
+    "un disque de k anneaux contient 1 + 3k(k+1) cellules, centre inclus" {
+        val center = grid.cellAt(paris)
+        // Bornes du jeu : 2 anneaux → 19 cellules, 4 anneaux → 61 cellules.
+        grid.disk(center, rings = 2) shouldHaveSize 19
+        grid.disk(center, rings = 4) shouldHaveSize 61
+        grid.disk(center, rings = 2) shouldContain center
+    }
+
+    "le contour d'une cellule hexagonale a six sommets" {
+        val cell = grid.cellAt(paris)
+        grid.outline(cell) shouldHaveSize 6
+    }
+
+    "expose le port TileCenterLocator pour le générateur de monde" {
+        grid.shouldBeInstanceOf<TileCenterLocator>()
+    }
+
+    "résout la cellule à la résolution centrale du jeu par défaut" {
+        grid.cellAt(paris) shouldBe H3Grid(resolution = GameConfig.H3_RESOLUTION).cellAt(paris)
+        // À une autre résolution, la même position tombe dans une cellule d'index différent : la
+        // résolution est bien un réglage, lu par défaut depuis la configuration centrale.
+        grid.cellAt(paris) shouldNotBe H3Grid(resolution = GameConfig.H3_RESOLUTION - 1).cellAt(paris)
+    }
+})
