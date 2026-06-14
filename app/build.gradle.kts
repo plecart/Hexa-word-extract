@@ -65,6 +65,9 @@ dependencies {
     implementation(libs.mapbox.maps.android)
     implementation(libs.mapbox.maps.compose)
 
+    // Position GPS réelle via FusedLocationProviderClient (Google Play services).
+    implementation(libs.play.services.location)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     // ViewModel + collecte d'état Compose conscient du cycle de vie (StateFlow → UI).

@@ -13,6 +13,7 @@ coroutines = "1.9.0"
 h3 = "4.1.1"
 mapbox = "11.24.2"
 googleServices = "4.4.2"
+playServicesLocation = "21.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -31,6 +32,7 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 uber-h3 = { group = "com.uber", name = "h3", version.ref = "h3" }
 mapbox-maps-android = { group = "com.mapbox.maps", name = "android", version.ref = "mapbox" }
 mapbox-maps-compose = { group = "com.mapbox.extension", name = "maps-compose", version.ref = "mapbox" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 
 # Artefacts de plugins Gradle, consommés par les plugins de convention de build-logic.
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }

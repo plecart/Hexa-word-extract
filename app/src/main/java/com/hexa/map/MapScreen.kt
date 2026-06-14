@@ -18,10 +18,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.google.android.gms.location.LocationServices
 import com.hexa.R
 import com.hexa.location.CameraMode
 import com.hexa.location.ChaseCameraConfig
-import com.hexa.location.SimulatedTrajectoryPositionSource
 import com.mapbox.android.gestures.MoveGestureDetector
 import com.mapbox.android.gestures.StandardScaleGestureDetector
 import com.mapbox.geojson.Point
@@ -45,17 +45,30 @@ import com.mapbox.maps.plugin.gestures.gestures
 private const val FOLLOW_EASE_MS = 200L
 
 /**
+ * Écran carte : derrière la **porte de permission de localisation**, affiche la caméra de poursuite.
+ *
+ * Tant que `ACCESS_FINE_LOCATION` n'est pas accordée, [LocationPermissionGate] présente la demande
+ * puis, en cas de refus, un état explicite ; une fois accordée, [ChaseCameraMap] s'affiche.
+ */
+@Composable
+fun MapScreen(modifier: Modifier = Modifier) {
+    LocationPermissionGate(modifier = modifier) {
+        ChaseCameraMap(modifier = Modifier.fillMaxSize())
+    }
+}
+
+/**
  * Carte Mapbox plein écran avec **caméra de poursuite à la troisième personne**.
  *
- * La caméra suit la position fournie par [ChaseCameraViewModel] (trajet simulé cette tranche),
- * inclinée et orientée selon le cap lissé de la boussole. Un déplacement au doigt suspend la
- * poursuite (mode libre) et fait apparaître un bouton de recentrage ; le zoom au pincement reste
- * actif et borné à [MapConfig.MIN_ZOOM]–[MapConfig.MAX_ZOOM] pendant la poursuite.
+ * La caméra suit la position GPS filtrée fournie par [ChaseCameraViewModel], inclinée et orientée
+ * selon le cap lissé de la boussole. Un déplacement au doigt suspend la poursuite (mode libre) et
+ * fait apparaître un bouton de recentrage ; le zoom au pincement reste actif et borné à
+ * [MapConfig.MIN_ZOOM]–[MapConfig.MAX_ZOOM] pendant la poursuite.
  *
  * Le token public est fourni au SDK en amont (cf. [com.hexa.MainActivity]).
  */
 @Composable
-fun MapScreen(modifier: Modifier = Modifier) {
+private fun ChaseCameraMap(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val viewModel: ChaseCameraViewModel = viewModel(factory = chaseCameraViewModelFactory(context))
 
@@ -133,15 +146,21 @@ fun MapScreen(modifier: Modifier = Modifier) {
 }
 
 /**
- * Fabrique le [ChaseCameraViewModel] en câblant les sources concrètes : trajet simulé pour la
- * position (#10 le remplacera par le GPS) et boussole de l'appareil pour le cap, avec les réglages
- * de [MapConfig].
+ * Fabrique le [ChaseCameraViewModel] en câblant les sources concrètes : position GPS filtrée
+ * ([FusedLocationSource]) et boussole de l'appareil ([CompassHeadingSource]) pour le cap, avec les
+ * réglages de [MapConfig]. La permission de localisation est garantie en amont par
+ * [LocationPermissionGate].
  */
 private fun chaseCameraViewModelFactory(context: Context) = viewModelFactory {
     initializer {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         ChaseCameraViewModel(
-            positionSource = SimulatedTrajectoryPositionSource(DemoTrajectory.POINTS, DemoTrajectory.STEP),
+            positionSource = FusedLocationSource(
+                client = LocationServices.getFusedLocationProviderClient(context),
+                intervalMs = MapConfig.GPS_INTERVAL_MS,
+                smoothingFactor = MapConfig.POSITION_SMOOTHING_FACTOR,
+                accuracyThresholdM = MapConfig.ACCURACY_THRESHOLD_M,
+            ),
             headingSource = CompassHeadingSource(sensorManager),
             config = ChaseCameraConfig(
                 pitchDeg = MapConfig.PITCH,
