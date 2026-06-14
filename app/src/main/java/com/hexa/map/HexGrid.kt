@@ -35,10 +35,16 @@ interface HexGrid : TileCenterLocator {
  *
  * @param resolution résolution H3 des cellules, lue par défaut depuis la configuration centrale
  *   ([GameConfig.H3_RESOLUTION]) : changer l'échelle de la grille ne demande qu'un réglage.
+ * @param h3 instance H3 native. Le chargement de la lib **diffère selon la plateforme** : sur
+ *   **Android**, passer `H3Core.newSystemInstance()` (charge `libh3-java.so` depuis les `jniLibs` de
+ *   l'APK, cf. `app/build.gradle.kts`) ; le défaut `H3Core.newInstance()` extrait la lib desktop
+ *   empaquetée dans le jar et ne sert que sur JVM (tests). Sur Android, ce défaut échouerait
+ *   (`UnsatisfiedLinkError`), AGP ne conservant pas les `.so` en ressources du classpath.
  */
-class H3Grid(private val resolution: Int = GameConfig.H3_RESOLUTION) : HexGrid {
-    private val h3 = H3Core.newInstance()
-
+class H3Grid(
+    private val resolution: Int = GameConfig.H3_RESOLUTION,
+    private val h3: H3Core = H3Core.newInstance(),
+) : HexGrid {
     override fun cellAt(position: LatLng): Long = h3.latLngToCell(position.latDeg, position.lngDeg, resolution)
 
     override fun disk(center: Long, rings: Int): List<Long> = h3.gridDisk(center, rings)

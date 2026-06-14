@@ -1,3 +1,4 @@
+import org.gradle.api.file.RelativePath
 import java.util.Properties
 
 plugins {
@@ -18,6 +19,28 @@ val mapboxPublicToken: String =
     }.getProperty("MAPBOX_PUBLIC_TOKEN")
         ?: System.getenv("MAPBOX_PUBLIC_TOKEN")
         ?: ""
+
+// La lib native H3 (`com.uber:h3`) embarque ses `.so` comme **ressources du classpath** par
+// plateforme (`android-arm64/…`, `android-arm/…`), pas sous `lib/<abi>/`. AGP les écarte donc du
+// packaging, et `H3Core.newInstance()` (qui lit la lib en ressource) échoue sur Android. On extrait
+// les `.so` Android du jar vers un dossier `jniLibs` généré : ils sont alors packagés comme libs
+// natives standard et chargeables via `System.loadLibrary` (`H3Core.newSystemInstance()`).
+val h3JniLibsDir = layout.buildDirectory.dir("generated/h3-jniLibs")
+val abiByH3Platform = mapOf("android-arm64" to "arm64-v8a", "android-arm" to "armeabi-v7a")
+val extractH3Natives by tasks.registering(Copy::class) {
+    val h3Jars = configurations.named("releaseRuntimeClasspath").map { classpath ->
+        classpath.files.filter { it.name.startsWith("h3-") && it.extension == "jar" }
+    }
+    from(h3Jars.map { jars -> jars.map(::zipTree) }) {
+        abiByH3Platform.keys.forEach { include("$it/libh3-java.so") }
+        eachFile {
+            val abi = abiByH3Platform.getValue(path.substringBefore('/'))
+            relativePath = RelativePath(true, abi, "libh3-java.so")
+        }
+        includeEmptyDirs = false
+    }
+    into(h3JniLibsDir)
+}
 
 android {
     namespace = "com.hexa"
@@ -54,7 +77,21 @@ android {
         // (comme les modules purs), plutôt que JUnit 4 par défaut d'AGP.
         unitTests.all { it.useJUnitPlatform() }
     }
+
+    // Les `.so` H3 extraits (cf. extractH3Natives) sont packagés comme libs natives de l'APK.
+    sourceSets.getByName("main").jniLibs.srcDir(h3JniLibsDir)
+
+    packaging {
+        resources {
+            // H3 embarque ses natifs desktop en ressources du classpath : inutiles sur Android (seuls
+            // les `.so` extraits en jniLibs servent). On les exclut pour ne pas gonfler l'APK.
+            excludes += setOf("darwin-*/**", "windows-*/**", "linux-*/**")
+        }
+    }
 }
+
+// L'extraction des natifs H3 doit précéder le packaging des jniLibs.
+tasks.named("preBuild").configure { dependsOn(extractH3Natives) }
 
 dependencies {
     // Modèles et configuration d'équilibrage, hébergés dans le module Kotlin pur :domain.
