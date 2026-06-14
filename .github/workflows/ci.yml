@@ -23,6 +23,12 @@ jobs:
         id: gradle
         run: echo "present=$([ -f gradlew ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
+      # google-services.json est non versionné (dépôt public). Le plugin google-services exige
+      # sa présence à la compilation de :app : on le reconstitue depuis le secret base64 du dépôt.
+      - name: Injecter google-services.json
+        if: steps.gradle.outputs.present == 'true'
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > app/google-services.json
+
       - name: Set up JDK 17
         if: steps.gradle.outputs.present == 'true'
         uses: actions/setup-java@v4

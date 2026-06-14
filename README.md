@@ -74,6 +74,21 @@ déterministe, persistance + récolte hors ligne) sont détaillées dans les sp�
   - Repli si les empreintes de bâtiments plates de Standard gênent sous la caméra inclinée :
     repartir d'un style classique dépourvu de couche `building` (suppression garantie).
 
+- **Firebase** — le backend (Auth anonyme + Cloud Firestore) repose sur un fichier de configuration
+  **non versionné** (dépôt public). Mise en place pour un nouveau poste :
+
+  1. Dans la [console Firebase](https://console.firebase.google.com), ouvrir le projet `hexa-word-extract`
+     (ou en recréer un, tier Spark) → *Paramètres du projet* → application Android `com.hexa`
+     → télécharger **`google-services.json`** et le placer dans **`app/google-services.json`**
+     (ignoré par git ; le plugin `google-services` le consomme au build).
+  2. Activer **Authentication → Anonyme** et provisionner **Cloud Firestore**.
+  3. Publier les règles de sécurité : coller [`firestore.rules`](firestore.rules) dans la console
+     (onglet *Rules*) ou `firebase deploy --only firestore:rules`. Elles limitent chaque joueur à
+     son document `players/{uid}` et ses sous-collections.
+
+  ⚠️ `google-services.json` n'est **jamais** versionné. En CI, il est reconstitué depuis le secret
+  de dépôt **`GOOGLE_SERVICES_JSON`** (contenu encodé en base64).
+
 Aucune installation de Gradle n'est nécessaire : le wrapper (`./gradlew`) télécharge la version
 attendue.
 
