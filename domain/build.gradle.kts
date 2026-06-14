@@ -9,6 +9,12 @@ dependencies {
     // Utilitaires géométriques et de bruit purs (sphère, simplex 3D) consommés par le générateur.
     implementation(project(":core"))
 
+    // Coroutines : `Flow` est le type réactif exposé par le port joueur (`observe`). API (non
+    // `implementation`) car `Flow` apparaît dans la signature publique du port — les consommateurs
+    // (`:app`) en ont besoin sur leur classpath. Reste du Kotlin pur multiplateforme : `:domain`
+    // demeure sans dépendance Android.
+    api(libs.kotlinx.coroutines.core)
+
     // H3 (lib native Uber) UNIQUEMENT en portée test : il alimente l'adaptateur de test qui
     // résout le centre d'une cellule et génère des indices variés. Le code de production de
     // :domain reste sans dépendance native — la résolution H3 réelle est injectée via le port

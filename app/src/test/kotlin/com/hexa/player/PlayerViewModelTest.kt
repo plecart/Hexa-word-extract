@@ -7,6 +7,8 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -65,4 +67,6 @@ private object AbsentPlayerRepository : PlayerRepository {
     override suspend fun load(id: PlayerId): Player? = null
 
     override suspend fun save(id: PlayerId, player: Player) = Unit
+
+    override fun observe(id: PlayerId): Flow<Player?> = flowOf(null)
 }

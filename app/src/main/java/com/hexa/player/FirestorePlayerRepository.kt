@@ -1,6 +1,9 @@
 package com.hexa.player
 
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -20,6 +23,22 @@ class FirestorePlayerRepository(
 
     override suspend fun save(id: PlayerId, player: Player) {
         document(id).set(PlayerDocumentMapper.toDocument(player)).await()
+    }
+
+    /**
+     * Pont entre l'écouteur d'instantanés Firestore et un [Flow]. `addSnapshotListener` émet
+     * immédiatement l'instantané en cache (offline), puis ré-émet à chaque écriture locale et à
+     * chaque synchronisation distante ; l'écouteur est retiré quand le flux n'est plus collecté.
+     */
+    override fun observe(id: PlayerId): Flow<Player?> = callbackFlow {
+        val registration = document(id).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+            } else {
+                trySend(snapshot?.data?.let(PlayerDocumentMapper::fromDocument))
+            }
+        }
+        awaitClose { registration.remove() }
     }
 
     private fun document(id: PlayerId) = firestore.collection(COLLECTION_PLAYERS).document(id.value)
