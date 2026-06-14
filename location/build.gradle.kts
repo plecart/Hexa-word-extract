@@ -8,8 +8,10 @@ plugins {
 }
 
 dependencies {
-    // Type valeur géographique partagé (LatLng) — feuille du graphe de modules.
-    implementation(project(":core"))
+    // Type valeur géographique partagé (LatLng) — exposé en `api` car il fait partie de la surface
+    // publique de ce module (CameraState.center, PositionSource, ChaseCameraController.cameraFor) :
+    // les consommateurs (`:app`) doivent pouvoir le nommer sans dépendre directement de `:core`.
+    api(project(":core"))
 
     // Les sources de position/orientation et le replay du trajet simulé s'expriment en Flow ;
     // kotlinx-coroutines est pur JVM, sans dépendance Android.
