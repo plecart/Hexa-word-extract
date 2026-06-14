@@ -31,4 +31,23 @@ object MapConfig {
 
     /** Zoom appliqué au lancement, à mi-plage de [MIN_ZOOM]–[MAX_ZOOM]. */
     const val DEFAULT_ZOOM: Double = 17.0
+
+    /**
+     * Inclinaison de la caméra de poursuite, en degrés (vue troisième personne). Choisie dans la
+     * plage 55–65° du game design : assez rasante pour donner du relief, sans masquer l'avant.
+     */
+    const val PITCH: Double = 60.0
+
+    /**
+     * Zoom maintenu en poursuite tant que l'utilisateur n'a pas pincé. Légèrement plus rapproché que
+     * [DEFAULT_ZOOM] pour cadrer ~150–300 m autour du joueur, en restant dans [MIN_ZOOM]–[MAX_ZOOM].
+     */
+    const val FOLLOW_ZOOM: Double = 17.5
+
+    /**
+     * Coefficient de lissage du cap de la boussole, dans `]0, 1]` (cf.
+     * [HeadingSmoother][com.hexa.location.HeadingSmoother]). Faible = caméra douce mais réactive
+     * avec retard ; élevé = réactive mais nerveuse. 0,15 amortit le bruit du capteur sans traîner.
+     */
+    const val HEADING_SMOOTHING_FACTOR: Double = 0.15
 }
