@@ -3,15 +3,13 @@ package com.hexa.map
 import com.hexa.location.ChaseCameraConfig
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
-import kotlin.time.Duration
 
 /**
- * Garde-fous sur les réglages caméra de [MapConfig] et le trajet de démonstration : ce sont des
- * valeurs, mais leur **cohérence** est un contrat (pitch troisième personne, zoom de poursuite dans
- * les bornes de jeu, lissage normalisé, trajet rejouable). On vérifie ce contrat plutôt que les
- * nombres exacts, qui restent libres de réglage.
+ * Garde-fous sur les réglages caméra et GPS de [MapConfig] : ce sont des valeurs, mais leur
+ * **cohérence** est un contrat (pitch troisième personne, zoom de poursuite dans les bornes de jeu,
+ * coefficients de lissage normalisés, seuils positifs). On vérifie ce contrat plutôt que les nombres
+ * exacts, qui restent libres de réglage.
  */
 class MapCameraConfigTest : StringSpec({
     "le pitch de poursuite reste dans la plage troisième personne (55–65°)" {
@@ -34,8 +32,12 @@ class MapCameraConfigTest : StringSpec({
         (MapConfig.HEADING_SMOOTHING_FACTOR > 0.0 && MapConfig.HEADING_SMOOTHING_FACTOR <= 1.0) shouldBe true
     }
 
-    "le trajet de démonstration est rejouable (non vide, pas strictement positif)" {
-        DemoTrajectory.POINTS.shouldNotBeEmpty()
-        (DemoTrajectory.STEP > Duration.ZERO) shouldBe true
+    "le coefficient de lissage de position est un facteur normalisé non nul" {
+        (MapConfig.POSITION_SMOOTHING_FACTOR > 0.0 && MapConfig.POSITION_SMOOTHING_FACTOR <= 1.0) shouldBe true
+    }
+
+    "le seuil de précision GPS et l'intervalle de mise à jour sont strictement positifs" {
+        (MapConfig.ACCURACY_THRESHOLD_M > 0.0) shouldBe true
+        (MapConfig.GPS_INTERVAL_MS > 0L) shouldBe true
     }
 })

@@ -72,6 +72,9 @@ dependencies {
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.kotlinx.coroutines.play.services)
 
+    // Position GPS réelle via FusedLocationProviderClient (Google Play services).
+    implementation(libs.play.services.location)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     // ViewModel + collecte d'état Compose conscient du cycle de vie (StateFlow → UI).
