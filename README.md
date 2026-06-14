@@ -117,8 +117,8 @@ seulement par discipline) la frontière entre le code Android et le cœur logiqu
 
 | Module | Type | Rôle | Dépend de |
 |---|---|---|---|
-| `:app` | Android application | Point d'entrée Android, UI Compose, câblage | `:domain`, `:location` |
-| `:domain` | Kotlin pur | Configuration d'équilibrage ([`GameConfig`](domain/src/main/kotlin/com/hexa/config/GameConfig.kt), [`Element`](domain/src/main/kotlin/com/hexa/config/Element.kt)) et générateur procédural du monde ([`WorldGenerator`](domain/src/main/kotlin/com/hexa/world/WorldGenerator.kt) : index H3 → contenu de tuile) | `:core` |
+| `:app` | Android application | Point d'entrée Android, UI Compose, câblage ; intégration Firebase (Auth anonyme + Firestore avec cache offline) derrière les ports du domaine | `:domain`, `:location` |
+| `:domain` | Kotlin pur | Configuration d'équilibrage ([`GameConfig`](domain/src/main/kotlin/com/hexa/config/GameConfig.kt), [`Element`](domain/src/main/kotlin/com/hexa/config/Element.kt)), générateur procédural du monde ([`WorldGenerator`](domain/src/main/kotlin/com/hexa/world/WorldGenerator.kt) : index H3 → contenu de tuile) et compte joueur — document, inventaire et amorçage idempotent ([`EnsurePlayerUseCase`](domain/src/main/kotlin/com/hexa/player/EnsurePlayerUseCase.kt)) derrière les ports [`PlayerRepository`](domain/src/main/kotlin/com/hexa/player/PlayerRepository.kt) / [`AuthGateway`](domain/src/main/kotlin/com/hexa/player/AuthGateway.kt) | `:core` |
 | `:location` | Kotlin pur | Poursuite de caméra à la 3ᵉ personne sans dépendance Mapbox : contrôleur de caméra ([`ChaseCameraController`](location/src/main/kotlin/com/hexa/location/ChaseCameraController.kt)), lissage de cap circulaire ([`HeadingSmoother`](location/src/main/kotlin/com/hexa/location/HeadingSmoother.kt)), sources de position derrière interface ([`PositionSource`](location/src/main/kotlin/com/hexa/location/PositionSource.kt)) | `:core` |
 | `:core` | Kotlin pur | Utilitaires génériques sans sémantique métier : géométrie ([`UnitSphere`](core/src/main/kotlin/com/hexa/core/geo/UnitSphere.kt)), bruit procédural | — |
 
