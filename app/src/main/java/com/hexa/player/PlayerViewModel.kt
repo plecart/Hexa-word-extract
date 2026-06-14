@@ -23,15 +23,25 @@ sealed interface PlayerUiState {
 }
 
 /**
- * Déclenche l'amorçage silencieux du compte au démarrage et **expose l'inventaire chargé** en
- * [StateFlow] observable (cf. PRD #5). Glu mince autour de [EnsurePlayerUseCase] : toute la logique
- * (idempotence, kit de départ) vit dans le domaine, ce qui rend ce ViewModel testable avec des
- * doubles.
+ * Amorce le compte au démarrage puis **observe le document joueur en continu**, exposant l'inventaire
+ * en [StateFlow] (cf. PRD #5). Glu mince : la logique d'amorçage (idempotence, kit de départ) vit dans
+ * [EnsurePlayerUseCase] et l'observation dans [PlayerRepository], ce qui rend ce ViewModel testable
+ * avec des doubles.
+ *
+ * Après l'amorçage, [PlayerRepository.observe] alimente l'inventaire : toute écriture — locale
+ * (récolte) ou distante (autre appareil) — se reflète dans [state] sans action de l'utilisateur.
+ *
+ * `Failed` est réservé à l'**échec d'amorçage** (compte/document indisponible au démarrage). Une fois
+ * l'inventaire affiché, un incident du flux temps réel ne le fait pas régresser : les émissions
+ * `null` (document transitoirement absent) et une éventuelle erreur du flux conservent le dernier
+ * inventaire connu.
  *
  * @param ensurePlayer cas d'usage d'amorçage (compte anonyme + document joueur).
+ * @param repository port d'observation du document joueur.
  */
 class PlayerViewModel(
     private val ensurePlayer: EnsurePlayerUseCase,
+    private val repository: PlayerRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow<PlayerUiState>(PlayerUiState.Loading)
 
@@ -40,15 +50,33 @@ class PlayerViewModel(
 
     init {
         viewModelScope.launch {
-            _state.value =
+            val (id, player) =
                 try {
-                    val (id, player) = ensurePlayer()
-                    PlayerUiState.Ready(id.value, player.inventory)
+                    ensurePlayer()
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    PlayerUiState.Failed
+                    _state.value = PlayerUiState.Failed
+                    return@launch
                 }
+
+            _state.value = PlayerUiState.Ready(id.value, player.inventory)
+            observeInventory(id)
+        }
+    }
+
+    /** Reflète chaque mise à jour du document dans [state] ; un incident du flux n'efface rien. */
+    private suspend fun observeInventory(id: PlayerId) {
+        try {
+            repository.observe(id).collect { live ->
+                if (live != null) {
+                    _state.value = PlayerUiState.Ready(id.value, live.inventory)
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Le live a échoué après l'affichage : on conserve le dernier inventaire connu.
         }
     }
 }

@@ -102,10 +102,11 @@ attendue.
 | Formater le code automatiquement | `./gradlew ktlintFormat` |
 | Mesurer la distribution du monde (rapport mesuré vs cibles + seuils proposés) | `./gradlew :domain:worldDistributionReport` |
 
-L'APK généré se trouve sous `app/build/outputs/apk/debug/`. L'application affiche un écran
-d'accueil minimal — placeholder du MVP — qui lit sa version et une constante de
-[`GameConfig`](domain/src/main/kotlin/com/hexa/config/GameConfig.kt) pour prouver le câblage
-build → configuration → UI.
+L'APK généré se trouve sous `app/build/outputs/apk/debug/`. Au lancement, l'application amorce
+silencieusement le compte joueur puis affiche la carte plein écran ; un bouton flottant ouvre la
+page d'inventaire à deux onglets (« Ressources », « Bâtiments »). L'onglet Ressources liste les cinq
+éléments avec leur quantité, mise à jour en temps réel depuis le document joueur (l'onglet Bâtiments
+arrive dans une tranche dédiée).
 
 La même chaîne qualité s'exécute sur chaque PR via GitHub Actions
 ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
