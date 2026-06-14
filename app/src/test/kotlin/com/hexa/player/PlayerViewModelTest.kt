@@ -11,6 +11,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -74,6 +75,18 @@ class PlayerViewModelTest : StringSpec({
             viewModel.state.value shouldBe PlayerUiState.Ready("uid-1", credited.inventory)
         }
     }
+
+    "une erreur du flux temps réel après chargement conserve le dernier inventaire" {
+        runTest(dispatcher) {
+            val initial = Player.newPlayer(clock.instant())
+            val repository = FailingObserveRepository(initial)
+            val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
+            val viewModel = PlayerViewModel(useCase, repository)
+            advanceUntilIdle()
+
+            viewModel.state.value shouldBe PlayerUiState.Ready("uid-1", initial.inventory)
+        }
+    }
 })
 
 /** Dépôt sans document : force le chemin « premier lancement » (création) et n'émet jamais de doc. */
@@ -99,5 +112,17 @@ private class ObservablePlayerRepository(initial: Player) : PlayerRepository {
 
     fun emit(player: Player) {
         stream.value = player
+    }
+}
+
+/** Dépôt dont le flux émet l'instantané puis échoue, pour simuler un incident du listener Firestore. */
+private class FailingObserveRepository(private val initial: Player) : PlayerRepository {
+    override suspend fun load(id: PlayerId): Player = initial
+
+    override suspend fun save(id: PlayerId, player: Player) = Unit
+
+    override fun observe(id: PlayerId): Flow<Player?> = flow {
+        emit(initial)
+        throw RuntimeException("listener perdu")
     }
 }
