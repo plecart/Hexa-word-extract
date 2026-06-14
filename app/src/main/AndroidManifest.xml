@@ -4,8 +4,11 @@
     <!-- Mapbox télécharge tuiles et style depuis le réseau. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Position GPS du joueur pour la caméra de poursuite (demandée au premier besoin). -->
+    <!-- Position GPS du joueur pour la caméra de poursuite (demandée au premier besoin).
+         FINE pour la précision piétonne ; COARSE exigée en regard de FINE (un refus du précis peut
+         n'accorder que l'approximatif). -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:allowBackup="true"

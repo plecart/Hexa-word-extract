@@ -2,4 +2,7 @@
     <string name="app_name">Hexa</string>
     <!-- Bouton de recentrage de la caméra de poursuite (visible après un déplacement manuel). -->
     <string name="recenter_camera">Recentrer</string>
+    <!-- Écran affiché quand la permission de localisation est refusée. -->
+    <string name="location_permission_rationale">Hexa a besoin de ta position pour suivre tes déplacements sur la carte. Autorise la localisation pour jouer.</string>
+    <string name="location_permission_retry">Autoriser la localisation</string>
 </resources>
