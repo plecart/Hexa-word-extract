@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ktlint)
+    // Traite google-services.json (non versionné) en ressources de configuration Firebase.
+    alias(libs.plugins.google.services)
 }
 
 // Token public Mapbox, lu depuis local.properties (non versionné) avec repli sur la variable

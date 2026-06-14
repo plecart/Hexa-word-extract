@@ -9,6 +9,8 @@ node_modules/
 .gradle/
 build/
 local.properties
+# Config Firebase : contient l'API key du projet ; injectée localement / via secret CI (dépôt public).
+google-services.json
 *.apk
 *.aab
 *.keystore
