@@ -76,12 +76,16 @@ class MainActivity : ComponentActivity() {
 private val playerViewModelFactory =
     viewModelFactory {
         initializer {
+            // Le même dépôt sert l'amorçage (load/save) et l'observation temps réel (observe).
+            val repository = FirestorePlayerRepository()
             PlayerViewModel(
+                ensurePlayer =
                 EnsurePlayerUseCase(
                     auth = FirebaseAuthGateway(),
-                    repository = FirestorePlayerRepository(),
+                    repository = repository,
                     clock = Clock.systemUTC(),
                 ),
+                repository = repository,
             )
         }
     }

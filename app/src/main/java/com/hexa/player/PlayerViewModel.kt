@@ -23,15 +23,22 @@ sealed interface PlayerUiState {
 }
 
 /**
- * Déclenche l'amorçage silencieux du compte au démarrage et **expose l'inventaire chargé** en
- * [StateFlow] observable (cf. PRD #5). Glu mince autour de [EnsurePlayerUseCase] : toute la logique
- * (idempotence, kit de départ) vit dans le domaine, ce qui rend ce ViewModel testable avec des
- * doubles.
+ * Amorce le compte au démarrage puis **observe le document joueur en continu**, exposant l'inventaire
+ * en [StateFlow] (cf. PRD #5). Glu mince : la logique d'amorçage (idempotence, kit de départ) vit dans
+ * [EnsurePlayerUseCase] et l'observation dans [PlayerRepository], ce qui rend ce ViewModel testable
+ * avec des doubles.
+ *
+ * Après l'amorçage, [PlayerRepository.observe] alimente l'inventaire : toute écriture — locale
+ * (récolte) ou distante (autre appareil) — se reflète dans [state] sans action de l'utilisateur. Les
+ * émissions `null` (document transitoirement absent) sont ignorées pour conserver le dernier
+ * inventaire connu plutôt que de régresser.
  *
  * @param ensurePlayer cas d'usage d'amorçage (compte anonyme + document joueur).
+ * @param repository port d'observation du document joueur.
  */
 class PlayerViewModel(
     private val ensurePlayer: EnsurePlayerUseCase,
+    private val repository: PlayerRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow<PlayerUiState>(PlayerUiState.Loading)
 
@@ -40,15 +47,19 @@ class PlayerViewModel(
 
     init {
         viewModelScope.launch {
-            _state.value =
-                try {
-                    val (id, player) = ensurePlayer()
-                    PlayerUiState.Ready(id.value, player.inventory)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    PlayerUiState.Failed
+            try {
+                val (id, player) = ensurePlayer()
+                _state.value = PlayerUiState.Ready(id.value, player.inventory)
+                repository.observe(id).collect { live ->
+                    if (live != null) {
+                        _state.value = PlayerUiState.Ready(id.value, live.inventory)
+                    }
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.value = PlayerUiState.Failed
+            }
         }
     }
 }
