@@ -34,6 +34,15 @@ class MapCameraConfigTest : StringSpec({
         (MapConfig.HEADING_SMOOTHING_FACTOR > 0.0 && MapConfig.HEADING_SMOOTHING_FACTOR <= 1.0) shouldBe true
     }
 
+    "le coefficient de lissage de position est un facteur normalisé non nul" {
+        (MapConfig.POSITION_SMOOTHING_FACTOR > 0.0 && MapConfig.POSITION_SMOOTHING_FACTOR <= 1.0) shouldBe true
+    }
+
+    "le seuil de précision GPS et l'intervalle de mise à jour sont strictement positifs" {
+        (MapConfig.ACCURACY_THRESHOLD_M > 0.0) shouldBe true
+        (MapConfig.GPS_INTERVAL_MS > 0L) shouldBe true
+    }
+
     "le trajet de démonstration est rejouable (non vide, pas strictement positif)" {
         DemoTrajectory.POINTS.shouldNotBeEmpty()
         (DemoTrajectory.STEP > Duration.ZERO) shouldBe true

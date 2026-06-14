@@ -50,4 +50,21 @@ object MapConfig {
      * avec retard ; élevé = réactive mais nerveuse. 0,15 amortit le bruit du capteur sans traîner.
      */
     const val HEADING_SMOOTHING_FACTOR: Double = 0.15
+
+    /**
+     * Coefficient de lissage de la position GPS, dans `]0, 1]` (cf.
+     * [PositionFilter][com.hexa.location.PositionFilter]). Le GPS rafraîchit ~1 Hz : 0,25 stabilise
+     * le tremblement à l'arrêt tout en suivant la marche sans retard perceptible.
+     */
+    const val POSITION_SMOOTHING_FACTOR: Double = 0.25
+
+    /**
+     * Précision horizontale maximale acceptée d'un point GPS, en mètres. Au-delà, le point est rejeté
+     * par [PositionFilter][com.hexa.location.PositionFilter] (évite les sauts en environnement urbain
+     * dense). 30 m laisse passer un fix piéton correct sans gober les positions aberrantes.
+     */
+    const val ACCURACY_THRESHOLD_M: Double = 30.0
+
+    /** Intervalle souhaité entre deux mises à jour GPS, en millisecondes (cadence piétonne). */
+    const val GPS_INTERVAL_MS: Long = 1_000L
 }
