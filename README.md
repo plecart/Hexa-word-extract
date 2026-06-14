@@ -102,12 +102,15 @@ seulement par discipline) la frontière entre le code Android et le cœur logiqu
 
 | Module | Type | Rôle | Dépend de |
 |---|---|---|---|
-| `:app` | Android application | Point d'entrée Android, UI Compose, câblage | `:domain` |
+| `:app` | Android application | Point d'entrée Android, UI Compose, câblage | `:domain`, `:location` |
 | `:domain` | Kotlin pur | Configuration d'équilibrage ([`GameConfig`](domain/src/main/kotlin/com/hexa/config/GameConfig.kt), [`Element`](domain/src/main/kotlin/com/hexa/config/Element.kt)) et générateur procédural du monde ([`WorldGenerator`](domain/src/main/kotlin/com/hexa/world/WorldGenerator.kt) : index H3 → contenu de tuile) | `:core` |
+| `:location` | Kotlin pur | Poursuite de caméra à la 3ᵉ personne sans dépendance Mapbox : contrôleur de caméra ([`ChaseCameraController`](location/src/main/kotlin/com/hexa/location/ChaseCameraController.kt)), lissage de cap circulaire ([`HeadingSmoother`](location/src/main/kotlin/com/hexa/location/HeadingSmoother.kt)), sources de position derrière interface ([`PositionSource`](location/src/main/kotlin/com/hexa/location/PositionSource.kt)) | `:core` |
 | `:core` | Kotlin pur | Utilitaires génériques sans sémantique métier : géométrie ([`UnitSphere`](core/src/main/kotlin/com/hexa/core/geo/UnitSphere.kt)), bruit procédural | — |
 
-Règle de dépendances : `:app → :domain → :core`, jamais l'inverse. Les modules Kotlin purs n'ont
-**aucune dépendance Android** — le SDK Android n'est pas sur leur classpath. Le générateur
+Règle de dépendances : `:app` dépend des modules purs (`:domain`, `:location`), eux-mêmes sur
+`:core` ; jamais l'inverse. Les modules Kotlin purs n'ont **aucune dépendance Android** — le SDK
+Android n'est pas sur leur classpath, et `:location` n'a pas non plus le SDK Mapbox : la logique de
+poursuite reste testable hors device. Le générateur
 procédural du monde vit dans `:domain` et consomme `:core` ; la grille H3 (native) est isolée
 derrière le port [`TileCenterLocator`](domain/src/main/kotlin/com/hexa/world/TileCenterLocator.kt),
 si bien que `:domain` reste partageable plus tard avec un serveur.
