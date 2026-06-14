@@ -14,6 +14,11 @@ dependencies {
     // :domain reste sans dépendance native — la résolution H3 réelle est injectée via le port
     // TileCenterLocator et câblée côté :app.
     testImplementation(libs.uber.h3)
+
+    // Temps virtuel (runTest) pour piloter les use cases `suspend` (amorçage joueur) en test. Le
+    // code de production n'utilise que le mot-clé `suspend` (intrinsèque au compilateur) : aucune
+    // dépendance coroutines n'est requise sur le classpath principal de ce module pur.
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 // Commande documentée de mesure empirique : exécute le test statistique sur un grand échantillon et

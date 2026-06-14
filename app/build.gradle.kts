@@ -65,6 +65,13 @@ dependencies {
     implementation(libs.mapbox.maps.android)
     implementation(libs.mapbox.maps.compose)
 
+    // Firebase : compte anonyme (auth) et document joueur avec cache offline (firestore). La BoM
+    // aligne les versions ; play-services adapte les Task Google en fonctions `suspend`.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.kotlinx.coroutines.play.services)
+
     // Position GPS réelle via FusedLocationProviderClient (Google Play services).
     implementation(libs.play.services.location)
 
