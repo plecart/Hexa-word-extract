@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Hexa</string>
+    <!-- Bouton de recentrage de la caméra de poursuite (visible après un déplacement manuel). -->
+    <string name="recenter_camera">Recentrer</string>
 </resources>
