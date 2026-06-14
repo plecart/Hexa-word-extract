@@ -89,12 +89,12 @@ object MapConfig {
             MIN_ZOOM to GRID_MAX_RINGS,
         )
 
-    /** Couleur du tracé de la grille (monochrome clair). **Provisoire**, à valider visuellement. */
-    const val GRID_LINE_COLOR: String = "#FFFFFF"
+    /** Couleur du tracé de la grille — cyan vif, contrasté sur le fond monochrome. **Provisoire**. */
+    const val GRID_LINE_COLOR: String = "#00E5FF"
 
-    /** Épaisseur du tracé de la grille, en points — fin pour rester discret. **Provisoire**. */
-    const val GRID_LINE_WIDTH: Double = 1.0
+    /** Épaisseur du tracé de la grille, en points — fin mais lisible. **Provisoire**. */
+    const val GRID_LINE_WIDTH: Double = 1.5
 
-    /** Opacité du tracé de la grille, dans `[0, 1]` — surcouche légère. **Provisoire**. */
-    const val GRID_LINE_OPACITY: Double = 0.4
+    /** Opacité du tracé de la grille, dans `[0, 1]` — surcouche visible sans masquer la carte. **Provisoire**. */
+    const val GRID_LINE_OPACITY: Double = 0.85
 }
