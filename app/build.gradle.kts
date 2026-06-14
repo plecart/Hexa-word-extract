@@ -65,6 +65,11 @@ dependencies {
     implementation(libs.mapbox.maps.android)
     implementation(libs.mapbox.maps.compose)
 
+    // Grille hexagonale H3 (lib native Uber) : seule intégration H3 de production. Elle sert le rendu
+    // de la grille ET résout le centre des cellules pour le générateur de monde (port TileCenterLocator
+    // de :domain, où H3 reste cantonné aux tests).
+    implementation(libs.uber.h3)
+
     // Firebase : compte anonyme (auth) et document joueur avec cache offline (firestore). La BoM
     // aligne les versions ; play-services adapte les Task Google en fonctions `suspend`.
     implementation(platform(libs.firebase.bom))
