@@ -100,6 +100,11 @@ private fun ChaseCameraMap(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxSize(),
             mapViewportState = viewportState,
             style = { MapStyle(style = MapConfig.STYLE_URL) },
+            // Ornements parasites masqués par lambda vide : la barre d'échelle n'apporte rien au jeu,
+            // et la boussole est sans objet puisque la caméra suit le cap en permanence (tap-to-north
+            // inutile). Logo et attribution Mapbox laissés au défaut → restent affichés (CGU Mapbox).
+            scaleBar = {},
+            compass = {},
         ) {
             // À chaque nouvelle pose de poursuite, glisser la caméra vers elle ; en mode libre
             // (pose nulle), ne rien imposer pour laisser la carte là où l'utilisateur l'a déplacée.
