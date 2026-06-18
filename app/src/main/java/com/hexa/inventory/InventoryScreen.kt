@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +19,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,12 +27,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.hexa.R
 import com.hexa.config.Element
 import com.hexa.player.Inventory
 import com.hexa.player.PlayerUiState
+import com.hexa.ui.theme.hexaGlowSurface
 
 /** Onglets de l'inventaire ; l'ordre des entrées fixe l'ordre d'affichage. */
 private enum class InventoryTab(
@@ -41,7 +46,9 @@ private enum class InventoryTab(
 }
 
 /**
- * Page d'inventaire à deux onglets, ouverte par-dessus la carte.
+ * Page d'inventaire à deux onglets, ouverte par-dessus la carte, habillée par la DA « carte sci-fi
+ * sombre » : fond anthracite plein, barre et onglets translucides, compteurs en panneaux à bordure
+ * lumineuse (cf. [hexaGlowSurface]).
  *
  * L'onglet **Ressources** liste les cinq éléments (par rareté croissante) avec leur quantité courante,
  * lue depuis [state] : comme le ViewModel observe le document joueur en continu, les compteurs se
@@ -58,28 +65,40 @@ fun InventoryScreen(state: PlayerUiState, onClose: () -> Unit, modifier: Modifie
 
     Scaffold(
         modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.inventory_title)) },
+                title = {
+                    Text(
+                        stringResource(R.string.inventory_title),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                },
                 navigationIcon = {
                     TextButton(onClick = onClose) { Text(stringResource(R.string.inventory_close)) }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
             )
         },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
-            TabRow(selectedTabIndex = selectedTab.ordinal) {
+            TabRow(selectedTabIndex = selectedTab.ordinal, containerColor = Color.Transparent) {
                 InventoryTab.entries.forEach { tab ->
                     Tab(
                         selected = selectedTab == tab,
                         onClick = { selectedTab = tab },
-                        text = { Text(stringResource(tab.titleRes)) },
+                        text = {
+                            Text(
+                                stringResource(tab.titleRes),
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                        },
                     )
                 }
             }
             when (selectedTab) {
                 InventoryTab.RESOURCES -> ResourcesTab(state, Modifier.fillMaxSize())
-                InventoryTab.BUILDINGS -> CenteredMessage(
+                InventoryTab.BUILDINGS -> CenteredPanel(
                     stringResource(R.string.inventory_buildings_empty),
                     Modifier.fillMaxSize(),
                 )
@@ -88,42 +107,67 @@ fun InventoryScreen(state: PlayerUiState, onClose: () -> Unit, modifier: Modifie
     }
 }
 
-/** Contenu de l'onglet Ressources selon l'état : message centré pendant/à l'échec, liste sinon. */
+/** Contenu de l'onglet Ressources selon l'état : panneau centré pendant/à l'échec, liste sinon. */
 @Composable
 private fun ResourcesTab(state: PlayerUiState, modifier: Modifier = Modifier) {
     when (state) {
-        PlayerUiState.Loading -> CenteredMessage(stringResource(R.string.inventory_loading), modifier)
-        PlayerUiState.Failed -> CenteredMessage(stringResource(R.string.inventory_error), modifier)
+        PlayerUiState.Loading -> CenteredPanel(stringResource(R.string.inventory_loading), modifier)
+        PlayerUiState.Failed -> CenteredPanel(stringResource(R.string.inventory_error), modifier)
         is PlayerUiState.Ready -> ResourceList(state.inventory, modifier)
     }
 }
 
-/** Les cinq compteurs, dans l'ordre de rareté de [Element]. */
+/** Les cinq compteurs en panneaux espacés, dans l'ordre de rareté de [Element]. */
 @Composable
 private fun ResourceList(inventory: Inventory, modifier: Modifier = Modifier) {
-    LazyColumn(modifier) {
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         items(Element.entries) { element ->
             ResourceRow(name = stringResource(labelOf(element)), amount = inventory[element])
         }
     }
 }
 
-/** Une ligne « nom de l'élément … quantité ». */
+/**
+ * Une ligne « nom de l'élément … quantité » en panneau DA. Le nom reste en corps système ; la
+ * quantité ressort en accent cyan, police d'affichage à chiffres tabulaires (slot compteur).
+ */
 @Composable
 private fun ResourceRow(name: String, amount: Long) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+        Modifier
+            .fillMaxWidth()
+            .hexaGlowSurface(shape = MaterialTheme.shapes.small)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(name, style = MaterialTheme.typography.bodyLarge)
-        Text(amount.toString(), style = MaterialTheme.typography.bodyLarge)
+        Text(name, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            amount.toString(),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
     }
 }
 
-/** Message unique centré (chargement, échec, état vide). */
+/** Message d'état (chargement, échec, onglet vide) centré dans un panneau DA discret. */
 @Composable
-private fun CenteredMessage(text: String, modifier: Modifier = Modifier) {
-    Box(modifier, contentAlignment = Alignment.Center) {
-        Text(text, style = MaterialTheme.typography.bodyLarge)
+private fun CenteredPanel(text: String, modifier: Modifier = Modifier) {
+    Box(modifier.padding(24.dp), contentAlignment = Alignment.Center) {
+        Text(
+            text,
+            modifier =
+            Modifier
+                .hexaGlowSurface(shape = MaterialTheme.shapes.medium)
+                .padding(horizontal = 24.dp, vertical = 20.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
