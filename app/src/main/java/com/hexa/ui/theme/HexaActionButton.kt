@@ -11,7 +11,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
-/** Hauteur de cible tactile minimale (recommandation d'accessibilité Material). */
+/** Cible tactile minimale (48×48 dp, recommandation d'accessibilité Material). */
 private val MIN_TOUCH_TARGET = 48.dp
 
 /**
@@ -44,7 +44,7 @@ fun HexaActionButton(text: String, onClick: () -> Unit, modifier: Modifier = Mod
             .clip(shape)
             .clickable(role = Role.Button, onClick = onClick)
             .hexaGlowSurface(shape = shape)
-            .defaultMinSize(minHeight = MIN_TOUCH_TARGET)
+            .defaultMinSize(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
             .padding(horizontal = 20.dp, vertical = 14.dp),
     )
 }
