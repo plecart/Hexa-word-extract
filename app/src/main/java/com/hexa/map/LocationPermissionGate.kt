@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -34,6 +34,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.hexa.R
+import com.hexa.ui.theme.HexaActionButton
+import com.hexa.ui.theme.hexaGlowSurface
 
 /**
  * Porte d'accès à la localisation : n'affiche [granted] que lorsque `ACCESS_FINE_LOCATION` est
@@ -104,11 +106,18 @@ private fun LocationDenied(modifier: Modifier, onRetry: () -> Unit) {
         ) {
             Text(
                 text = stringResource(R.string.location_permission_rationale),
+                modifier =
+                Modifier
+                    .hexaGlowSurface(shape = MaterialTheme.shapes.medium)
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
-            Button(onClick = onRetry) {
-                Text(text = stringResource(R.string.location_permission_retry))
-            }
+            HexaActionButton(
+                text = stringResource(R.string.location_permission_retry),
+                onClick = onRetry,
+            )
         }
     }
 }

@@ -17,9 +17,9 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Planche d'aperçu Studio de la direction artistique : pastilles de la palette d'éléments, panneau
- * habillé ([hexaGlowSurface]) et typographie (titre Chakra Petch, compteur à chiffres tabulaires en
- * accent cyan). Sert de référence visuelle et de garde-fou : une régression du thème saute aux yeux
- * dans le volet `@Preview`.
+ * habillé ([hexaGlowSurface]), typographie (titre Chakra Petch, compteur à chiffres tabulaires en
+ * accent cyan) et bouton d'action commun ([HexaActionButton]). Sert de référence visuelle et de
+ * garde-fou : une régression du thème saute aux yeux dans le volet `@Preview`.
  */
 @Preview(name = "Thème Hexa", showBackground = true, backgroundColor = 0xFF0B0E13)
 @Composable
@@ -62,6 +62,8 @@ private fun HexaThemePreview() {
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
+
+            HexaActionButton(text = "Recentrer", onClick = {})
         }
     }
 }

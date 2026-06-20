@@ -5,8 +5,6 @@ import android.hardware.SensorManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,6 +22,7 @@ import com.hexa.R
 import com.hexa.location.CameraMode
 import com.hexa.location.ChaseCameraConfig
 import com.hexa.location.PositionSource
+import com.hexa.ui.theme.HexaActionButton
 import com.mapbox.android.gestures.MoveGestureDetector
 import com.mapbox.android.gestures.StandardScaleGestureDetector
 import com.mapbox.geojson.Point
@@ -157,12 +156,11 @@ private fun ChaseCameraMap(modifier: Modifier = Modifier) {
         }
 
         if (mode == CameraMode.FREE) {
-            ExtendedFloatingActionButton(
+            HexaActionButton(
+                text = stringResource(R.string.recenter_camera),
                 onClick = viewModel::recenter,
                 modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-            ) {
-                Text(text = stringResource(R.string.recenter_camera))
-            }
+            )
         }
     }
 }
