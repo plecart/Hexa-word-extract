@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +28,7 @@ import com.hexa.player.EnsurePlayerUseCase
 import com.hexa.player.FirebaseAuthGateway
 import com.hexa.player.FirestorePlayerRepository
 import com.hexa.player.PlayerViewModel
+import com.hexa.ui.theme.HexaActionButton
 import com.hexa.ui.theme.HexaTheme
 import com.mapbox.common.MapboxOptions
 import java.time.Clock
@@ -77,16 +76,15 @@ private fun MapWithInventory(viewModel: PlayerViewModel) {
             )
             BackHandler { inventoryOpen = false }
         } else {
-            ExtendedFloatingActionButton(
+            HexaActionButton(
+                text = stringResource(R.string.inventory_open),
                 onClick = { inventoryOpen = true },
                 modifier =
                 Modifier
                     .align(Alignment.TopEnd)
                     .statusBarsPadding()
                     .padding(16.dp),
-            ) {
-                Text(text = stringResource(R.string.inventory_open))
-            }
+            )
         }
     }
 }
