@@ -210,7 +210,7 @@ private fun ResourceTilesPreview() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Element.entries.forEachIndexed { index, element ->
-                ResourceRow(element = element, amount = sampleAmounts[index])
+                ResourceRow(element = element, amount = sampleAmounts[index % sampleAmounts.size])
             }
         }
     }
