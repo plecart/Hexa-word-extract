@@ -38,6 +38,7 @@ import com.hexa.R
 import com.hexa.config.Element
 import com.hexa.player.Inventory
 import com.hexa.player.PlayerUiState
+import com.hexa.ui.theme.AnimatedCount
 import com.hexa.ui.theme.ElementObject
 import com.hexa.ui.theme.ElementVisuals
 import com.hexa.ui.theme.HexaTheme
@@ -168,8 +169,8 @@ private fun ResourceRow(element: Element, amount: Long) {
                 color = MaterialTheme.colorScheme.onSurface,
             )
         }
-        Text(
-            amount.toString(),
+        AnimatedCount(
+            amount = amount,
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
         )

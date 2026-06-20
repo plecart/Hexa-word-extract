@@ -6,6 +6,11 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -57,8 +62,11 @@ class MainActivity : ComponentActivity() {
 
 /**
  * Compose la carte et superpose l'inventaire. La carte **reste composée** sous l'inventaire : son
- * état (position, zoom de la caméra) est ainsi préservé pendant l'aller-retour. Le bouton retour
- * système ferme l'inventaire plutôt que de quitter l'app.
+ * état (position, zoom de la caméra) est ainsi préservé pendant l'aller-retour. La bascule
+ * `inventoryOpen` est **animée** (transition carte ↔ inventaire) : l'inventaire descend en fondu sur
+ * la carte à l'ouverture et remonte à la fermeture, tandis que le bouton d'ouverture fait un simple
+ * fondu inverse. Le bouton retour système ferme l'inventaire (avec la même transition) plutôt que de
+ * quitter l'app.
  */
 @Composable
 private fun MapWithInventory(viewModel: PlayerViewModel) {
@@ -68,24 +76,36 @@ private fun MapWithInventory(viewModel: PlayerViewModel) {
     Box(Modifier.fillMaxSize()) {
         MapScreen(modifier = Modifier.fillMaxSize())
 
-        if (inventoryOpen) {
+        AnimatedVisibility(
+            visible = inventoryOpen,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
+            exit = fadeOut() + slideOutVertically(targetOffsetY = { -it }),
+            modifier = Modifier.fillMaxSize(),
+        ) {
             InventoryScreen(
                 state = playerState,
                 onClose = { inventoryOpen = false },
                 modifier = Modifier.fillMaxSize(),
             )
-            BackHandler { inventoryOpen = false }
-        } else {
+        }
+
+        AnimatedVisibility(
+            visible = !inventoryOpen,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier =
+            Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(16.dp),
+        ) {
             HexaActionButton(
                 text = stringResource(R.string.inventory_open),
                 onClick = { inventoryOpen = true },
-                modifier =
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .statusBarsPadding()
-                    .padding(16.dp),
             )
         }
+
+        BackHandler(enabled = inventoryOpen) { inventoryOpen = false }
     }
 }
 
