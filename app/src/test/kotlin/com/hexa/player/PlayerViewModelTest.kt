@@ -39,7 +39,12 @@ class PlayerViewModelTest : StringSpec({
         runTest(dispatcher) {
             val starter = Player.newPlayer(clock.instant())
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, AbsentPlayerRepository, clock)
-            val viewModel = PlayerViewModel(useCase, AbsentPlayerRepository, craftFor(AbsentPlayerRepository))
+            val viewModel = PlayerViewModel(
+                useCase,
+                AbsentPlayerRepository,
+                ObservableBuildingsRepository(),
+                craftFor(AbsentPlayerRepository),
+            )
 
             viewModel.state.value shouldBe PlayerUiState.Loading
             advanceUntilIdle()
@@ -52,7 +57,12 @@ class PlayerViewModelTest : StringSpec({
         runTest(dispatcher) {
             val useCase =
                 EnsurePlayerUseCase(AuthGateway { error("réseau indisponible") }, AbsentPlayerRepository, clock)
-            val viewModel = PlayerViewModel(useCase, AbsentPlayerRepository, craftFor(AbsentPlayerRepository))
+            val viewModel = PlayerViewModel(
+                useCase,
+                AbsentPlayerRepository,
+                ObservableBuildingsRepository(),
+                craftFor(AbsentPlayerRepository),
+            )
 
             advanceUntilIdle()
             viewModel.state.value shouldBe PlayerUiState.Failed
@@ -64,7 +74,7 @@ class PlayerViewModelTest : StringSpec({
             val initial = Player.newPlayer(clock.instant())
             val repository = ObservablePlayerRepository(initial)
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
-            val viewModel = PlayerViewModel(useCase, repository, craftFor(repository))
+            val viewModel = PlayerViewModel(useCase, repository, ObservableBuildingsRepository(), craftFor(repository))
             advanceUntilIdle()
 
             viewModel.state.value shouldBe
@@ -84,7 +94,7 @@ class PlayerViewModelTest : StringSpec({
             val initial = Player.newPlayer(clock.instant()) // 250 Cendrite, 100 Givrelin, 0 extracteur
             val repository = ObservablePlayerRepository(initial)
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
-            val viewModel = PlayerViewModel(useCase, repository, craftFor(repository))
+            val viewModel = PlayerViewModel(useCase, repository, ObservableBuildingsRepository(), craftFor(repository))
             advanceUntilIdle()
 
             viewModel.craftExtracteur()
@@ -97,21 +107,20 @@ class PlayerViewModelTest : StringSpec({
         }
     }
 
-    "la pose d'une base se reflète dans baseCell et dans les cellules bâties" {
+    "un bâtiment posé dans la sous-collection se reflète dans les cellules bâties" {
         runTest(dispatcher) {
             val initial = Player.newPlayer(clock.instant())
             val repository = ObservablePlayerRepository(initial)
+            val buildings = ObservableBuildingsRepository()
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
-            val viewModel = PlayerViewModel(useCase, repository, craftFor(repository))
+            val viewModel = PlayerViewModel(useCase, repository, buildings, craftFor(repository))
             advanceUntilIdle()
 
-            (viewModel.state.value as PlayerUiState.Ready).baseCell shouldBe null
             viewModel.builtCells.value shouldBe emptySet()
 
-            repository.emit(initial.copy(baseCell = "8a1fb46622dffff"))
+            buildings.place(uid, PlacedBuilding.base("8a1fb46622dffff", clock.instant()))
             advanceUntilIdle()
 
-            (viewModel.state.value as PlayerUiState.Ready).baseCell shouldBe "8a1fb46622dffff"
             viewModel.builtCells.value shouldBe setOf("8a1fb46622dffff")
         }
     }
@@ -121,7 +130,7 @@ class PlayerViewModelTest : StringSpec({
             val initial = Player.newPlayer(clock.instant())
             val repository = FailingObserveRepository(initial)
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
-            val viewModel = PlayerViewModel(useCase, repository, craftFor(repository))
+            val viewModel = PlayerViewModel(useCase, repository, ObservableBuildingsRepository(), craftFor(repository))
             advanceUntilIdle()
 
             viewModel.state.value shouldBe
@@ -157,6 +166,17 @@ private class ObservablePlayerRepository(initial: Player) : PlayerRepository {
     fun emit(player: Player) {
         stream.value = player
     }
+}
+
+/** Sous-collection de bâtiments en mémoire : [place] pousse sur le flux observé (un doc par tuile). */
+private class ObservableBuildingsRepository(initial: List<PlacedBuilding> = emptyList()) : BuildingsRepository {
+    private val stream = MutableStateFlow(initial)
+
+    override suspend fun place(id: PlayerId, building: PlacedBuilding) {
+        stream.value = stream.value.filterNot { it.cell == building.cell } + building
+    }
+
+    override fun observe(id: PlayerId): Flow<List<PlacedBuilding>> = stream.asStateFlow()
 }
 
 /** Dépôt dont le flux émet l'instantané puis échoue, pour simuler un incident du listener Firestore. */

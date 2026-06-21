@@ -34,6 +34,7 @@ import com.hexa.map.MapScreen
 import com.hexa.player.CraftBuildingUseCase
 import com.hexa.player.EnsurePlayerUseCase
 import com.hexa.player.FirebaseAuthGateway
+import com.hexa.player.FirestoreBuildingsRepository
 import com.hexa.player.FirestorePlayerRepository
 import com.hexa.player.PlayerUiState
 import com.hexa.player.PlayerViewModel
@@ -157,6 +158,7 @@ private val playerViewModelFactory =
                     clock = Clock.systemUTC(),
                 ),
                 repository = repository,
+                buildings = FirestoreBuildingsRepository(),
                 craftBuilding = CraftBuildingUseCase(auth = auth, players = repository),
             )
         }

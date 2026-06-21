@@ -1,8 +1,10 @@
 package com.hexa.player
 
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import java.time.Instant
 
@@ -39,6 +41,31 @@ class FakeBuildingsRepositoryTest : StringSpec({
 
             repository.buildingsOf(uid) shouldBe mapOf(cell to second)
             repository.saved shouldHaveSize 2
+        }
+    }
+
+    "observe émet la liste à jour des bâtiments du joueur, vide au départ puis à chaque pose" {
+        runTest {
+            val repository = FakeBuildingsRepository()
+            val base = PlacedBuilding.base(cell, now)
+            val other = PlacedBuilding.base("8a1fb46622cffff", now)
+
+            repository.observe(uid).first() shouldBe emptyList()
+
+            repository.place(uid, base)
+            repository.observe(uid).first() shouldBe listOf(base)
+
+            repository.place(uid, other)
+            repository.observe(uid).first() shouldContainExactlyInAnyOrder listOf(base, other)
+        }
+    }
+
+    "observe isole les bâtiments par joueur" {
+        runTest {
+            val repository = FakeBuildingsRepository()
+            repository.place(uid, PlacedBuilding.base(cell, now))
+
+            repository.observe(PlayerId("autre")).first() shouldBe emptyList()
         }
     }
 })

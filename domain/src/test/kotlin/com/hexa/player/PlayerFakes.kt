@@ -53,13 +53,22 @@ class FakePlayerRepository(initial: Map<PlayerId, Player> = emptyMap()) : Player
  */
 class FakeBuildingsRepository : BuildingsRepository {
     private val documents = mutableMapOf<PlayerId, MutableMap<String, PlacedBuilding>>()
+    private val streams = mutableMapOf<PlayerId, MutableStateFlow<List<PlacedBuilding>>>()
     val saved = mutableListOf<Pair<PlayerId, PlacedBuilding>>()
 
     override suspend fun place(id: PlayerId, building: PlacedBuilding) {
-        documents.getOrPut(id) { mutableMapOf() }[building.cell] = building
+        val byCell = documents.getOrPut(id) { mutableMapOf() }
+        byCell[building.cell] = building
         saved += id to building
+        streamOf(id).value = byCell.values.toList()
     }
+
+    override fun observe(id: PlayerId): Flow<List<PlacedBuilding>> = streamOf(id).asStateFlow()
 
     /** Bâtiments posés par le joueur [id], indexés par tuile, pour les assertions. */
     fun buildingsOf(id: PlayerId): Map<String, PlacedBuilding> = documents[id] ?: emptyMap()
+
+    /** Flux par joueur, amorcé sur les documents courants — comme un instantané Firestore initial. */
+    private fun streamOf(id: PlayerId): MutableStateFlow<List<PlacedBuilding>> =
+        streams.getOrPut(id) { MutableStateFlow(documents[id]?.values?.toList().orEmpty()) }
 }

@@ -12,8 +12,8 @@ import java.time.Instant
  * un champ : il sert d'**identifiant de document** (posé par [FirestoreBuildingsRepository]), ce qui
  * garantit la règle « un bâtiment par tuile ».
  *
- * Seule l'écriture est traduite : la lecture des bâtiments (rendu, récolte) n'existe pas encore et
- * sa désérialisation viendra avec elle. Pur et sans dépendance Android : testable directement.
+ * Écriture et lecture sont symétriques ([toDocument] / [fromDocument]) : un aller-retour restitue le
+ * bâtiment d'origine, nanosecondes comprises. Pur et sans dépendance Android : testable directement.
  */
 object BuildingDocumentMapper {
     const val FIELD_TYPE = "type"
@@ -27,8 +27,25 @@ object BuildingDocumentMapper {
         FIELD_LAST_COLLECTED_AT to building.lastCollectedAt.toTimestamp(),
     )
 
+    /**
+     * Désérialise les [data] d'un document `buildings/{h3Index}` en [PlacedBuilding]. L'index H3 n'est
+     * pas un champ : il est fourni par l'appelant via [cell] (= identifiant du document Firestore).
+     */
+    fun fromDocument(cell: String, data: Map<String, Any?>): PlacedBuilding = PlacedBuilding(
+        cell = cell,
+        type = (data[FIELD_TYPE] as String).toPlacedBuildingType(),
+        placedAt = (data[FIELD_PLACED_AT] as Timestamp).toInstant(),
+        lastCollectedAt = (data[FIELD_LAST_COLLECTED_AT] as Timestamp).toInstant(),
+    )
+
     /** Timestamp Firestore préservant les nanosecondes (le constructeur `Timestamp(Date)` les perdrait). */
     private fun Instant.toTimestamp(): Timestamp = Timestamp(epochSecond, nano)
 
+    /** Instant reconstruit depuis le Timestamp Firestore, nanosecondes comprises. */
+    private fun Timestamp.toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
+
     private val PlacedBuildingType.fieldKey: String get() = name.lowercase()
+
+    /** Type relu depuis son libellé contractuel ([fieldKey]) — inverse de [fieldKey]. */
+    private fun String.toPlacedBuildingType(): PlacedBuildingType = PlacedBuildingType.valueOf(uppercase())
 }
