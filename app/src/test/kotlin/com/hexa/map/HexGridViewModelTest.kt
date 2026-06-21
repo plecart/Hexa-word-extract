@@ -11,6 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -48,8 +49,9 @@ class HexGridViewModelTest : StringSpec({
     "classe la cellule courante COURANTE, une bâtie BATIE, les autres NORMALE" {
         runTest {
             val grid = FakeHexGrid()
-            // Le disque factice autour de 48 est [48, 49, 50, …] ; on marque 49 comme bâtie.
-            val built = BuiltTiles { it == 49L }
+            // Le disque factice autour de 48 est [48, 49, 50, …] ; on marque 49 comme bâtie (la
+            // fausse grille rend l'index H3 textuel par `cell.toString()`).
+            val built = flowOf(setOf("49"))
             val vm = HexGridViewModel(PositionSource { MutableStateFlow(LatLng(48.0, 2.0)) }, grid, built)
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
@@ -58,6 +60,23 @@ class HexGridViewModelTest : StringSpec({
             byCell[48L]?.state shouldBe TileState.COURANTE
             byCell[49L]?.state shouldBe TileState.BATIE
             byCell[50L]?.state shouldBe TileState.NORMALE
+        }
+    }
+
+    "fait passer une tuile à BATIE quand le flux des cellules bâties émet (base posée)" {
+        runTest {
+            val grid = FakeHexGrid()
+            val built = MutableStateFlow(emptySet<String>())
+            val vm = HexGridViewModel(PositionSource { MutableStateFlow(LatLng(48.0, 2.0)) }, grid, built)
+            backgroundScope.launchCells(vm)
+            advanceUntilIdle()
+            val stateOf49 = { vm.cells.value.first { it.outline.first().latDeg.toLong() == 49L }.state }
+            stateOf49() shouldBe TileState.NORMALE
+
+            built.value = setOf("49")
+            advanceUntilIdle()
+
+            stateOf49() shouldBe TileState.BATIE
         }
     }
 
@@ -113,7 +132,7 @@ class HexGridViewModelTest : StringSpec({
 })
 
 /** Aucune tuile bâtie : isole les tests qui ne portent pas sur l'état « bâtie ». */
-private val NONE_BUILT = BuiltTiles { false }
+private val NONE_BUILT = flowOf(emptySet<String>())
 
 /** Un collecteur de fond active la chaîne (StateFlow `WhileSubscribed`) le temps du test. */
 private fun CoroutineScope.launchCells(vm: HexGridViewModel) = launch { vm.cells.collect {} }
