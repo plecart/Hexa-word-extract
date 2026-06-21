@@ -37,8 +37,8 @@ import com.mapbox.maps.plugin.animation.easeTo
 import com.mapbox.maps.plugin.gestures.OnMoveListener
 import com.mapbox.maps.plugin.gestures.OnScaleListener
 import com.mapbox.maps.plugin.gestures.gestures
-import com.uber.h3core.H3Core
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Durée d'interpolation de la caméra vers chaque nouvelle pose. Proche de la cadence d'échantillonnage
@@ -76,9 +76,11 @@ fun MapScreen(builtCells: Flow<Set<String>>, modifier: Modifier = Modifier) {
 @Composable
 private fun ChaseCameraMap(builtCells: Flow<Set<String>>, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val positionSource = (context.applicationContext as HexaApplication).sharedPositionSource
-    val viewModel: ChaseCameraViewModel = viewModel(factory = chaseCameraViewModelFactory(context, positionSource))
-    val gridViewModel: HexGridViewModel = viewModel(factory = hexGridViewModelFactory(positionSource, builtCells))
+    val app = context.applicationContext as HexaApplication
+    val viewModel: ChaseCameraViewModel =
+        viewModel(factory = chaseCameraViewModelFactory(context, app.sharedPositionSource))
+    val gridViewModel: HexGridViewModel =
+        viewModel(factory = hexGridViewModelFactory(app.sharedCurrentTile, app.sharedGrid, builtCells))
 
     val camera by viewModel.cameraState.collectAsStateWithLifecycle()
     val mode by viewModel.mode.collectAsStateWithLifecycle()
@@ -193,17 +195,14 @@ private fun chaseCameraViewModelFactory(context: Context, positionSource: Positi
 }
 
 /**
- * Fabrique le [HexGridViewModel] en câblant la **même** position GPS filtrée partagée que la caméra
- * ([positionSource]) et l'intégration H3 de production ([H3Grid]) : un seul abonnement GPS sert la
- * caméra et la grille. [builtCells] fournit les cellules à surligner comme « bâties » (la base posée).
+ * Fabrique le [HexGridViewModel] en câblant la **tuile courante partagée** ([currentTile]) et
+ * l'intégration H3 de production partagée ([grid]) — les mêmes que celles servies à l'inspection de
+ * tuile, pour un suivi unique. [builtCells] fournit les cellules à surligner comme « bâties » (la
+ * base posée).
  */
-private fun hexGridViewModelFactory(positionSource: PositionSource, builtCells: Flow<Set<String>>) = viewModelFactory {
-    initializer {
-        // Sur Android, H3 se charge depuis les jniLibs via newSystemInstance (cf. [H3Grid]).
-        HexGridViewModel(
-            positionSource = positionSource,
-            grid = H3Grid(h3 = H3Core.newSystemInstance()),
-            builtCells = builtCells,
-        )
+private fun hexGridViewModelFactory(currentTile: StateFlow<Long?>, grid: HexGrid, builtCells: Flow<Set<String>>) =
+    viewModelFactory {
+        initializer {
+            HexGridViewModel(currentTile = currentTile, grid = grid, builtCells = builtCells)
+        }
     }
-}
