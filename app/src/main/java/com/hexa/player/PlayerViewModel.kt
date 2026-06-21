@@ -3,11 +3,8 @@ package com.hexa.player
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -68,19 +65,10 @@ class PlayerViewModel(
 
     /**
      * Bâtiments **posés** du joueur, observés depuis la sous-collection ([buildings]) — **source
-     * unique** du rendu 3D sur la carte (cf. [com.hexa.map.buildingPlacements]) et de l'état « bâtie »
-     * des tuiles. Toute pose — la base ou un futur extracteur — s'y reflète sans recréer la carte.
+     * unique** du rendu 3D sur la carte (cf. [com.hexa.map.buildingPlacements]). Toute pose — la base
+     * ou un futur extracteur — s'y reflète sans recréer la carte. Vide tant qu'aucun n'est posé.
      */
     val placedBuildings: StateFlow<List<PlacedBuilding>> = _placedBuildings.asStateFlow()
-
-    /**
-     * Index H3 des cellules **bâties**, projetés depuis [placedBuildings] pour le rendu de la grille
-     * (cf. [com.hexa.map.HexGridViewModel]). Vide tant qu'aucun bâtiment n'est posé.
-     */
-    val builtCells: StateFlow<Set<String>> =
-        _placedBuildings
-            .map { placed -> placed.mapTo(mutableSetOf()) { it.cell } }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
     init {
         viewModelScope.launch {
@@ -118,8 +106,8 @@ class PlayerViewModel(
     }
 
     /**
-     * Reflète la sous-collection des bâtiments dans [placedBuildings] (et donc [builtCells]). Un
-     * incident du flux conserve la dernière liste connue, sans régression de l'affichage.
+     * Reflète la sous-collection des bâtiments dans [placedBuildings]. Un incident du flux conserve la
+     * dernière liste connue, sans régression de l'affichage.
      */
     private suspend fun observeBuildings(id: PlayerId) {
         try {

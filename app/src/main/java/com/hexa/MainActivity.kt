@@ -71,19 +71,14 @@ class MainActivity : ComponentActivity() {
  * une surcouche s'affiche selon l'état du compte. Tant que la base n'est pas posée
  * ([PlayerUiState.Ready] avec `baseCell` nul), l'**écran de premier lancement** invite à la poser
  * par-dessus la carte ; sinon (base posée, ou amorçage en cours/échoué) c'est l'**inventaire** qui
- * est superposable. La carte reçoit les bâtiments posés à rendre en 3D ([PlayerViewModel.placedBuildings])
- * et les cellules bâties à surligner ([PlayerViewModel.builtCells]).
+ * est superposable. La carte reçoit les bâtiments posés à rendre en 3D ([PlayerViewModel.placedBuildings]).
  */
 @Composable
 private fun HexaRoot(viewModel: PlayerViewModel) {
     val playerState by viewModel.state.collectAsStateWithLifecycle()
 
     Box(Modifier.fillMaxSize()) {
-        MapScreen(
-            builtCells = viewModel.builtCells,
-            placedBuildings = viewModel.placedBuildings,
-            modifier = Modifier.fillMaxSize(),
-        )
+        MapScreen(placedBuildings = viewModel.placedBuildings, modifier = Modifier.fillMaxSize())
 
         val ready = playerState as? PlayerUiState.Ready
         if (ready != null && ready.baseCell == null) {

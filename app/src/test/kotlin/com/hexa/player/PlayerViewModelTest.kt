@@ -107,7 +107,7 @@ class PlayerViewModelTest : StringSpec({
         }
     }
 
-    "un bâtiment posé dans la sous-collection alimente placedBuildings et les cellules bâties" {
+    "un bâtiment posé dans la sous-collection alimente placedBuildings" {
         runTest(dispatcher) {
             val initial = Player.newPlayer(clock.instant())
             val repository = ObservablePlayerRepository(initial)
@@ -117,14 +117,12 @@ class PlayerViewModelTest : StringSpec({
             advanceUntilIdle()
 
             viewModel.placedBuildings.value shouldBe emptyList()
-            viewModel.builtCells.value shouldBe emptySet()
 
             val base = PlacedBuilding.base("8a1fb46622dffff", clock.instant())
             buildings.place(uid, base)
             advanceUntilIdle()
 
             viewModel.placedBuildings.value shouldBe listOf(base)
-            viewModel.builtCells.value shouldBe setOf("8a1fb46622dffff")
         }
     }
 

@@ -114,12 +114,6 @@ object MapConfig {
      */
     const val TILE_CURRENT_FILL_COLOR: String = "rgba(0, 229, 255, 0.25)"
 
-    /**
-     * Remplissage des **tuiles bâties** — ambre translucide, teinte franchement distincte du cyan de
-     * la tuile courante et du tracé de grille, pour les différencier d'un coup d'œil. **Provisoire**.
-     */
-    const val TILE_BUILT_FILL_COLOR: String = "rgba(255, 145, 0, 0.30)"
-
     /** Remplissage des **tuiles normales** — transparent : seule leur ligne de contour les dessine. */
     const val TILE_NORMAL_FILL_COLOR: String = "rgba(0, 0, 0, 0.0)"
 

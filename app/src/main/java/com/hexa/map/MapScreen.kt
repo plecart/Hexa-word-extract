@@ -58,19 +58,13 @@ private const val FOLLOW_EASE_MS = 200L
  * Tant que `ACCESS_FINE_LOCATION` n'est pas accordée, [LocationPermissionGate] présente la demande
  * puis, en cas de refus, un état explicite ; une fois accordée, [ChaseCameraMap] s'affiche.
  *
- * @param builtCells flux des index H3 des cellules bâties à surligner (la base posée, cf.
- *   [com.hexa.player.PlayerViewModel.builtCells]).
  * @param placedBuildings flux des bâtiments posés, rendus en **modèles 3D** sur la carte (cf.
  *   [com.hexa.player.PlayerViewModel.placedBuildings]).
  */
 @Composable
-fun MapScreen(
-    builtCells: Flow<Set<String>>,
-    placedBuildings: Flow<List<PlacedBuilding>>,
-    modifier: Modifier = Modifier,
-) {
+fun MapScreen(placedBuildings: Flow<List<PlacedBuilding>>, modifier: Modifier = Modifier) {
     LocationPermissionGate(modifier = modifier) {
-        ChaseCameraMap(builtCells = builtCells, placedBuildings = placedBuildings, modifier = Modifier.fillMaxSize())
+        ChaseCameraMap(placedBuildings = placedBuildings, modifier = Modifier.fillMaxSize())
     }
 }
 
@@ -85,17 +79,13 @@ fun MapScreen(
  * Le token public est fourni au SDK en amont (cf. [com.hexa.MainActivity]).
  */
 @Composable
-private fun ChaseCameraMap(
-    builtCells: Flow<Set<String>>,
-    placedBuildings: Flow<List<PlacedBuilding>>,
-    modifier: Modifier = Modifier,
-) {
+private fun ChaseCameraMap(placedBuildings: Flow<List<PlacedBuilding>>, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val app = context.applicationContext as HexaApplication
     val viewModel: ChaseCameraViewModel =
         viewModel(factory = chaseCameraViewModelFactory(context, app.sharedPositionSource))
     val gridViewModel: HexGridViewModel =
-        viewModel(factory = hexGridViewModelFactory(app.sharedCurrentTile, app.sharedGrid, builtCells))
+        viewModel(factory = hexGridViewModelFactory(app.sharedCurrentTile, app.sharedGrid))
     val inspectionViewModel: TileInspectionViewModel =
         viewModel(factory = tileInspectionViewModelFactory(app.sharedGrid, app.sharedCurrentTile))
 
@@ -237,15 +227,13 @@ private fun chaseCameraViewModelFactory(context: Context, positionSource: Positi
 /**
  * Fabrique le [HexGridViewModel] en câblant la **tuile courante partagée** ([currentTile]) et
  * l'intégration H3 de production partagée ([grid]) — les mêmes que celles servies à l'inspection de
- * tuile, pour un suivi unique. [builtCells] fournit les cellules à surligner comme « bâties » (la
- * base posée).
+ * tuile, pour un suivi unique.
  */
-private fun hexGridViewModelFactory(currentTile: StateFlow<Long?>, grid: HexGrid, builtCells: Flow<Set<String>>) =
-    viewModelFactory {
-        initializer {
-            HexGridViewModel(currentTile = currentTile, grid = grid, builtCells = builtCells)
-        }
+private fun hexGridViewModelFactory(currentTile: StateFlow<Long?>, grid: HexGrid) = viewModelFactory {
+    initializer {
+        HexGridViewModel(currentTile = currentTile, grid = grid)
     }
+}
 
 /**
  * Fabrique le [TileInspectionViewModel] en câblant la **même** intégration H3 partagée ([grid]) et la
