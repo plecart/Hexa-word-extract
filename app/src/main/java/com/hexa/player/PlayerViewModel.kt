@@ -3,8 +3,11 @@ package com.hexa.player
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -15,8 +18,11 @@ sealed interface PlayerUiState {
     /** Amorçage en cours (premier état). */
     data object Loading : PlayerUiState
 
-    /** Compte prêt : uid et inventaire chargés. */
-    data class Ready(val uid: String, val inventory: Inventory) : PlayerUiState
+    /**
+     * Compte prêt : uid, inventaire et cellule de la base ([baseCell] `null` tant qu'elle n'est pas
+     * posée — c'est ce qui décide l'affichage de l'écran de premier lancement, cf. PRD #5).
+     */
+    data class Ready(val uid: String, val inventory: Inventory, val baseCell: String?) : PlayerUiState
 
     /** L'amorçage a échoué (ex. réseau indisponible au tout premier lancement). */
     data object Failed : PlayerUiState
@@ -48,6 +54,16 @@ class PlayerViewModel(
     /** État courant du compte joueur. */
     val state: StateFlow<PlayerUiState> = _state.asStateFlow()
 
+    /**
+     * Index H3 des cellules **bâties** du joueur, pour le rendu de la grille (cf. [com.hexa.map.HexGridViewModel]).
+     * Au MVP, c'est la base posée (`baseCell`) ou rien. Émet à nouveau dès que la base est posée, ce
+     * qui fait apparaître la tuile « bâtie » sans recréer la carte.
+     */
+    val builtCells: StateFlow<Set<String>> =
+        state
+            .map { setOfNotNull((it as? PlayerUiState.Ready)?.baseCell) }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
+
     init {
         viewModelScope.launch {
             val (id, player) =
@@ -60,23 +76,23 @@ class PlayerViewModel(
                     return@launch
                 }
 
-            _state.value = PlayerUiState.Ready(id.value, player.inventory)
-            observeInventory(id)
+            _state.value = PlayerUiState.Ready(id.value, player.inventory, player.baseCell)
+            observePlayer(id)
         }
     }
 
     /** Reflète chaque mise à jour du document dans [state] ; un incident du flux n'efface rien. */
-    private suspend fun observeInventory(id: PlayerId) {
+    private suspend fun observePlayer(id: PlayerId) {
         try {
             repository.observe(id).collect { live ->
                 if (live != null) {
-                    _state.value = PlayerUiState.Ready(id.value, live.inventory)
+                    _state.value = PlayerUiState.Ready(id.value, live.inventory, live.baseCell)
                 }
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            // Le live a échoué après l'affichage : on conserve le dernier inventaire connu.
+            // Le live a échoué après l'affichage : on conserve le dernier état connu.
         }
     }
 }
