@@ -14,7 +14,8 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Backpack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,7 +36,8 @@ import com.hexa.player.FirebaseAuthGateway
 import com.hexa.player.FirestorePlayerRepository
 import com.hexa.player.PlayerUiState
 import com.hexa.player.PlayerViewModel
-import com.hexa.ui.theme.HexaActionButton
+import com.hexa.ui.theme.HexaAction
+import com.hexa.ui.theme.HexaActionBar
 import com.hexa.ui.theme.HexaTheme
 import com.mapbox.common.MapboxOptions
 import java.time.Clock
@@ -88,9 +90,9 @@ private fun HexaRoot(viewModel: PlayerViewModel) {
 /**
  * Superpose l'inventaire à la carte, une fois la base posée (ou pendant l'amorçage/échec). La bascule
  * `inventoryOpen` est **animée** (transition carte ↔ inventaire) : l'inventaire descend en fondu sur
- * la carte à l'ouverture et remonte à la fermeture, tandis que le bouton d'ouverture fait un simple
- * fondu inverse. Le bouton retour système ferme l'inventaire (avec la même transition) plutôt que de
- * quitter l'app.
+ * la carte à l'ouverture et remonte à la fermeture, tandis que la barre d'actions (ancrée en bas,
+ * centrée) fait un simple fondu inverse. Le bouton retour système ferme l'inventaire (avec la même
+ * transition) plutôt que de quitter l'app.
  */
 @Composable
 private fun InventoryOverlay(playerState: PlayerUiState) {
@@ -116,13 +118,18 @@ private fun InventoryOverlay(playerState: PlayerUiState) {
             exit = fadeOut(),
             modifier =
             Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
+                .align(Alignment.BottomCenter)
                 .padding(16.dp),
         ) {
-            HexaActionButton(
-                text = stringResource(R.string.inventory_open),
-                onClick = { inventoryOpen = true },
+            HexaActionBar(
+                actions =
+                listOf(
+                    HexaAction(
+                        icon = Icons.Outlined.Backpack,
+                        contentDescription = stringResource(R.string.inventory_open),
+                        onClick = { inventoryOpen = true },
+                    ),
+                ),
             )
         }
 
