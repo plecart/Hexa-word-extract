@@ -46,12 +46,15 @@ object HexaElementColors {
 }
 
 /**
- * Couleurs d'identité des bâtiments (liseré de tuile), **pendant** de [HexaElementColors]. Autorées
- * par la DA — jamais dérivées des pixels de l'icône — et choisies distinctes des cinq éléments pour
- * que ressources et bâtiments ne se confondent pas. Au MVP, seul l'extracteur est craftable.
+ * Couleurs d'identité des bâtiments (liseré de tuile, teinte du modèle 3D sur la carte), **pendant**
+ * de [HexaElementColors]. Autorées par la DA — jamais dérivées des pixels de l'icône — et choisies
+ * distinctes des cinq éléments **et entre elles** pour qu'un bâtiment posé se lise d'un coup d'œil.
+ * `extracteur` couvre le stock craftable ; `base` couvre la base offerte ([PlacedBuildingType.BASE]),
+ * fonctionnellement un extracteur mais visuellement distincte (le foyer du joueur).
  */
 object HexaBuildingColors {
     val extracteur = Color(0xFF9FB2C4) // acier froid
+    val base = Color(0xFFE0A23B) // or chaud — le foyer, distinct de l'acier de l'extracteur
 }
 
 /**
