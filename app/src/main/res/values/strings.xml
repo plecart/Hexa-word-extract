@@ -23,6 +23,17 @@
     <string name="inventory_loading">Chargement de l\'inventaire…</string>
     <string name="inventory_error">Impossible de charger l\'inventaire.</string>
 
+    <!-- Inspection de tuile : bottom sheet ouvert au tap sur la carte (#19). -->
+    <string name="tile_inspection_title">Contenu de la tuile</string>
+    <!-- Badge affiché quand la tuile inspectée est la tuile courante du joueur. -->
+    <string name="tile_inspection_here">Vous êtes ici</string>
+    <!-- État vide : la tuile ne contient aucune ressource (~un quart des tuiles). -->
+    <string name="tile_inspection_empty">Cette tuile ne contient aucune ressource.</string>
+    <!-- Richesse d\'un gisement, en pourcentage entier (ex. « Richesse 73 % »). -->
+    <string name="tile_deposit_richness">Richesse %1$d %%</string>
+    <!-- Vitesse d\'extraction d\'un gisement, en unités par heure (ex. « 42 u/h »). -->
+    <string name="tile_deposit_rate">%1$d u/h</string>
+
     <!-- Libellés des cinq éléments, par rareté croissante (cf. com.hexa.config.Element). -->
     <string name="element_cendrite">Cendrite</string>
     <string name="element_givrelin">Givrelin</string>
