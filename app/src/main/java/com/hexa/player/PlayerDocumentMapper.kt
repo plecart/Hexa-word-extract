@@ -28,10 +28,21 @@ object PlayerDocumentMapper {
         FIELD_BUILT_BUILDINGS to player.builtBuildings.entries.associate { it.key.fieldKey to it.value.toLong() },
     )
 
-    /** Reconstruit un [Player] depuis les données brutes d'un document Firestore. */
+    /**
+     * Reconstruit un [Player] depuis les données brutes d'un document Firestore.
+     *
+     * **Lecture tolérante de bout en bout** (cohérente avec la complétion à zéro des compteurs) : un
+     * document légataire, incomplet ou au type inattendu ne plante jamais, il dégrade champ par champ.
+     * - `createdAt` absent ou non-`Timestamp` → repli sur [Instant.EPOCH].
+     * - `baseCell` absent ou non-`String` → `null` (base réputée non posée).
+     *
+     * Le repli de `createdAt` sur l'epoch est volontairement neutre : le mapper reste pur (pas
+     * d'horloge), et l'aller-retour d'un document écrit par [toDocument] reste exact (il porte toujours
+     * un `Timestamp` valide).
+     */
     fun fromDocument(data: Map<String, Any?>): Player = Player(
-        createdAt = (data[FIELD_CREATED_AT] as Timestamp).toInstant(),
-        baseCell = data[FIELD_BASE_CELL] as String?,
+        createdAt = (data[FIELD_CREATED_AT] as? Timestamp)?.toInstant() ?: Instant.EPOCH,
+        baseCell = data[FIELD_BASE_CELL] as? String,
         inventory = readInventory(data[FIELD_INVENTORY]),
         builtBuildings = readBuiltBuildings(data[FIELD_BUILT_BUILDINGS]),
     )

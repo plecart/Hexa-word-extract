@@ -32,6 +32,27 @@ class PlayerDocumentMapperTest : StringSpec({
         PlayerDocumentMapper.fromDocument(PlayerDocumentMapper.toDocument(player)) shouldBe player
     }
 
+    "fromDocument replie un createdAt absent sur l'epoch plutôt que de planter" {
+        val doc = mapOf(PlayerDocumentMapper.FIELD_BASE_CELL to null)
+
+        val player = PlayerDocumentMapper.fromDocument(doc)
+
+        player.createdAt shouldBe Instant.EPOCH
+    }
+
+    "fromDocument tolère des createdAt et baseCell de type inattendu sans planter" {
+        val doc =
+            mapOf(
+                PlayerDocumentMapper.FIELD_CREATED_AT to "pas-un-timestamp",
+                PlayerDocumentMapper.FIELD_BASE_CELL to 42L,
+            )
+
+        val player = PlayerDocumentMapper.fromDocument(doc)
+
+        player.createdAt shouldBe Instant.EPOCH
+        player.baseCell shouldBe null
+    }
+
     "fromDocument complète les compteurs absents à zéro" {
         val doc =
             mapOf(
