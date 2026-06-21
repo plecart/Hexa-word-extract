@@ -38,6 +38,7 @@ import com.mapbox.maps.plugin.gestures.OnMoveListener
 import com.mapbox.maps.plugin.gestures.OnScaleListener
 import com.mapbox.maps.plugin.gestures.gestures
 import com.uber.h3core.H3Core
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Durée d'interpolation de la caméra vers chaque nouvelle pose. Proche de la cadence d'échantillonnage
@@ -51,11 +52,14 @@ private const val FOLLOW_EASE_MS = 200L
  *
  * Tant que `ACCESS_FINE_LOCATION` n'est pas accordée, [LocationPermissionGate] présente la demande
  * puis, en cas de refus, un état explicite ; une fois accordée, [ChaseCameraMap] s'affiche.
+ *
+ * @param builtCells flux des index H3 des cellules bâties à surligner (la base posée, cf.
+ *   [com.hexa.player.PlayerViewModel.builtCells]).
  */
 @Composable
-fun MapScreen(modifier: Modifier = Modifier) {
+fun MapScreen(builtCells: Flow<Set<String>>, modifier: Modifier = Modifier) {
     LocationPermissionGate(modifier = modifier) {
-        ChaseCameraMap(modifier = Modifier.fillMaxSize())
+        ChaseCameraMap(builtCells = builtCells, modifier = Modifier.fillMaxSize())
     }
 }
 
@@ -70,11 +74,11 @@ fun MapScreen(modifier: Modifier = Modifier) {
  * Le token public est fourni au SDK en amont (cf. [com.hexa.MainActivity]).
  */
 @Composable
-private fun ChaseCameraMap(modifier: Modifier = Modifier) {
+private fun ChaseCameraMap(builtCells: Flow<Set<String>>, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val positionSource = (context.applicationContext as HexaApplication).sharedPositionSource
     val viewModel: ChaseCameraViewModel = viewModel(factory = chaseCameraViewModelFactory(context, positionSource))
-    val gridViewModel: HexGridViewModel = viewModel(factory = hexGridViewModelFactory(positionSource))
+    val gridViewModel: HexGridViewModel = viewModel(factory = hexGridViewModelFactory(positionSource, builtCells))
 
     val camera by viewModel.cameraState.collectAsStateWithLifecycle()
     val mode by viewModel.mode.collectAsStateWithLifecycle()
@@ -191,11 +195,15 @@ private fun chaseCameraViewModelFactory(context: Context, positionSource: Positi
 /**
  * Fabrique le [HexGridViewModel] en câblant la **même** position GPS filtrée partagée que la caméra
  * ([positionSource]) et l'intégration H3 de production ([H3Grid]) : un seul abonnement GPS sert la
- * caméra et la grille.
+ * caméra et la grille. [builtCells] fournit les cellules à surligner comme « bâties » (la base posée).
  */
-private fun hexGridViewModelFactory(positionSource: PositionSource) = viewModelFactory {
+private fun hexGridViewModelFactory(positionSource: PositionSource, builtCells: Flow<Set<String>>) = viewModelFactory {
     initializer {
         // Sur Android, H3 se charge depuis les jniLibs via newSystemInstance (cf. [H3Grid]).
-        HexGridViewModel(positionSource = positionSource, grid = H3Grid(h3 = H3Core.newSystemInstance()))
+        HexGridViewModel(
+            positionSource = positionSource,
+            grid = H3Grid(h3 = H3Core.newSystemInstance()),
+            builtCells = builtCells,
+        )
     }
 }

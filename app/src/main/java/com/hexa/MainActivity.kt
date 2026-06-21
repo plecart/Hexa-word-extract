@@ -27,11 +27,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.hexa.firstlaunch.FirstLaunchScreen
 import com.hexa.inventory.InventoryScreen
 import com.hexa.map.MapScreen
 import com.hexa.player.EnsurePlayerUseCase
 import com.hexa.player.FirebaseAuthGateway
 import com.hexa.player.FirestorePlayerRepository
+import com.hexa.player.PlayerUiState
 import com.hexa.player.PlayerViewModel
 import com.hexa.ui.theme.HexaActionButton
 import com.hexa.ui.theme.HexaTheme
@@ -54,28 +56,47 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             HexaTheme {
-                MapWithInventory(playerViewModel)
+                HexaRoot(playerViewModel)
             }
         }
     }
 }
 
 /**
- * Compose la carte et superpose l'inventaire. La carte **reste composée** sous l'inventaire : son
- * état (position, zoom de la caméra) est ainsi préservé pendant l'aller-retour. La bascule
+ * Racine de l'UI : la carte **reste toujours composée dessous** (son état caméra est préservé), et
+ * une surcouche s'affiche selon l'état du compte. Tant que la base n'est pas posée
+ * ([PlayerUiState.Ready] avec `baseCell` nul), l'**écran de premier lancement** invite à la poser
+ * par-dessus la carte ; sinon (base posée, ou amorçage en cours/échoué) c'est l'**inventaire** qui
+ * est superposable. La carte reçoit les cellules bâties à surligner (la base) via [PlayerViewModel.builtCells].
+ */
+@Composable
+private fun HexaRoot(viewModel: PlayerViewModel) {
+    val playerState by viewModel.state.collectAsStateWithLifecycle()
+
+    Box(Modifier.fillMaxSize()) {
+        MapScreen(builtCells = viewModel.builtCells, modifier = Modifier.fillMaxSize())
+
+        val ready = playerState as? PlayerUiState.Ready
+        if (ready != null && ready.baseCell == null) {
+            FirstLaunchScreen(modifier = Modifier.fillMaxSize())
+        } else {
+            InventoryOverlay(playerState)
+        }
+    }
+}
+
+/**
+ * Superpose l'inventaire à la carte, une fois la base posée (ou pendant l'amorçage/échec). La bascule
  * `inventoryOpen` est **animée** (transition carte ↔ inventaire) : l'inventaire descend en fondu sur
  * la carte à l'ouverture et remonte à la fermeture, tandis que le bouton d'ouverture fait un simple
  * fondu inverse. Le bouton retour système ferme l'inventaire (avec la même transition) plutôt que de
  * quitter l'app.
  */
 @Composable
-private fun MapWithInventory(viewModel: PlayerViewModel) {
+private fun InventoryOverlay(playerState: PlayerUiState) {
     var inventoryOpen by rememberSaveable { mutableStateOf(false) }
-    val playerState by viewModel.state.collectAsStateWithLifecycle()
 
     Box(Modifier.fillMaxSize()) {
-        MapScreen(modifier = Modifier.fillMaxSize())
-
         AnimatedVisibility(
             visible = inventoryOpen,
             enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
