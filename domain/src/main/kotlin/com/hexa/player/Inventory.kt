@@ -24,6 +24,19 @@ data class Inventory(val amounts: Map<Element, Long>) {
     /** Compteur de l'[element] donné (jamais nul : l'invariant garantit sa présence). */
     operator fun get(element: Element): Long = amounts.getValue(element)
 
+    /**
+     * Inventaire **débité** de [costs] (unités par élément, ex. une recette de craft). Les éléments
+     * absents de [costs] sont laissés intacts.
+     *
+     * Opération de bas niveau : l'appelant garantit que chaque compteur couvre son coût (cf. [Craft],
+     * qui vérifie la suffisance avant de débiter). Sans ce contrôle, un compteur passerait négatif.
+     *
+     * @param costs montant à retrancher par élément.
+     * @return un nouvel inventaire, les cinq compteurs préservés.
+     */
+    fun minus(costs: Map<Element, Int>): Inventory =
+        Inventory(amounts.mapValues { (element, amount) -> amount - (costs[element]?.toLong() ?: 0L) })
+
     companion object {
         private val ELEMENTS: Set<Element> = Element.entries.toSet()
 
