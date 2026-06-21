@@ -40,8 +40,8 @@ import com.hexa.player.Inventory
 import com.hexa.player.PlayerUiState
 import com.hexa.ui.theme.AnimatedCount
 import com.hexa.ui.theme.ElementObject
-import com.hexa.ui.theme.ElementVisuals
 import com.hexa.ui.theme.HexaTheme
+import com.hexa.ui.theme.ObjectAssets
 import com.hexa.ui.theme.hexaGlowSurface
 
 /** Onglets de l'inventaire ; l'ordre des entrées fixe l'ordre d'affichage. */
@@ -55,7 +55,7 @@ private enum class InventoryTab(
 /**
  * Page d'inventaire à deux onglets, ouverte par-dessus la carte, habillée par la DA « carte sci-fi
  * sombre » : fond anthracite plein, barre et onglets translucides, ressources en tuiles dont le liseré
- * prend la couleur de l'élément (cf. [hexaGlowSurface], [ElementVisuals]).
+ * prend la couleur de l'élément (cf. [hexaGlowSurface], [ObjectAssets]).
  *
  * L'onglet **Ressources** liste les cinq éléments (par rareté croissante) avec leur quantité courante,
  * lue depuis [state] : comme le ViewModel observe le document joueur en continu, les compteurs se
@@ -139,12 +139,12 @@ private fun ResourceList(inventory: Inventory, modifier: Modifier = Modifier) {
 }
 
 /**
- * Tuile d'un élément : bloc placeholder + nom à gauche, quantité à droite, le tout en panneau DA dont
- * le **liseré prend la couleur de l'élément** ([ElementVisuals]) — l'identité saute aux yeux sans
- * lire le nom. Le nom reste en corps système ; la quantité ressort en accent cyan, police d'affichage
- * à chiffres tabulaires (slot compteur, convention posée par la DA).
+ * Tuile d'un élément : icône + nom à gauche, quantité à droite, le tout en panneau DA dont le
+ * **liseré prend la couleur de l'élément** ([ObjectAssets]) — l'identité saute aux yeux sans lire le
+ * nom. Le nom reste en corps système ; la quantité ressort en accent cyan, police d'affichage à
+ * chiffres tabulaires (slot compteur, convention posée par la DA).
  *
- * @param element l'élément affiché (fixe la couleur, le bloc et le libellé).
+ * @param element l'élément affiché (fixe la couleur, l'icône et le libellé).
  * @param amount quantité courante en stock.
  */
 @Composable
@@ -153,7 +153,7 @@ private fun ResourceRow(element: Element, amount: Long) {
         modifier =
         Modifier
             .fillMaxWidth()
-            .hexaGlowSurface(shape = MaterialTheme.shapes.small, glow = ElementVisuals.of(element).color)
+            .hexaGlowSurface(shape = MaterialTheme.shapes.small, glow = ObjectAssets.of(element).color)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -195,8 +195,8 @@ private fun CenteredPanel(text: String, modifier: Modifier = Modifier) {
 }
 
 /**
- * Aperçu Studio des cinq tuiles de ressource — une par élément, dans l'ordre de rareté, avec son bloc
- * placeholder, son liseré coloré et une quantité d'exemple (dont un zéro et un grand nombre, pour les
+ * Aperçu Studio des cinq tuiles de ressource — une par élément, dans l'ordre de rareté, avec son
+ * icône, son liseré coloré et une quantité d'exemple (dont un zéro et un grand nombre, pour les
  * chiffres tabulaires). Garde-fou visuel : une régression de l'identité d'un élément saute aux yeux.
  */
 @Preview(name = "Tuiles de ressource", showBackground = true, backgroundColor = 0xFF0B0E13)
