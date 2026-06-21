@@ -61,7 +61,7 @@ Sinon, consigne une seule issue. Le gabarit d'issue unique se trouve dans `refer
 
 Utilise le gabarit pertinent dans `references/`. Remplis :
 
-- **Titre** — court, en langage métier, décrit le problème visible par l'utilisateur (pas le chemin de code). Moins de ~70 caractères.
+- **Titre** — court, en langage métier, décrit le problème visible par l'utilisateur (pas le chemin de code). Moins de ~70 caractères. **Jamais de préfixe conventional commit** (`feat(scope):`, `fix:`, …) : ce format est réservé aux commits et titres de PR, pas aux issues.
 - **Ce qui s'est passé** — comportement observé, en langage clair.
 - **Ce que j'attendais** — comportement attendu.
 - **Étapes pour reproduire** — concrètes, numérotées, copiables-collables.
