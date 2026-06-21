@@ -128,6 +128,8 @@ dependencies {
     implementation(libs.androidx.compose.animation)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    // Icônes vectorielles Material (set étendu) : glyphes du chrome UI (barre d'actions de la carte).
+    implementation(libs.androidx.compose.material.icons.extended)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     // Tests unitaires : Kotest (cohérent avec les modules purs) + temps virtuel des coroutines.
