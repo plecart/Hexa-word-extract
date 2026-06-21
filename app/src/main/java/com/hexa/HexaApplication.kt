@@ -5,6 +5,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.PersistentCacheSettings
+import com.hexa.core.geo.LatLng
 import com.hexa.location.PositionSource
 import com.hexa.location.SharedPositionSource
 import com.hexa.map.CurrentTileTracker.currentTile
@@ -66,7 +67,16 @@ class HexaApplication : Application() {
      * qu'une seule façade native vivante. Sur Android, H3 se charge depuis les jniLibs via
      * `newSystemInstance` (cf. [H3Grid]).
      */
-    val sharedGrid: HexGrid by lazy { H3Grid(h3 = H3Core.newSystemInstance()) }
+    private val h3Grid: H3Grid by lazy { H3Grid(h3 = H3Core.newSystemInstance()) }
+
+    val sharedGrid: HexGrid get() = h3Grid
+
+    /**
+     * Résout l'index H3 **textuel** d'une tuile (cellule d'un bâtiment lu depuis Firestore) en son
+     * centre, pour poser les modèles 3D des bâtiments sur la carte (cf.
+     * [com.hexa.map.buildingPlacements]). Adossé à la **même** intégration H3 partagée que [sharedGrid].
+     */
+    val centerOfCell: (String) -> LatLng get() = h3Grid::centerOf
 
     /**
      * Tuile courante **partagée** : la cellule H3 sous le joueur, lissée par hystérésis

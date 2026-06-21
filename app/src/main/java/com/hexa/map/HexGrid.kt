@@ -63,4 +63,12 @@ class H3Grid(
         h3.cellToLatLng(h3Index).let { LatLng(latDeg = it.lat, lngDeg = it.lng) }
 
     override fun toH3String(cell: Long): String = h3.h3ToString(cell)
+
+    /**
+     * Centre de la cellule désignée par son **index H3 textuel** (format de `Player.baseCell` et de
+     * l'ID des documents `buildings/{h3Index}`). Inverse de [toH3String] côté géométrie : permet de
+     * poser un bâtiment lu depuis Firestore (cellule en `String`) sur la carte sans exposer la
+     * conversion native sur l'interface [HexGrid], que seule la production manipule.
+     */
+    fun centerOf(cell: String): LatLng = centerOf(h3.stringToH3(cell))
 }
