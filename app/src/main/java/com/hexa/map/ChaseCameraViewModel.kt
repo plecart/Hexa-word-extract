@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.update
  * zoom au pincement). Toute la logique de pose vivant dans `:location`, ce ViewModel reste une glu
  * mince et testable avec des sources factices.
  *
- * @param positionSource source de la position suivie (trajet simulé cette tranche, GPS réel en #10).
+ * @param positionSource source de la position suivie (position GPS réelle filtrée et partagée).
  * @param headingSource source du cap brut (boussole).
  * @param config paramètres de cadrage injectés depuis [MapConfig].
  * @param headingSmoothingFactor coefficient de lissage du cap, cf. [HeadingSmoother][com.hexa.location.HeadingSmoother].

@@ -13,10 +13,10 @@ dependencies {
     // les consommateurs (`:app`) doivent pouvoir le nommer sans dépendre directement de `:core`.
     api(project(":core"))
 
-    // Les sources de position/orientation et le replay du trajet simulé s'expriment en Flow ;
-    // kotlinx-coroutines est pur JVM, sans dépendance Android.
+    // Les sources de position/orientation s'expriment en Flow ; kotlinx-coroutines est pur JVM,
+    // sans dépendance Android.
     implementation(libs.kotlinx.coroutines.core)
 
-    // Temps virtuel (runTest) pour tester le replay sans attendre le temps réel.
+    // Temps virtuel (runTest) pour tester les sources Flow et le partage chaud sans attendre le temps réel.
     testImplementation(libs.kotlinx.coroutines.test)
 }
