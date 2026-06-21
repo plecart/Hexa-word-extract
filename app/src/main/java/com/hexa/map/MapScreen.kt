@@ -78,7 +78,7 @@ private fun ChaseCameraMap(modifier: Modifier = Modifier) {
 
     val camera by viewModel.cameraState.collectAsStateWithLifecycle()
     val mode by viewModel.mode.collectAsStateWithLifecycle()
-    val gridOutlines by gridViewModel.outlines.collectAsStateWithLifecycle()
+    val gridCells by gridViewModel.cells.collectAsStateWithLifecycle()
 
     // La grille suit le palier d'anneaux du zoom de poursuite courant (et du zoom au pincement, qui
     // se répercute sur la pose). En mode libre, le dernier zoom de poursuite est conservé.
@@ -119,10 +119,10 @@ private fun ChaseCameraMap(modifier: Modifier = Modifier) {
                     MapAnimationOptions.Builder().duration(FOLLOW_EASE_MS).build(),
                 )
             }
-            // Redessine la grille hexagonale à chaque nouvel ensemble de contours (changement de
-            // cellule ou de palier de zoom) ; la source GeoJSON n'est créée qu'une fois.
-            MapEffect(gridOutlines) { mapView ->
-                mapView.mapboxMap.getStyle { style -> style.showHexGrid(gridOutlines) }
+            // Redessine la grille hexagonale à chaque nouvel ensemble de cellules (changement de
+            // tuile courante ou de palier de zoom) ; la source GeoJSON n'est créée qu'une fois.
+            MapEffect(gridCells) { mapView ->
+                mapView.mapboxMap.getStyle { style -> style.showHexGrid(gridCells) }
             }
             MapEffect(Unit) { mapView ->
                 mapView.mapboxMap.setBounds(
