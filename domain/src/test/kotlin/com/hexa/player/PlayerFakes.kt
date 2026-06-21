@@ -46,3 +46,20 @@ class FakePlayerRepository(initial: Map<PlayerId, Player> = emptyMap()) : Player
     private fun streamOf(id: PlayerId): MutableStateFlow<Player?> =
         streams.getOrPut(id) { MutableStateFlow(documents[id]) }
 }
+
+/**
+ * [BuildingsRepository] adossé à une carte mutable, indexée par tuile (un doc par index H3, comme
+ * Firestore). Enregistre les écritures dans [saved] pour vérifier l'absence de débit/pose superflue.
+ */
+class FakeBuildingsRepository : BuildingsRepository {
+    private val documents = mutableMapOf<PlayerId, MutableMap<String, PlacedBuilding>>()
+    val saved = mutableListOf<Pair<PlayerId, PlacedBuilding>>()
+
+    override suspend fun place(id: PlayerId, building: PlacedBuilding) {
+        documents.getOrPut(id) { mutableMapOf() }[building.cell] = building
+        saved += id to building
+    }
+
+    /** Bâtiments posés par le joueur [id], indexés par tuile, pour les assertions. */
+    fun buildingsOf(id: PlayerId): Map<String, PlacedBuilding> = documents[id] ?: emptyMap()
+}
