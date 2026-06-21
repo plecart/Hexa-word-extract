@@ -3,7 +3,6 @@
 package com.hexa.player
 
 import com.hexa.config.Element
-import com.hexa.config.GameConfig
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
@@ -38,13 +37,14 @@ class PlayerViewModelTest : StringSpec({
 
     "au démarrage, l'état passe de Loading à Ready avec l'uid et l'inventaire du kit de départ" {
         runTest(dispatcher) {
+            val starter = Player.newPlayer(clock.instant())
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, AbsentPlayerRepository, clock)
-            val viewModel = PlayerViewModel(useCase, AbsentPlayerRepository)
+            val viewModel = PlayerViewModel(useCase, AbsentPlayerRepository, craftFor(AbsentPlayerRepository))
 
             viewModel.state.value shouldBe PlayerUiState.Loading
             advanceUntilIdle()
             viewModel.state.value shouldBe
-                PlayerUiState.Ready("uid-1", Inventory.of(GameConfig.STARTER_KIT), baseCell = null)
+                PlayerUiState.Ready("uid-1", starter.inventory, starter.builtBuildings, baseCell = null)
         }
     }
 
@@ -52,7 +52,7 @@ class PlayerViewModelTest : StringSpec({
         runTest(dispatcher) {
             val useCase =
                 EnsurePlayerUseCase(AuthGateway { error("réseau indisponible") }, AbsentPlayerRepository, clock)
-            val viewModel = PlayerViewModel(useCase, AbsentPlayerRepository)
+            val viewModel = PlayerViewModel(useCase, AbsentPlayerRepository, craftFor(AbsentPlayerRepository))
 
             advanceUntilIdle()
             viewModel.state.value shouldBe PlayerUiState.Failed
@@ -64,16 +64,36 @@ class PlayerViewModelTest : StringSpec({
             val initial = Player.newPlayer(clock.instant())
             val repository = ObservablePlayerRepository(initial)
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
-            val viewModel = PlayerViewModel(useCase, repository)
+            val viewModel = PlayerViewModel(useCase, repository, craftFor(repository))
             advanceUntilIdle()
 
-            viewModel.state.value shouldBe PlayerUiState.Ready("uid-1", initial.inventory, baseCell = null)
+            viewModel.state.value shouldBe
+                PlayerUiState.Ready("uid-1", initial.inventory, initial.builtBuildings, baseCell = null)
 
             val credited = initial.copy(inventory = Inventory.of(mapOf(Element.CENDRITE to 9_999)))
             repository.emit(credited)
             advanceUntilIdle()
 
-            viewModel.state.value shouldBe PlayerUiState.Ready("uid-1", credited.inventory, baseCell = null)
+            viewModel.state.value shouldBe
+                PlayerUiState.Ready("uid-1", credited.inventory, credited.builtBuildings, baseCell = null)
+        }
+    }
+
+    "un craft d'extracteur débite l'inventaire et crédite le stock, reflété sans action" {
+        runTest(dispatcher) {
+            val initial = Player.newPlayer(clock.instant()) // 250 Cendrite, 100 Givrelin, 0 extracteur
+            val repository = ObservablePlayerRepository(initial)
+            val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
+            val viewModel = PlayerViewModel(useCase, repository, craftFor(repository))
+            advanceUntilIdle()
+
+            viewModel.craftExtracteur()
+            advanceUntilIdle()
+
+            val ready = viewModel.state.value as PlayerUiState.Ready
+            ready.inventory[Element.CENDRITE] shouldBe 150L
+            ready.inventory[Element.GIVRELIN] shouldBe 60L
+            ready.builtBuildings.getValue(BuildingType.EXTRACTEUR) shouldBe 1
         }
     }
 
@@ -82,7 +102,7 @@ class PlayerViewModelTest : StringSpec({
             val initial = Player.newPlayer(clock.instant())
             val repository = ObservablePlayerRepository(initial)
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
-            val viewModel = PlayerViewModel(useCase, repository)
+            val viewModel = PlayerViewModel(useCase, repository, craftFor(repository))
             advanceUntilIdle()
 
             (viewModel.state.value as PlayerUiState.Ready).baseCell shouldBe null
@@ -101,13 +121,17 @@ class PlayerViewModelTest : StringSpec({
             val initial = Player.newPlayer(clock.instant())
             val repository = FailingObserveRepository(initial)
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
-            val viewModel = PlayerViewModel(useCase, repository)
+            val viewModel = PlayerViewModel(useCase, repository, craftFor(repository))
             advanceUntilIdle()
 
-            viewModel.state.value shouldBe PlayerUiState.Ready("uid-1", initial.inventory, baseCell = null)
+            viewModel.state.value shouldBe
+                PlayerUiState.Ready("uid-1", initial.inventory, initial.builtBuildings, baseCell = null)
         }
     }
 })
+
+/** Cas d'usage de craft câblé sur [repository] et l'uid de test, pour construire le ViewModel. */
+private fun craftFor(repository: PlayerRepository) = CraftBuildingUseCase(AuthGateway { PlayerId("uid-1") }, repository)
 
 /** Dépôt sans document : force le chemin « premier lancement » (création) et n'émet jamais de doc. */
 private object AbsentPlayerRepository : PlayerRepository {

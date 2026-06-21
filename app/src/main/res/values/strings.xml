@@ -18,10 +18,15 @@
     <string name="inventory_title">Inventaire</string>
     <string name="inventory_tab_resources">Ressources</string>
     <string name="inventory_tab_buildings">Bâtiments</string>
-    <!-- État vide de l'onglet Bâtiments : son contenu arrive dans une tranche dédiée (#23). -->
-    <string name="inventory_buildings_empty">Aucun bâtiment pour l\'instant.</string>
     <string name="inventory_loading">Chargement de l\'inventaire…</string>
     <string name="inventory_error">Impossible de charger l\'inventaire.</string>
+
+    <!-- Onglet Bâtiments : stock prêt à poser + craft de l'extracteur (cf. PRD #5, user stories 8-11). -->
+    <string name="building_extracteur">Extracteur</string>
+    <string name="inventory_craft_title">Construire un extracteur</string>
+    <string name="inventory_craft_button">Construire</string>
+    <!-- Recette : quantité possédée puis requise pour une ressource, ex. « 120 / 100 ». -->
+    <string name="inventory_craft_amount">%1$d / %2$d</string>
 
     <!-- Inspection de tuile : bottom sheet ouvert au tap sur la carte (#19). -->
     <string name="tile_inspection_title">Contenu de la tuile</string>
@@ -33,6 +38,7 @@
     <string name="tile_deposit_richness">Richesse %1$d %%</string>
     <!-- Vitesse d\'extraction d\'un gisement, en unités par heure (ex. « 42 u/h »). -->
     <string name="tile_deposit_rate">%1$d u/h</string>
+
 
     <!-- Libellés des cinq éléments, par rareté croissante (cf. com.hexa.config.Element). -->
     <string name="element_cendrite">Cendrite</string>

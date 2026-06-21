@@ -46,6 +46,15 @@ object HexaElementColors {
 }
 
 /**
+ * Couleurs d'identité des bâtiments (liseré de tuile), **pendant** de [HexaElementColors]. Autorées
+ * par la DA — jamais dérivées des pixels de l'icône — et choisies distinctes des cinq éléments pour
+ * que ressources et bâtiments ne se confondent pas. Au MVP, seul l'extracteur est craftable.
+ */
+object HexaBuildingColors {
+    val extracteur = Color(0xFF9FB2C4) // acier froid
+}
+
+/**
  * Schéma de couleurs sombre **unique** de l'application, branché par [HexaTheme]. Pas de variante
  * claire : la DA est exclusivement sombre. Les slots non renseignés gardent les valeurs sombres
  * Material 3 par défaut.
