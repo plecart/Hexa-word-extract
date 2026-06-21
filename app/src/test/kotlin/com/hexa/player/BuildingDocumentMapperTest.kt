@@ -24,4 +24,31 @@ class BuildingDocumentMapperTest : StringSpec({
         doc[BuildingDocumentMapper.FIELD_LAST_COLLECTED_AT] shouldBe
             Timestamp(lastCollectedAt.epochSecond, lastCollectedAt.nano)
     }
+
+    "fromDocument relit le type, l'index H3 (id du doc) et les bornes temporelles avec leurs nanos" {
+        val cell = "8a1fb46622dffff"
+        val placedAt = Instant.parse("2026-06-20T09:00:00.123456789Z")
+        val lastCollectedAt = Instant.parse("2026-06-21T10:00:00Z")
+        val data = mapOf<String, Any?>(
+            BuildingDocumentMapper.FIELD_TYPE to "base",
+            BuildingDocumentMapper.FIELD_PLACED_AT to Timestamp(placedAt.epochSecond, placedAt.nano),
+            BuildingDocumentMapper.FIELD_LAST_COLLECTED_AT to
+                Timestamp(lastCollectedAt.epochSecond, lastCollectedAt.nano),
+        )
+
+        BuildingDocumentMapper.fromDocument(cell, data) shouldBe
+            PlacedBuilding(cell, PlacedBuildingType.BASE, placedAt, lastCollectedAt)
+    }
+
+    "toDocument puis fromDocument restitue le bâtiment d'origine (aller-retour)" {
+        val building = PlacedBuilding(
+            "8a1fb46622dffff",
+            PlacedBuildingType.BASE,
+            Instant.parse("2026-06-20T09:00:00.123456789Z"),
+            Instant.parse("2026-06-21T10:00:00.987654321Z"),
+        )
+
+        val document = BuildingDocumentMapper.toDocument(building)
+        BuildingDocumentMapper.fromDocument(building.cell, document) shouldBe building
+    }
 })
