@@ -31,6 +31,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.hexa.firstlaunch.FirstLaunchScreen
 import com.hexa.inventory.InventoryScreen
 import com.hexa.map.MapScreen
+import com.hexa.player.CraftBuildingUseCase
 import com.hexa.player.EnsurePlayerUseCase
 import com.hexa.player.FirebaseAuthGateway
 import com.hexa.player.FirestorePlayerRepository
@@ -82,7 +83,7 @@ private fun HexaRoot(viewModel: PlayerViewModel) {
         if (ready != null && ready.baseCell == null) {
             FirstLaunchScreen(modifier = Modifier.fillMaxSize())
         } else {
-            InventoryOverlay(playerState)
+            InventoryOverlay(playerState, onCraftExtracteur = viewModel::craftExtracteur)
         }
     }
 }
@@ -95,7 +96,7 @@ private fun HexaRoot(viewModel: PlayerViewModel) {
  * transition) plutôt que de quitter l'app.
  */
 @Composable
-private fun InventoryOverlay(playerState: PlayerUiState) {
+private fun InventoryOverlay(playerState: PlayerUiState, onCraftExtracteur: () -> Unit) {
     var inventoryOpen by rememberSaveable { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize()) {
@@ -108,6 +109,7 @@ private fun InventoryOverlay(playerState: PlayerUiState) {
             InventoryScreen(
                 state = playerState,
                 onClose = { inventoryOpen = false },
+                onCraftExtracteur = onCraftExtracteur,
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -144,16 +146,18 @@ private fun InventoryOverlay(playerState: PlayerUiState) {
 private val playerViewModelFactory =
     viewModelFactory {
         initializer {
-            // Le même dépôt sert l'amorçage (load/save) et l'observation temps réel (observe).
+            // Le même compte et le même dépôt servent l'amorçage, l'observation temps réel et le craft.
+            val auth = FirebaseAuthGateway()
             val repository = FirestorePlayerRepository()
             PlayerViewModel(
                 ensurePlayer =
                 EnsurePlayerUseCase(
-                    auth = FirebaseAuthGateway(),
+                    auth = auth,
                     repository = repository,
                     clock = Clock.systemUTC(),
                 ),
                 repository = repository,
+                craftBuilding = CraftBuildingUseCase(auth = auth, players = repository),
             )
         }
     }

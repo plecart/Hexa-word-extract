@@ -19,10 +19,16 @@ sealed interface PlayerUiState {
     data object Loading : PlayerUiState
 
     /**
-     * Compte prêt : uid, inventaire et cellule de la base ([baseCell] `null` tant qu'elle n'est pas
-     * posée — c'est ce qui décide l'affichage de l'écran de premier lancement, cf. PRD #5).
+     * Compte prêt : uid, inventaire, stock de bâtiments construits prêts à poser, et cellule de la
+     * base ([baseCell] `null` tant qu'elle n'est pas posée — c'est ce qui décide l'affichage de
+     * l'écran de premier lancement, cf. PRD #5).
      */
-    data class Ready(val uid: String, val inventory: Inventory, val baseCell: String?) : PlayerUiState
+    data class Ready(
+        val uid: String,
+        val inventory: Inventory,
+        val builtBuildings: Map<BuildingType, Int>,
+        val baseCell: String?,
+    ) : PlayerUiState
 
     /** L'amorçage a échoué (ex. réseau indisponible au tout premier lancement). */
     data object Failed : PlayerUiState
@@ -44,10 +50,12 @@ sealed interface PlayerUiState {
  *
  * @param ensurePlayer cas d'usage d'amorçage (compte anonyme + document joueur).
  * @param repository port d'observation du document joueur.
+ * @param craftBuilding cas d'usage de craft d'un bâtiment (débit inventaire + crédit stock, persisté).
  */
 class PlayerViewModel(
     private val ensurePlayer: EnsurePlayerUseCase,
     private val repository: PlayerRepository,
+    private val craftBuilding: CraftBuildingUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow<PlayerUiState>(PlayerUiState.Loading)
 
@@ -76,8 +84,25 @@ class PlayerViewModel(
                     return@launch
                 }
 
-            _state.value = PlayerUiState.Ready(id.value, player.inventory, player.baseCell)
+            _state.value = player.toReady(id)
             observePlayer(id)
+        }
+    }
+
+    /**
+     * Construit un extracteur : débite l'inventaire, crédite le stock, persiste. Le résultat **remonte
+     * seul** par l'observation du document ([observePlayer]) — pas de mutation directe de [state] ici.
+     * Un échec (réseau, ressources insuffisantes en cas de course) ne fait pas régresser l'affichage.
+     */
+    fun craftExtracteur() {
+        viewModelScope.launch {
+            try {
+                craftBuilding(BuildingType.EXTRACTEUR)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Le craft a échoué : on conserve le dernier état connu, sans régression.
+            }
         }
     }
 
@@ -86,7 +111,7 @@ class PlayerViewModel(
         try {
             repository.observe(id).collect { live ->
                 if (live != null) {
-                    _state.value = PlayerUiState.Ready(id.value, live.inventory, live.baseCell)
+                    _state.value = live.toReady(id)
                 }
             }
         } catch (e: CancellationException) {
@@ -95,4 +120,8 @@ class PlayerViewModel(
             // Le live a échoué après l'affichage : on conserve le dernier état connu.
         }
     }
+
+    /** Projette le document joueur en état `Ready` affichable (inventaire + stock + base). */
+    private fun Player.toReady(id: PlayerId): PlayerUiState.Ready =
+        PlayerUiState.Ready(id.value, inventory, builtBuildings, baseCell)
 }

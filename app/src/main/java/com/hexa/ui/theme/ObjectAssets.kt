@@ -2,6 +2,7 @@ package com.hexa.ui.theme
 
 import androidx.compose.ui.graphics.Color
 import com.hexa.config.Element
+import com.hexa.player.BuildingType
 
 /**
  * Les assets d'un objet du jeu, réunis en un point unique : son **master 3D** ([glb]), son **icône
@@ -28,8 +29,8 @@ data class ObjectAsset(val glb: String, val icon: String, val color: Color)
  * que ses assets ne sont pas fournis ici — garde-fou contre un objet affiché sans icône ni couleur.
  * Pendant de [com.hexa.inventory.labelOf] côté libellés.
  *
- * Point d'ancrage réutilisable pour tous les rendus d'un élément : [ElementObject] (icône) et le
- * liseré de tuile ([hexaGlowSurface], couleur). S'étendra plus tard à `BuildingType`.
+ * Point d'ancrage réutilisable pour tous les rendus d'un objet : icône ([ElementObject],
+ * [BuildingObject]) et liseré de tuile ([hexaGlowSurface], couleur). Couvre éléments et bâtiments.
  */
 object ObjectAssets {
     /**
@@ -44,6 +45,16 @@ object ObjectAssets {
         Element.LITHOSEVE -> objectAsset("lithoseve", HexaElementColors.lithoseve)
         Element.ECHOFER -> objectAsset("echofer", HexaElementColors.echofer)
         Element.NYCTITE -> objectAsset("nyctite", HexaElementColors.nyctite)
+    }
+
+    /**
+     * Les assets de [building] — même convention `assets/objects/<nom>/` que les éléments.
+     *
+     * @param building le bâtiment dont on veut l'habillage (icône + couleur d'identité).
+     * @return son [ObjectAsset], garanti non nul pour tout bâtiment (`when` exhaustif sans `else`).
+     */
+    fun of(building: BuildingType): ObjectAsset = when (building) {
+        BuildingType.EXTRACTEUR -> objectAsset("extracteur", HexaBuildingColors.extracteur)
     }
 
     /** Compose l'[ObjectAsset] d'un objet à partir de son dossier [name] et de sa couleur d'identité. */
