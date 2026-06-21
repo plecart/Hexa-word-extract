@@ -15,8 +15,8 @@ object MapConfig {
     const val STYLE_URL: String = "mapbox://styles/pbernier/cmqcpqcwy001m01s4eumxepf8"
 
     /**
-     * Latitude du centre par défaut au lancement (Paris). **Provisoire** : remplacé par la position
-     * GPS réelle du joueur en #10 (permission de localisation + position filtrée).
+     * Latitude du centre de repli au lancement (Paris), affichée tant que le premier fix GPS n'est pas
+     * arrivé ; la caméra bascule ensuite sur la position GPS réelle filtrée du joueur.
      */
     const val DEFAULT_CENTER_LAT: Double = 48.8566
 
