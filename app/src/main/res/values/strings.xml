@@ -6,6 +6,12 @@
     <string name="location_permission_rationale">Hexa a besoin de ta position pour suivre tes déplacements sur la carte. Autorise la localisation pour jouer.</string>
     <string name="location_permission_retry">Autoriser la localisation</string>
 
+    <!-- Écran de premier lancement : pose de la base offerte (cf. PRD #5, user stories 3-5). -->
+    <string name="first_launch_title">Pose ta base</string>
+    <string name="first_launch_rationale">Rends-toi à l\'endroit où tu veux t\'établir, puis pose ta base sur ta tuile actuelle. Elle est offerte et produira comme un extracteur.</string>
+    <string name="first_launch_place_base">Poser ma base ici</string>
+    <string name="first_launch_awaiting_position">En attente de ta position…</string>
+
     <!-- Inventaire : page à deux onglets ouverte depuis la carte. -->
     <string name="inventory_open">Ouvrir l\'inventaire</string>
     <string name="inventory_close">Fermer l\'inventaire</string>

@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hexa.location.PositionSource
 import com.hexa.map.CurrentTileTracker.currentTile
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 
 /**
@@ -27,13 +29,15 @@ import kotlinx.coroutines.flow.stateIn
  *
  * @param positionSource source de la position filtrée, partagée avec la caméra (cf. [com.hexa.location.SharedPositionSource]).
  * @param grid façade de la grille hexagonale (cellule sous la position, disque, contours, centre).
- * @param builtTiles cellules bâties, pour l'état [TileState.BATIE] (cf. [DemoBuiltTiles] au MVP).
+ * @param builtCells flux des **index H3 textuels** des cellules bâties, pour l'état [TileState.BATIE].
+ *   Au MVP, la seule cellule bâtie est la base posée (`Player.baseCell`) ; ce flux émet à nouveau dès
+ *   qu'elle change, ce qui fait apparaître la base sur la grille sans recréer le ViewModel.
  * @param hysteresisMarginM marge d'hystérésis du suivi de tuile courante, en mètres.
  */
 class HexGridViewModel(
     positionSource: PositionSource,
     private val grid: HexGrid,
-    private val builtTiles: BuiltTiles = DemoBuiltTiles,
+    builtCells: Flow<Set<String>> = flowOf(emptySet()),
     private val hysteresisMarginM: Double = MapConfig.TILE_HYSTERESIS_MARGIN_M,
 ) : ViewModel() {
     /** Zoom courant de la carte ; mis à jour par l'UI au pincement. */
@@ -48,7 +52,9 @@ class HexGridViewModel(
         combine(
             positionSource.positions().currentTile(grid, hysteresisMarginM),
             zoom.distinctUntilChangedBy(VisibleCells::ringsForZoom),
-        ) { current, zoomLevel ->
+            builtCells,
+        ) { current, zoomLevel, built ->
+            val builtTiles = BuiltTiles { grid.toH3String(it) in built }
             VisibleCells.cellsAround(current, zoomLevel, grid).map { cell ->
                 GridCell(grid.outline(cell), tileState(cell, current, builtTiles))
             }

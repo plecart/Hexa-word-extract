@@ -43,7 +43,8 @@ class PlayerViewModelTest : StringSpec({
 
             viewModel.state.value shouldBe PlayerUiState.Loading
             advanceUntilIdle()
-            viewModel.state.value shouldBe PlayerUiState.Ready("uid-1", Inventory.of(GameConfig.STARTER_KIT))
+            viewModel.state.value shouldBe
+                PlayerUiState.Ready("uid-1", Inventory.of(GameConfig.STARTER_KIT), baseCell = null)
         }
     }
 
@@ -66,13 +67,32 @@ class PlayerViewModelTest : StringSpec({
             val viewModel = PlayerViewModel(useCase, repository)
             advanceUntilIdle()
 
-            viewModel.state.value shouldBe PlayerUiState.Ready("uid-1", initial.inventory)
+            viewModel.state.value shouldBe PlayerUiState.Ready("uid-1", initial.inventory, baseCell = null)
 
             val credited = initial.copy(inventory = Inventory.of(mapOf(Element.CENDRITE to 9_999)))
             repository.emit(credited)
             advanceUntilIdle()
 
-            viewModel.state.value shouldBe PlayerUiState.Ready("uid-1", credited.inventory)
+            viewModel.state.value shouldBe PlayerUiState.Ready("uid-1", credited.inventory, baseCell = null)
+        }
+    }
+
+    "la pose d'une base se reflète dans baseCell et dans les cellules bâties" {
+        runTest(dispatcher) {
+            val initial = Player.newPlayer(clock.instant())
+            val repository = ObservablePlayerRepository(initial)
+            val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
+            val viewModel = PlayerViewModel(useCase, repository)
+            advanceUntilIdle()
+
+            (viewModel.state.value as PlayerUiState.Ready).baseCell shouldBe null
+            viewModel.builtCells.value shouldBe emptySet()
+
+            repository.emit(initial.copy(baseCell = "8a1fb46622dffff"))
+            advanceUntilIdle()
+
+            (viewModel.state.value as PlayerUiState.Ready).baseCell shouldBe "8a1fb46622dffff"
+            viewModel.builtCells.value shouldBe setOf("8a1fb46622dffff")
         }
     }
 
@@ -84,7 +104,7 @@ class PlayerViewModelTest : StringSpec({
             val viewModel = PlayerViewModel(useCase, repository)
             advanceUntilIdle()
 
-            viewModel.state.value shouldBe PlayerUiState.Ready("uid-1", initial.inventory)
+            viewModel.state.value shouldBe PlayerUiState.Ready("uid-1", initial.inventory, baseCell = null)
         }
     }
 })

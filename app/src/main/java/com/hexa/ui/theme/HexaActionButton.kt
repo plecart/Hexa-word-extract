@@ -14,6 +14,9 @@ import androidx.compose.ui.unit.dp
 /** Cible tactile minimale (48×48 dp, recommandation d'accessibilité Material). */
 private val MIN_TOUCH_TARGET = 48.dp
 
+/** Opacité du libellé quand le bouton est désactivé (convention Material « disabled content »). */
+private const val DISABLED_ALPHA = 0.38f
+
 /**
  * Bouton d'action habillé selon la DA « carte sci-fi sombre » : un panneau [hexaGlowSurface]
  * (surface translucide + bordure fine lumineuse, coins nets) portant un libellé en accent cyan.
@@ -28,21 +31,28 @@ private val MIN_TOUCH_TARGET = 48.dp
  * — alignement, marges, flottant ou centré — est laissé à l'appelant via [modifier].
  *
  * @param text libellé de l'action, déjà résolu (chaîne, pas d'id de ressource).
- * @param onClick invoqué à chaque tap.
+ * @param onClick invoqué à chaque tap (ignoré si [enabled] est `false`).
  * @param modifier agencement décidé par l'appelant (alignement, marges) ; appliqué avant l'habillage,
  *   de sorte que la surface lumineuse épouse la taille du bouton.
+ * @param enabled quand `false`, le bouton n'est pas cliquable et son libellé est atténué — utilisé
+ *   p. ex. tant qu'une condition n'est pas remplie (tuile courante inconnue à la pose de la base).
  */
 @Composable
-fun HexaActionButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun HexaActionButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val shape = MaterialTheme.shapes.large
     Text(
         text = text,
         style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
+        color =
+        if (enabled) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.primary.copy(alpha = DISABLED_ALPHA)
+        },
         modifier =
         modifier
             .clip(shape)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .hexaGlowSurface(shape = shape)
             .defaultMinSize(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
             .padding(horizontal = 20.dp, vertical = 14.dp),

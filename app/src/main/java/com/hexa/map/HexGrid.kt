@@ -28,6 +28,13 @@ interface HexGrid : TileCenterLocator {
 
     /** Sommets du contour de la cellule, dans l'ordre, pour en tracer le pourtour. */
     fun outline(cell: Long): List<LatLng>
+
+    /**
+     * Index H3 de la cellule sous sa forme **textuelle canonique** (hexadécimal). C'est le format
+     * contractuel de `Player.baseCell` et de l'ID de document `buildings/{h3Index}` : il fait le pont
+     * entre la grille (qui manipule des `Long`) et le document joueur (qui stocke des `String`).
+     */
+    fun toH3String(cell: Long): String
 }
 
 /**
@@ -54,4 +61,6 @@ class H3Grid(
 
     override fun centerOf(h3Index: Long): LatLng =
         h3.cellToLatLng(h3Index).let { LatLng(latDeg = it.lat, lngDeg = it.lng) }
+
+    override fun toH3String(cell: Long): String = h3.h3ToString(cell)
 }

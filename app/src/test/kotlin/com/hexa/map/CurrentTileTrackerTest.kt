@@ -89,6 +89,8 @@ private class LinearFakeGrid(
 
     override fun outline(cell: Long): List<LatLng> = emptyList()
 
+    override fun toH3String(cell: Long): String = cell.toString()
+
     companion object {
         const val CELL_A = 1L
         const val CELL_B = 2L
