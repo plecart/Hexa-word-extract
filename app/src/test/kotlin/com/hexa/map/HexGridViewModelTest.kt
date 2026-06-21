@@ -3,7 +3,6 @@
 package com.hexa.map
 
 import com.hexa.core.geo.LatLng
-import com.hexa.location.PositionSource
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -20,11 +19,12 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 
 /**
- * [HexGridViewModel] est la glu d'app de la grille : il transforme la position filtrée en cellule
- * courante (avec hystérésis), en déduit le disque de cellules au zoom courant et expose chacune avec
- * son état visuel. On vérifie cette orchestration avec une fausse grille — sans device ni H3 —, en
- * s'assurant que la grille ne se recalcule que lorsque la **cellule** ou le **palier de zoom** change,
- * et que chaque cellule reçoit le bon état (courante / bâtie / normale).
+ * [HexGridViewModel] est la glu d'app de la grille : à partir de la tuile courante partagée, il déduit
+ * le disque de cellules au zoom courant et expose chacune avec son état visuel. On vérifie cette
+ * orchestration avec une fausse grille — sans device ni H3 —, en s'assurant que la grille ne se
+ * recalcule que lorsque la **tuile courante** ou le **palier de zoom** change, et que chaque cellule
+ * reçoit le bon état (courante / bâtie / normale). Le suivi de la tuile courante (hystérésis) est
+ * testé à part (`CurrentTileTrackerTest`).
  */
 class HexGridViewModelTest : StringSpec({
     // viewModelScope tourne sur Dispatchers.Main : on le branche sur le planificateur de test.
@@ -34,7 +34,7 @@ class HexGridViewModelTest : StringSpec({
     "expose le disque autour de la cellule courante, au rayon du zoom de poursuite" {
         runTest {
             val grid = FakeHexGrid()
-            val vm = HexGridViewModel(PositionSource { MutableStateFlow(LatLng(48.0, 2.0)) }, grid, NONE_BUILT)
+            val vm = HexGridViewModel(MutableStateFlow(48L), grid, NONE_BUILT)
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
 
@@ -52,7 +52,7 @@ class HexGridViewModelTest : StringSpec({
             // Le disque factice autour de 48 est [48, 49, 50, …] ; on marque 49 comme bâtie (la
             // fausse grille rend l'index H3 textuel par `cell.toString()`).
             val built = flowOf(setOf("49"))
-            val vm = HexGridViewModel(PositionSource { MutableStateFlow(LatLng(48.0, 2.0)) }, grid, built)
+            val vm = HexGridViewModel(MutableStateFlow(48L), grid, built)
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
 
@@ -67,7 +67,7 @@ class HexGridViewModelTest : StringSpec({
         runTest {
             val grid = FakeHexGrid()
             val built = MutableStateFlow(emptySet<String>())
-            val vm = HexGridViewModel(PositionSource { MutableStateFlow(LatLng(48.0, 2.0)) }, grid, built)
+            val vm = HexGridViewModel(MutableStateFlow(48L), grid, built)
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
             val stateOf49 = { vm.cells.value.first { it.outline.first().latDeg.toLong() == 49L }.state }
@@ -80,16 +80,16 @@ class HexGridViewModelTest : StringSpec({
         }
     }
 
-    "recalcule la grille quand le joueur change franchement de cellule" {
+    "recalcule la grille quand la tuile courante change" {
         runTest {
             val grid = FakeHexGrid()
-            val position = MutableStateFlow(LatLng(48.0, 2.0))
-            val vm = HexGridViewModel(PositionSource { position }, grid, NONE_BUILT)
+            val currentTile = MutableStateFlow<Long?>(48L)
+            val vm = HexGridViewModel(currentTile, grid, NONE_BUILT)
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
+            grid.lastCenter shouldBe 48L
 
-            // Un degré de latitude (~111 km) est très au-delà de la marge d'hystérésis : la tuile bascule.
-            position.value = LatLng(49.0, 2.0)
+            currentTile.value = 49L
             advanceUntilIdle()
 
             grid.lastCenter shouldBe 49L
@@ -99,7 +99,7 @@ class HexGridViewModelTest : StringSpec({
     "ne recalcule pas la grille tant que le zoom reste dans le même palier" {
         runTest {
             val grid = FakeHexGrid()
-            val vm = HexGridViewModel(PositionSource { MutableStateFlow(LatLng(48.0, 2.0)) }, grid, NONE_BUILT)
+            val vm = HexGridViewModel(MutableStateFlow(48L), grid, NONE_BUILT)
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
             // On se cale d'abord dans le palier ≥ 18 (2 anneaux), puis on observe.
@@ -118,7 +118,7 @@ class HexGridViewModelTest : StringSpec({
     "recalcule la grille quand le zoom franchit un palier" {
         runTest {
             val grid = FakeHexGrid()
-            val vm = HexGridViewModel(PositionSource { MutableStateFlow(LatLng(48.0, 2.0)) }, grid, NONE_BUILT)
+            val vm = HexGridViewModel(MutableStateFlow(48L), grid, NONE_BUILT)
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
 

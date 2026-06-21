@@ -19,10 +19,12 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.hexa.HexaApplication
 import com.hexa.R
+import com.hexa.core.geo.LatLng
 import com.hexa.location.CameraMode
 import com.hexa.location.ChaseCameraConfig
 import com.hexa.location.PositionSource
 import com.hexa.ui.theme.HexaActionButton
+import com.hexa.world.WorldGenerator
 import com.mapbox.android.gestures.MoveGestureDetector
 import com.mapbox.android.gestures.StandardScaleGestureDetector
 import com.mapbox.geojson.Point
@@ -34,11 +36,12 @@ import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportS
 import com.mapbox.maps.extension.compose.style.MapStyle
 import com.mapbox.maps.plugin.animation.MapAnimationOptions
 import com.mapbox.maps.plugin.animation.easeTo
+import com.mapbox.maps.plugin.gestures.OnMapClickListener
 import com.mapbox.maps.plugin.gestures.OnMoveListener
 import com.mapbox.maps.plugin.gestures.OnScaleListener
 import com.mapbox.maps.plugin.gestures.gestures
-import com.uber.h3core.H3Core
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Durée d'interpolation de la caméra vers chaque nouvelle pose. Proche de la cadence d'échantillonnage
@@ -76,13 +79,18 @@ fun MapScreen(builtCells: Flow<Set<String>>, modifier: Modifier = Modifier) {
 @Composable
 private fun ChaseCameraMap(builtCells: Flow<Set<String>>, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val positionSource = (context.applicationContext as HexaApplication).sharedPositionSource
-    val viewModel: ChaseCameraViewModel = viewModel(factory = chaseCameraViewModelFactory(context, positionSource))
-    val gridViewModel: HexGridViewModel = viewModel(factory = hexGridViewModelFactory(positionSource, builtCells))
+    val app = context.applicationContext as HexaApplication
+    val viewModel: ChaseCameraViewModel =
+        viewModel(factory = chaseCameraViewModelFactory(context, app.sharedPositionSource))
+    val gridViewModel: HexGridViewModel =
+        viewModel(factory = hexGridViewModelFactory(app.sharedCurrentTile, app.sharedGrid, builtCells))
+    val inspectionViewModel: TileInspectionViewModel =
+        viewModel(factory = tileInspectionViewModelFactory(app.sharedGrid, app.sharedCurrentTile))
 
     val camera by viewModel.cameraState.collectAsStateWithLifecycle()
     val mode by viewModel.mode.collectAsStateWithLifecycle()
     val gridCells by gridViewModel.cells.collectAsStateWithLifecycle()
+    val inspection by inspectionViewModel.inspection.collectAsStateWithLifecycle()
 
     // La grille suit le palier d'anneaux du zoom de poursuite courant (et du zoom au pincement, qui
     // se répercute sur la pose). En mode libre, le dernier zoom de poursuite est conservé.
@@ -108,6 +116,14 @@ private fun ChaseCameraMap(builtCells: Flow<Set<String>>, modifier: Modifier = M
             // inutile). Logo et attribution Mapbox laissés au défaut → restent affichés (CGU Mapbox).
             scaleBar = {},
             compass = {},
+            // Un tap ouvre l'inspection de la tuile touchée : Mapbox fournit la coordonnée carte du
+            // point, le ViewModel en résout la cellule H3 et en recalcule le contenu à la volée. Le
+            // clic passe par le paramètre du composable (et non le plugin gestures, que le wrapper
+            // Compose réinitialise) ; `true` consomme l'événement.
+            onMapClickListener = OnMapClickListener { point ->
+                inspectionViewModel.inspectAt(LatLng(latDeg = point.latitude(), lngDeg = point.longitude()))
+                true
+            },
         ) {
             // À chaque nouvelle pose de poursuite, glisser la caméra vers elle ; en mode libre
             // (pose nulle), ne rien imposer pour laisser la carte là où l'utilisateur l'a déplacée.
@@ -159,6 +175,10 @@ private fun ChaseCameraMap(builtCells: Flow<Set<String>>, modifier: Modifier = M
             }
         }
 
+        inspection?.let { open ->
+            TileInspectionSheet(inspection = open, onDismiss = inspectionViewModel::dismiss)
+        }
+
         if (mode == CameraMode.FREE) {
             HexaActionButton(
                 text = stringResource(R.string.recenter_camera),
@@ -193,17 +213,31 @@ private fun chaseCameraViewModelFactory(context: Context, positionSource: Positi
 }
 
 /**
- * Fabrique le [HexGridViewModel] en câblant la **même** position GPS filtrée partagée que la caméra
- * ([positionSource]) et l'intégration H3 de production ([H3Grid]) : un seul abonnement GPS sert la
- * caméra et la grille. [builtCells] fournit les cellules à surligner comme « bâties » (la base posée).
+ * Fabrique le [HexGridViewModel] en câblant la **tuile courante partagée** ([currentTile]) et
+ * l'intégration H3 de production partagée ([grid]) — les mêmes que celles servies à l'inspection de
+ * tuile, pour un suivi unique. [builtCells] fournit les cellules à surligner comme « bâties » (la
+ * base posée).
  */
-private fun hexGridViewModelFactory(positionSource: PositionSource, builtCells: Flow<Set<String>>) = viewModelFactory {
+private fun hexGridViewModelFactory(currentTile: StateFlow<Long?>, grid: HexGrid, builtCells: Flow<Set<String>>) =
+    viewModelFactory {
+        initializer {
+            HexGridViewModel(currentTile = currentTile, grid = grid, builtCells = builtCells)
+        }
+    }
+
+/**
+ * Fabrique le [TileInspectionViewModel] en câblant la **même** intégration H3 partagée ([grid]) et la
+ * **même** tuile courante partagée ([currentTile]) que la grille. Le contenu d'une tuile vient du
+ * [WorldGenerator] de `:domain`, instancié sur cette grille (elle joue le rôle de
+ * [com.hexa.world.TileCenterLocator]) : la résolution tap → cellule et le générateur partagent ainsi
+ * une seule façade native.
+ */
+private fun tileInspectionViewModelFactory(grid: HexGrid, currentTile: StateFlow<Long?>) = viewModelFactory {
     initializer {
-        // Sur Android, H3 se charge depuis les jniLibs via newSystemInstance (cf. [H3Grid]).
-        HexGridViewModel(
-            positionSource = positionSource,
-            grid = H3Grid(h3 = H3Core.newSystemInstance()),
-            builtCells = builtCells,
+        TileInspectionViewModel(
+            grid = grid,
+            contentOf = WorldGenerator(centerLocator = grid)::contentOf,
+            currentTile = currentTile,
         )
     }
 }
