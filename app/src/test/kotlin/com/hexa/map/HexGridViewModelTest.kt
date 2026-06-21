@@ -140,4 +140,6 @@ private class FakeHexGrid : HexGrid {
     override fun outline(cell: Long): List<LatLng> = listOf(LatLng(cell.toDouble(), 0.0))
 
     override fun centerOf(h3Index: Long): LatLng = LatLng(h3Index.toDouble(), 0.0)
+
+    override fun toH3String(cell: Long): String = cell.toString()
 }

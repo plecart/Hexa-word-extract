@@ -38,6 +38,16 @@ class HexGridTest : StringSpec({
         grid.outline(cell) shouldHaveSize 6
     }
 
+    "convertit une cellule en son index H3 textuel canonique (hexadécimal), stable et distinct" {
+        val cell = grid.cellAt(paris)
+        val other = grid.cellAt(LatLng(48.86, 2.36))
+        // Forme canonique H3 = hexadécimal de l'index ; c'est le contrat de `Player.baseCell` / l'ID de
+        // document `buildings/{h3Index}`.
+        grid.toH3String(cell) shouldBe java.lang.Long.toHexString(cell)
+        grid.toH3String(cell) shouldBe grid.toH3String(cell)
+        grid.toH3String(cell) shouldNotBe grid.toH3String(other)
+    }
+
     "expose le port TileCenterLocator pour le générateur de monde" {
         grid.shouldBeInstanceOf<TileCenterLocator>()
     }
