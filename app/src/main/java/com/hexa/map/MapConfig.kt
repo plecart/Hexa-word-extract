@@ -68,6 +68,16 @@ object MapConfig {
     /** Intervalle souhaité entre deux mises à jour GPS, en millisecondes (cadence piétonne). */
     const val GPS_INTERVAL_MS: Long = 1_000L
 
+    /**
+     * Marge d'hystérésis du suivi de la tuile courante, en mètres (cf.
+     * [CurrentTileTracker]). On ne bascule sur la cellule voisine que si son centre est plus proche
+     * d'au moins cette marge que celui de la tuile courante : à l'arrêt en bordure, le tremblement
+     * résiduel du GPS lissé ne fait alors plus clignoter la tuile. Même famille que
+     * [POSITION_SMOOTHING_FACTOR]/[ACCURACY_THRESHOLD_M] : robustesse au jitter GPS. 8 m ≈ un tiers
+     * d'arête de cellule res-11 (~25 m), assez pour stabiliser sans retarder un vrai changement.
+     */
+    const val TILE_HYSTERESIS_MARGIN_M: Double = 8.0
+
     /** Nombre d'anneaux minimal de la grille (zoom le plus rapproché) — 2 anneaux ≈ 19 cellules. */
     const val GRID_MIN_RINGS: Int = 2
 
@@ -97,4 +107,19 @@ object MapConfig {
 
     /** Opacité du tracé de la grille, dans `[0, 1]` — surcouche visible sans masquer la carte. **Provisoire**. */
     const val GRID_LINE_OPACITY: Double = 0.85
+
+    /**
+     * Remplissage de la **tuile courante** (sous le joueur) — cyan translucide, accordé à
+     * [GRID_LINE_COLOR] : surligne la cellule sans masquer la carte dessous. **Provisoire**.
+     */
+    const val TILE_CURRENT_FILL_COLOR: String = "rgba(0, 229, 255, 0.25)"
+
+    /**
+     * Remplissage des **tuiles bâties** — ambre translucide, teinte franchement distincte du cyan de
+     * la tuile courante et du tracé de grille, pour les différencier d'un coup d'œil. **Provisoire**.
+     */
+    const val TILE_BUILT_FILL_COLOR: String = "rgba(255, 145, 0, 0.30)"
+
+    /** Remplissage des **tuiles normales** — transparent : seule leur ligne de contour les dessine. */
+    const val TILE_NORMAL_FILL_COLOR: String = "rgba(0, 0, 0, 0.0)"
 }
