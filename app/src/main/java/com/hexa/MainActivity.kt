@@ -81,7 +81,7 @@ private fun HexaRoot(viewModel: PlayerViewModel) {
         if (ready != null && ready.baseCell == null) {
             FirstLaunchScreen(modifier = Modifier.fillMaxSize())
         } else {
-            InventoryOverlay(playerState)
+            InventoryOverlay(playerState, onCraftExtracteur = viewModel::craftExtracteur)
         }
     }
 }
@@ -94,7 +94,7 @@ private fun HexaRoot(viewModel: PlayerViewModel) {
  * quitter l'app.
  */
 @Composable
-private fun InventoryOverlay(playerState: PlayerUiState) {
+private fun InventoryOverlay(playerState: PlayerUiState, onCraftExtracteur: () -> Unit) {
     var inventoryOpen by rememberSaveable { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize()) {
@@ -107,6 +107,7 @@ private fun InventoryOverlay(playerState: PlayerUiState) {
             InventoryScreen(
                 state = playerState,
                 onClose = { inventoryOpen = false },
+                onCraftExtracteur = onCraftExtracteur,
                 modifier = Modifier.fillMaxSize(),
             )
         }
