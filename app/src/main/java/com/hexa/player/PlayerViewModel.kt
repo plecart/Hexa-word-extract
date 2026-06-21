@@ -3,11 +3,8 @@ package com.hexa.player
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -50,11 +47,13 @@ sealed interface PlayerUiState {
  *
  * @param ensurePlayer cas d'usage d'amorçage (compte anonyme + document joueur).
  * @param repository port d'observation du document joueur.
+ * @param buildings port d'observation de la sous-collection des bâtiments posés.
  * @param craftBuilding cas d'usage de craft d'un bâtiment (débit inventaire + crédit stock, persisté).
  */
 class PlayerViewModel(
     private val ensurePlayer: EnsurePlayerUseCase,
     private val repository: PlayerRepository,
+    private val buildings: BuildingsRepository,
     private val craftBuilding: CraftBuildingUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow<PlayerUiState>(PlayerUiState.Loading)
@@ -62,15 +61,15 @@ class PlayerViewModel(
     /** État courant du compte joueur. */
     val state: StateFlow<PlayerUiState> = _state.asStateFlow()
 
+    private val _builtCells = MutableStateFlow<Set<String>>(emptySet())
+
     /**
-     * Index H3 des cellules **bâties** du joueur, pour le rendu de la grille (cf. [com.hexa.map.HexGridViewModel]).
-     * Au MVP, c'est la base posée (`baseCell`) ou rien. Émet à nouveau dès que la base est posée, ce
-     * qui fait apparaître la tuile « bâtie » sans recréer la carte.
+     * Index H3 des cellules **bâties** du joueur, pour le rendu de la grille (cf.
+     * [com.hexa.map.HexGridViewModel]). Dérivé de la **sous-collection des bâtiments** ([buildings]) :
+     * toute pose — la base ou un futur extracteur — fait apparaître la tuile « bâtie » sans recréer la
+     * carte. Vide tant qu'aucun bâtiment n'est posé.
      */
-    val builtCells: StateFlow<Set<String>> =
-        state
-            .map { setOfNotNull((it as? PlayerUiState.Ready)?.baseCell) }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
+    val builtCells: StateFlow<Set<String>> = _builtCells.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -85,6 +84,7 @@ class PlayerViewModel(
                 }
 
             _state.value = player.toReady(id)
+            launch { observeBuildings(id) }
             observePlayer(id)
         }
     }
@@ -103,6 +103,22 @@ class PlayerViewModel(
             } catch (e: Exception) {
                 // Le craft a échoué : on conserve le dernier état connu, sans régression.
             }
+        }
+    }
+
+    /**
+     * Reflète la sous-collection des bâtiments dans [builtCells] (index H3 des tuiles bâties). Un
+     * incident du flux conserve le dernier ensemble connu, sans régression de l'affichage.
+     */
+    private suspend fun observeBuildings(id: PlayerId) {
+        try {
+            buildings.observe(id).collect { placed ->
+                _builtCells.value = placed.mapTo(mutableSetOf()) { it.cell }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // L'observation des bâtiments a échoué : on conserve le dernier ensemble connu.
         }
     }
 
