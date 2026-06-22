@@ -65,10 +65,20 @@ class H3Grid(
     override fun toH3String(cell: Long): String = h3.h3ToString(cell)
 
     /**
+     * Index H3 numérique reconstruit depuis sa forme **textuelle canonique** (hexadécimal) — inverse
+     * de [toH3String]. Refait le pont `String → Long` pour les cellules lues depuis Firestore
+     * (`Player.baseCell`, ID des documents `buildings/{h3Index}`), que le générateur de monde
+     * ([com.hexa.world.WorldGenerator.contentOf], indexé par `Long`) consomme lors de la récolte.
+     *
+     * Réservé à la production (la conversion native n'est pas exposée sur l'interface [HexGrid], que
+     * seuls les tests substituent).
+     */
+    fun toH3Index(cell: String): Long = h3.stringToH3(cell)
+
+    /**
      * Centre de la cellule désignée par son **index H3 textuel** (format de `Player.baseCell` et de
      * l'ID des documents `buildings/{h3Index}`). Inverse de [toH3String] côté géométrie : permet de
-     * poser un bâtiment lu depuis Firestore (cellule en `String`) sur la carte sans exposer la
-     * conversion native sur l'interface [HexGrid], que seule la production manipule.
+     * poser un bâtiment lu depuis Firestore (cellule en `String`) sur la carte.
      */
-    fun centerOf(cell: String): LatLng = centerOf(h3.stringToH3(cell))
+    fun centerOf(cell: String): LatLng = centerOf(toH3Index(cell))
 }
