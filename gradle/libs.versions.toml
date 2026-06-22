@@ -9,6 +9,11 @@ lifecycle = "2.8.7"
 composeBom = "2024.12.01"
 ktlint = "12.1.2"
 kotest = "5.9.1"
+# Robolectric 4.14 ajoute le support de compileSdk 35 (cf. android.compileSdk).
+robolectric = "4.14.1"
+# junit-vintage-engine exécute les tests JUnit 4 (Compose UI-test) sur la plateforme JUnit 5 que
+# Kotest fournit déjà ; aligné sur la famille junit-platform 1.10 tirée par Kotest 5.9.1.
+junitVintage = "5.10.2"
 coroutines = "1.9.0"
 h3 = "4.1.1"
 mapbox = "11.24.2"
@@ -31,6 +36,12 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 kotest-runner-junit5 = { group = "io.kotest", name = "kotest-runner-junit5", version.ref = "kotest" }
 kotest-assertions-core = { group = "io.kotest", name = "kotest-assertions-core", version.ref = "kotest" }
+# Infra de test UI Compose (saveur Robolectric, dans src/test) : harnais JUnit 4 piloté hors
+# émulateur. ui-test-junit4/ui-test-manifest sont versionnés par la Compose BoM (pas de version ici).
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+junit-vintage-engine = { group = "org.junit.vintage", name = "junit-vintage-engine", version.ref = "junitVintage" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }

@@ -73,8 +73,12 @@ android {
     }
 
     testOptions {
+        // Les tests UI Compose en saveur Robolectric lisent les ressources Android (chaînes, thème)
+        // depuis src/test : sans cela, stringResource renverrait des valeurs vides hors émulateur.
+        unitTests.isIncludeAndroidResources = true
         // Les tests unitaires de :app utilisent Kotest, qui s'exécute sur la plateforme JUnit 5
-        // (comme les modules purs), plutôt que JUnit 4 par défaut d'AGP.
+        // (comme les modules purs), plutôt que JUnit 4 par défaut d'AGP. junit-vintage-engine (ajouté
+        // en testRuntimeOnly) y exécute en plus les tests Compose UI-test, restés en JUnit 4.
         unitTests.all { it.useJUnitPlatform() }
     }
 
@@ -136,4 +140,13 @@ dependencies {
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.kotlinx.coroutines.test)
+
+    // Tests UI Compose en saveur Robolectric, dans src/test (pas d'androidTest instrumenté :
+    // l'émulateur est fragile sur ce projet). Le harnais ui-test-junit4 est en JUnit 4 ; vintage le
+    // fait tourner sous la plateforme JUnit 5 du projet. ui-test-manifest fournit le manifest de test
+    // (debug) ; il pilote l'arbre sémantique, sans rendu visuel ni Mapbox/GPS.
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.robolectric)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    testRuntimeOnly(libs.junit.vintage.engine)
 }
