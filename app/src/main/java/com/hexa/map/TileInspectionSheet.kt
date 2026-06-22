@@ -48,17 +48,30 @@ fun TileInspectionSheet(inspection: TileInspection, onDismiss: () -> Unit, modif
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
     ) {
-        Column(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            InspectionHeader(isCurrent = inspection.isCurrent)
-            if (inspection.isEmpty) {
-                EmptyTile()
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    inspection.deposits.forEach { DepositRow(it) }
-                }
+        TileInspectionContent(inspection)
+    }
+}
+
+/**
+ * Corps du panneau d'inspection, **indépendant du `ModalBottomSheet`** : en-tête puis liste des
+ * gisements ou état vide selon [TileInspection.isEmpty]. Extrait de [TileInspectionSheet] pour être
+ * rendu directement — par les aperçus Studio et par les tests UI Compose (qui n'ont pas à composer la
+ * coquille `ModalBottomSheet`, fenêtre séparée difficile à piloter hors instrumentation).
+ *
+ * @param inspection contenu de la tuile et indicateur « tuile courante ».
+ */
+@Composable
+internal fun TileInspectionContent(inspection: TileInspection, modifier: Modifier = Modifier) {
+    Column(
+        modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        InspectionHeader(isCurrent = inspection.isCurrent)
+        if (inspection.isEmpty) {
+            EmptyTile()
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                inspection.deposits.forEach { DepositRow(it) }
             }
         }
     }
@@ -151,12 +164,16 @@ private fun EmptyTile() {
 @Composable
 private fun PopulatedTilePreview() {
     HexaTheme {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            InspectionHeader(isCurrent = true)
-            DepositRow(ElementDeposit(Element.CENDRITE, richness = 0.82, ratePerHour = 52))
-            DepositRow(ElementDeposit(Element.LITHOSEVE, richness = 0.45, ratePerHour = 9))
-            DepositRow(ElementDeposit(Element.NYCTITE, richness = 0.13, ratePerHour = 1))
-        }
+        TileInspectionContent(
+            TileInspection(
+                deposits = listOf(
+                    ElementDeposit(Element.CENDRITE, richness = 0.82, ratePerHour = 52),
+                    ElementDeposit(Element.LITHOSEVE, richness = 0.45, ratePerHour = 9),
+                    ElementDeposit(Element.NYCTITE, richness = 0.13, ratePerHour = 1),
+                ),
+                isCurrent = true,
+            ),
+        )
     }
 }
 
@@ -165,9 +182,6 @@ private fun PopulatedTilePreview() {
 @Composable
 private fun EmptyTilePreview() {
     HexaTheme {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            InspectionHeader(isCurrent = false)
-            EmptyTile()
-        }
+        TileInspectionContent(TileInspection(deposits = emptyList(), isCurrent = false))
     }
 }
