@@ -126,6 +126,15 @@ object MapConfig {
     const val BUILDING_MODEL_SCALE: Double = 15.0
 
     /**
+     * Remontée verticale du modèle, en mètres, pour **poser sa base au sol** : le `model.glb` est un
+     * cube centré sur son origine (sommets de −0,5 à +0,5), donc ancré au sol il s'enterrerait de moitié.
+     * On le remonte d'une demi-hauteur (= demi-[BUILDING_MODEL_SCALE], le cube étant mis à l'échelle
+     * uniformément). À revoir si l'art définitif est autoré « base à l'origine » (la remontée tomberait
+     * alors à 0). **Provisoire**.
+     */
+    const val BUILDING_MODEL_GROUND_LIFT_M: Double = BUILDING_MODEL_SCALE / 2.0
+
+    /**
      * Intensité du mélange entre la couleur propre du modèle et sa **teinte d'identité par type**
      * (`model-color-mix-intensity`, dans `[0, 1]` : 0 = couleur du glb, 1 = teinte pleine). 0,7 teinte
      * franchement base ≠ extracteur tout en gardant un peu du modelé du glb. **Provisoire**.

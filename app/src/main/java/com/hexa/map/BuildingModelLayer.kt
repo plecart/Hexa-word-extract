@@ -5,6 +5,7 @@ import com.hexa.ui.theme.ObjectAssets
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.layers.addLayer
@@ -68,6 +69,10 @@ internal fun Style.showBuildingModels(placements: List<BuildingModelPlacement>) 
                         MapConfig.BUILDING_MODEL_SCALE,
                     ),
                 )
+                // Le modèle est centré sur son origine : ancré au sol, sa moitié basse s'enterrerait.
+                // On le remonte d'une demi-hauteur (en mètres, +Z = vers le haut) pour poser sa base
+                // sur la tuile.
+                modelTranslation(listOf(0.0, 0.0, MapConfig.BUILDING_MODEL_GROUND_LIFT_M))
             },
         )
     }
@@ -78,6 +83,7 @@ internal fun Style.showBuildingModels(placements: List<BuildingModelPlacement>) 
  * comme identifiant de modèle. Couvre tous les types d'emblée (pas seulement ceux déjà à l'écran), si
  * bien qu'un bâtiment qui apparaît ensuite référence un modèle déjà enregistré.
  */
+@OptIn(MapboxExperimental::class)
 private fun Style.registerBuildingModels() {
     PlacedBuildingType.entries.forEach { type ->
         val modelId = ObjectAssets.of(type).glb
