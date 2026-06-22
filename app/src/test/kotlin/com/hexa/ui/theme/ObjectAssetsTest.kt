@@ -1,9 +1,11 @@
 package com.hexa.ui.theme
 
 import com.hexa.config.Element
+import com.hexa.player.PlacedBuildingType
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import java.io.File
 
 /**
@@ -45,6 +47,20 @@ class ObjectAssetsTest : StringSpec({
             assetFile(asset.glb).isFile shouldBe true
             assetFile(asset.icon).isFile shouldBe true
         }
+    }
+
+    "la base posée pointe son dossier objects/base avec model.glb et icon.png présents sur disque" {
+        val base = ObjectAssets.of(PlacedBuildingType.BASE)
+
+        base.glb shouldBe "objects/base/model.glb"
+        base.icon shouldBe "objects/base/icon.png"
+        assetFile(base.glb).isFile shouldBe true
+        assetFile(base.icon).isFile shouldBe true
+    }
+
+    "la base et l'extracteur ont des couleurs d'identité distinctes" {
+        ObjectAssets.of(PlacedBuildingType.BASE).color shouldBe HexaBuildingColors.base
+        ObjectAssets.of(PlacedBuildingType.BASE).color shouldNotBe HexaBuildingColors.extracteur
     }
 })
 

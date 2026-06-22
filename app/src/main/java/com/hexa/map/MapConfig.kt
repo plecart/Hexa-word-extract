@@ -114,12 +114,30 @@ object MapConfig {
      */
     const val TILE_CURRENT_FILL_COLOR: String = "rgba(0, 229, 255, 0.25)"
 
-    /**
-     * Remplissage des **tuiles bâties** — ambre translucide, teinte franchement distincte du cyan de
-     * la tuile courante et du tracé de grille, pour les différencier d'un coup d'œil. **Provisoire**.
-     */
-    const val TILE_BUILT_FILL_COLOR: String = "rgba(255, 145, 0, 0.30)"
-
     /** Remplissage des **tuiles normales** — transparent : seule leur ligne de contour les dessine. */
     const val TILE_NORMAL_FILL_COLOR: String = "rgba(0, 0, 0, 0.0)"
+
+    /**
+     * Facteur d'échelle appliqué au `model.glb` d'un bâtiment posé sur la carte (couche de modèles 3D,
+     * cf. [Style.showBuildingModels]). Le glb placeholder est modélisé à l'unité ; ce facteur le porte
+     * à la hauteur visée (~15 m, cf. PRD #4). **À affiner à la validation visuelle sur device** une
+     * fois l'art définitif en place (ancrage au sol, lisibilité caméra inclinée). **Provisoire**.
+     */
+    const val BUILDING_MODEL_SCALE: Double = 15.0
+
+    /**
+     * Remontée verticale du modèle, en mètres, pour **poser sa base au sol** : le `model.glb` est un
+     * cube centré sur son origine (sommets de −0,5 à +0,5), donc ancré au sol il s'enterrerait de moitié.
+     * On le remonte d'une demi-hauteur (= demi-[BUILDING_MODEL_SCALE], le cube étant mis à l'échelle
+     * uniformément). À revoir si l'art définitif est autoré « base à l'origine » (la remontée tomberait
+     * alors à 0). **Provisoire**.
+     */
+    const val BUILDING_MODEL_GROUND_LIFT_M: Double = BUILDING_MODEL_SCALE / 2.0
+
+    /**
+     * Intensité du mélange entre la couleur propre du modèle et sa **teinte d'identité par type**
+     * (`model-color-mix-intensity`, dans `[0, 1]` : 0 = couleur du glb, 1 = teinte pleine). 0,7 teinte
+     * franchement base ≠ extracteur tout en gardant un peu du modelé du glb. **Provisoire**.
+     */
+    const val BUILDING_MODEL_COLOR_MIX: Double = 0.7
 }

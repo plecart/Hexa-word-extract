@@ -7,12 +7,13 @@ import com.hexa.core.geo.LatLng
  *
  * - [NORMALE] : cellule ordinaire de la grille (contour seul).
  * - [COURANTE] : cellule sous le joueur, surlignée distinctement.
- * - [BATIE] : cellule portant un bâtiment du joueur, distincte des deux autres (cf. [BuiltTiles]).
+ *
+ * Les tuiles **bâties** ne sont plus distinguées sur la grille : un bâtiment posé est rendu par son
+ * **modèle 3D** (cf. [Style.showBuildingModels]), qui rend le remplissage redondant.
  */
 enum class TileState {
     NORMALE,
     COURANTE,
-    BATIE,
 }
 
 /**
@@ -24,15 +25,10 @@ enum class TileState {
 data class GridCell(val outline: List<LatLng>, val state: TileState)
 
 /**
- * Classe une cellule en son état visuel. La **tuile courante prime** : la cellule sous le joueur est
- * toujours [TileState.COURANTE], même si elle est bâtie (on veut toujours voir où l'on se trouve).
+ * Classe une cellule en son état visuel : la cellule sous le joueur est [TileState.COURANTE], toutes
+ * les autres sont [TileState.NORMALE].
  *
  * @param cell cellule à classer.
  * @param current cellule courante (sous le joueur).
- * @param builtTiles ensemble des cellules bâties.
  */
-fun tileState(cell: Long, current: Long, builtTiles: BuiltTiles): TileState = when {
-    cell == current -> TileState.COURANTE
-    builtTiles.contains(cell) -> TileState.BATIE
-    else -> TileState.NORMALE
-}
+fun tileState(cell: Long, current: Long): TileState = if (cell == current) TileState.COURANTE else TileState.NORMALE

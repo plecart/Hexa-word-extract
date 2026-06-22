@@ -3,6 +3,7 @@ package com.hexa.ui.theme
 import androidx.compose.ui.graphics.Color
 import com.hexa.config.Element
 import com.hexa.player.BuildingType
+import com.hexa.player.PlacedBuildingType
 
 /**
  * Les assets d'un objet du jeu, réunis en un point unique : son **master 3D** ([glb]), son **icône
@@ -55,6 +56,18 @@ object ObjectAssets {
      */
     fun of(building: BuildingType): ObjectAsset = when (building) {
         BuildingType.EXTRACTEUR -> objectAsset("extracteur", HexaBuildingColors.extracteur)
+    }
+
+    /**
+     * Les assets d'un bâtiment **posé sur la grille** ([PlacedBuildingType]) — son `model.glb` (rendu
+     * 3D sur la carte) et sa couleur de teinte. Distinct de [of] sur [BuildingType] (le stock
+     * craftable) : un bâtiment posé a sa propre identité, à commencer par la base.
+     *
+     * @param building le bâtiment posé dont on veut l'habillage 3D.
+     * @return son [ObjectAsset], garanti non nul (`when` exhaustif sans `else`).
+     */
+    fun of(building: PlacedBuildingType): ObjectAsset = when (building) {
+        PlacedBuildingType.BASE -> objectAsset("base", HexaBuildingColors.base)
     }
 
     /** Compose l'[ObjectAsset] d'un objet à partir de son dossier [name] et de sa couleur d'identité. */

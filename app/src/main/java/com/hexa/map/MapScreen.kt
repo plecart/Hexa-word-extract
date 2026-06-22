@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -23,6 +24,7 @@ import com.hexa.core.geo.LatLng
 import com.hexa.location.CameraMode
 import com.hexa.location.ChaseCameraConfig
 import com.hexa.location.PositionSource
+import com.hexa.player.PlacedBuilding
 import com.hexa.ui.theme.HexaActionButton
 import com.hexa.world.WorldGenerator
 import com.mapbox.android.gestures.MoveGestureDetector
@@ -56,13 +58,13 @@ private const val FOLLOW_EASE_MS = 200L
  * Tant que `ACCESS_FINE_LOCATION` n'est pas accordée, [LocationPermissionGate] présente la demande
  * puis, en cas de refus, un état explicite ; une fois accordée, [ChaseCameraMap] s'affiche.
  *
- * @param builtCells flux des index H3 des cellules bâties à surligner (la base posée, cf.
- *   [com.hexa.player.PlayerViewModel.builtCells]).
+ * @param placedBuildings flux des bâtiments posés, rendus en **modèles 3D** sur la carte (cf.
+ *   [com.hexa.player.PlayerViewModel.placedBuildings]).
  */
 @Composable
-fun MapScreen(builtCells: Flow<Set<String>>, modifier: Modifier = Modifier) {
+fun MapScreen(placedBuildings: Flow<List<PlacedBuilding>>, modifier: Modifier = Modifier) {
     LocationPermissionGate(modifier = modifier) {
-        ChaseCameraMap(builtCells = builtCells, modifier = Modifier.fillMaxSize())
+        ChaseCameraMap(placedBuildings = placedBuildings, modifier = Modifier.fillMaxSize())
     }
 }
 
@@ -77,13 +79,13 @@ fun MapScreen(builtCells: Flow<Set<String>>, modifier: Modifier = Modifier) {
  * Le token public est fourni au SDK en amont (cf. [com.hexa.MainActivity]).
  */
 @Composable
-private fun ChaseCameraMap(builtCells: Flow<Set<String>>, modifier: Modifier = Modifier) {
+private fun ChaseCameraMap(placedBuildings: Flow<List<PlacedBuilding>>, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val app = context.applicationContext as HexaApplication
     val viewModel: ChaseCameraViewModel =
         viewModel(factory = chaseCameraViewModelFactory(context, app.sharedPositionSource))
     val gridViewModel: HexGridViewModel =
-        viewModel(factory = hexGridViewModelFactory(app.sharedCurrentTile, app.sharedGrid, builtCells))
+        viewModel(factory = hexGridViewModelFactory(app.sharedCurrentTile, app.sharedGrid))
     val inspectionViewModel: TileInspectionViewModel =
         viewModel(factory = tileInspectionViewModelFactory(app.sharedGrid, app.sharedCurrentTile))
 
@@ -91,6 +93,11 @@ private fun ChaseCameraMap(builtCells: Flow<Set<String>>, modifier: Modifier = M
     val mode by viewModel.mode.collectAsStateWithLifecycle()
     val gridCells by gridViewModel.cells.collectAsStateWithLifecycle()
     val inspection by inspectionViewModel.inspection.collectAsStateWithLifecycle()
+
+    // Bâtiments posés → placements de modèles 3D : la résolution cellule → centre (H3 natif) passe par
+    // l'intégration partagée de l'application, la même que la grille et l'inspection.
+    val buildings by placedBuildings.collectAsStateWithLifecycle(initialValue = emptyList())
+    val placements = remember(buildings) { buildingPlacements(buildings, app.centerOfCell) }
 
     // La grille suit le palier d'anneaux du zoom de poursuite courant (et du zoom au pincement, qui
     // se répercute sur la pose). En mode libre, le dernier zoom de poursuite est conservé.
@@ -143,6 +150,11 @@ private fun ChaseCameraMap(builtCells: Flow<Set<String>>, modifier: Modifier = M
             // tuile courante ou de palier de zoom) ; la source GeoJSON n'est créée qu'une fois.
             MapEffect(gridCells) { mapView ->
                 mapView.mapboxMap.getStyle { style -> style.showHexGrid(gridCells) }
+            }
+            // Redessine les modèles 3D des bâtiments à chaque changement de la liste des placements
+            // (apparition d'un bâtiment, changement de tuile) ; la source/couche n'est créée qu'une fois.
+            MapEffect(placements) { mapView ->
+                mapView.mapboxMap.getStyle { style -> style.showBuildingModels(placements) }
             }
             MapEffect(Unit) { mapView ->
                 mapView.mapboxMap.setBounds(
@@ -215,15 +227,13 @@ private fun chaseCameraViewModelFactory(context: Context, positionSource: Positi
 /**
  * Fabrique le [HexGridViewModel] en câblant la **tuile courante partagée** ([currentTile]) et
  * l'intégration H3 de production partagée ([grid]) — les mêmes que celles servies à l'inspection de
- * tuile, pour un suivi unique. [builtCells] fournit les cellules à surligner comme « bâties » (la
- * base posée).
+ * tuile, pour un suivi unique.
  */
-private fun hexGridViewModelFactory(currentTile: StateFlow<Long?>, grid: HexGrid, builtCells: Flow<Set<String>>) =
-    viewModelFactory {
-        initializer {
-            HexGridViewModel(currentTile = currentTile, grid = grid, builtCells = builtCells)
-        }
+private fun hexGridViewModelFactory(currentTile: StateFlow<Long?>, grid: HexGrid) = viewModelFactory {
+    initializer {
+        HexGridViewModel(currentTile = currentTile, grid = grid)
     }
+}
 
 /**
  * Fabrique le [TileInspectionViewModel] en câblant la **même** intégration H3 partagée ([grid]) et la
