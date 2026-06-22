@@ -69,6 +69,20 @@ object MapConfig {
     const val GPS_INTERVAL_MS: Long = 1_000L
 
     /**
+     * Délai de maintien des sources partagées (position GPS, tuile courante…) après la **dernière
+     * désinscription**, en millisecondes — paramètre de
+     * [WhileSubscribed][kotlinx.coroutines.flow.SharingStarted.WhileSubscribed]. Source de vérité unique consommée par
+     * tous les flux chauds de `:app` (les ViewModels carte/premier lancement et
+     * [com.hexa.HexaApplication]) : une rotation d'écran ou une navigation brève libère puis réabonne
+     * l'observateur en moins de ce délai, sans relancer le GPS. 5 s couvre confortablement une
+     * recréation d'activité tout en relâchant vite la source quand l'écran part vraiment.
+     *
+     * Le module pur `:location` ([com.hexa.location.SharedPositionSource]) ne peut pas dépendre de
+     * `:app` : il garde son propre défaut, aligné par convention sur cette constante de référence.
+     */
+    const val SOURCE_STOP_TIMEOUT_MS: Long = 5_000L
+
+    /**
      * Marge d'hystérésis du suivi de la tuile courante, en mètres (cf.
      * [CurrentTileTracker]). On ne bascule sur la cellule voisine que si son centre est plus proche
      * d'au moins cette marge que celui de la tuile courante : à l'arrêt en bordure, le tremblement

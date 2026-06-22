@@ -40,7 +40,12 @@ class SharedPositionSource(
     override fun positions(): Flow<LatLng> = shared
 
     private companion object {
-        /** Maintien de 5 s après la dernière désinscription — cohérent avec le ViewModel de caméra. */
+        /**
+         * Maintien par défaut après la dernière désinscription, en millisecondes. `:location` est un
+         * module pur et ne peut pas dépendre de `:app` : cette valeur est alignée par convention sur
+         * `MapConfig.SOURCE_STOP_TIMEOUT_MS` (la source de vérité côté `:app`), qui est aussi celle que
+         * passent en pratique les ViewModels. La changer ici sans la changer là-bas les ferait diverger.
+         */
         const val DEFAULT_STOP_TIMEOUT_MS = 5_000L
     }
 }

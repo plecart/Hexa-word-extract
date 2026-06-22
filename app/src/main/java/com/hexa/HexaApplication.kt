@@ -87,7 +87,7 @@ class HexaApplication : Application() {
     val sharedCurrentTile: StateFlow<Long?> by lazy {
         sharedPositionSource.positions()
             .currentTile(sharedGrid, MapConfig.TILE_HYSTERESIS_MARGIN_M)
-            .stateIn(appScope, SharingStarted.WhileSubscribed(SHARE_STOP_MS), null)
+            .stateIn(appScope, SharingStarted.WhileSubscribed(MapConfig.SOURCE_STOP_TIMEOUT_MS), null)
     }
 
     override fun onCreate() {
@@ -96,10 +96,5 @@ class HexaApplication : Application() {
             FirebaseFirestoreSettings.Builder()
                 .setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
                 .build()
-    }
-
-    private companion object {
-        /** Délai de maintien des flux partagés après la dernière désinscription (rotation d'écran). */
-        const val SHARE_STOP_MS = 5_000L
     }
 }
