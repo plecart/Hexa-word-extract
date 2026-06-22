@@ -57,7 +57,7 @@ class ChaseCameraViewModel(
             userZoom,
         ) { position, headingDeg, chaseController, zoom ->
             chaseController.cameraFor(position, headingDeg, zoom)
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(MapConfig.SOURCE_STOP_TIMEOUT_MS), null)
 
     /** Mode courant de la caméra — pilote l'affichage du bouton de recentrage. */
     val mode: StateFlow<CameraMode> =
@@ -79,8 +79,5 @@ class ChaseCameraViewModel(
     private companion object {
         /** Cap d'amorçage (nord) avant la première mesure de boussole, pour afficher la pose sans attendre. */
         const val DEFAULT_HEADING_DEG = 0.0
-
-        /** Délai de maintien des sources après la dernière désinscription (rotation d'écran). */
-        const val STOP_TIMEOUT_MS = 5_000L
     }
 }

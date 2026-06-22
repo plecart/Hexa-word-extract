@@ -49,15 +49,10 @@ class HexGridViewModel(
             VisibleCells.cellsAround(current, zoomLevel, grid).map { cell ->
                 GridCell(grid.outline(cell), tileState(cell, current))
             }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyList())
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(MapConfig.SOURCE_STOP_TIMEOUT_MS), emptyList())
 
     /** À appeler quand l'utilisateur ajuste le zoom : la grille suivra le palier d'anneaux. */
     fun onZoomChanged(zoomLevel: Double) {
         zoom.value = zoomLevel
-    }
-
-    private companion object {
-        /** Délai de maintien de la position partagée après la dernière désinscription (rotation d'écran). */
-        const val STOP_TIMEOUT_MS = 5_000L
     }
 }

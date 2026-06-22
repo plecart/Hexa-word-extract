@@ -43,7 +43,7 @@ class FirstLaunchViewModel(
         positionSource
             .positions()
             .currentTile(grid, hysteresisMarginM)
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(MapConfig.SOURCE_STOP_TIMEOUT_MS), null)
 
     private val _placing = MutableStateFlow(false)
 
@@ -61,10 +61,5 @@ class FirstLaunchViewModel(
                 _placing.value = false
             }
         }
-    }
-
-    private companion object {
-        /** Délai de maintien du suivi de position après la dernière désinscription (rotation d'écran). */
-        const val STOP_TIMEOUT_MS = 5_000L
     }
 }
