@@ -37,6 +37,17 @@ data class Inventory(val amounts: Map<Element, Long>) {
     fun minus(costs: Map<Element, Int>): Inventory =
         Inventory(amounts.mapValues { (element, amount) -> amount - (costs[element]?.toLong() ?: 0L) })
 
+    /**
+     * Inventaire **crédité** de [gains] (unités par élément, ex. une récolte). Les éléments absents de
+     * [gains] sont laissés intacts. Opération inverse de [minus] ; les gains sont des [Long] car une
+     * récolte hors ligne accumule sur de longues durées, au-delà de la capacité d'un [Int].
+     *
+     * @param gains montant à ajouter par élément.
+     * @return un nouvel inventaire, les cinq compteurs préservés.
+     */
+    fun plus(gains: Map<Element, Long>): Inventory =
+        Inventory(amounts.mapValues { (element, amount) -> amount + (gains[element] ?: 0L) })
+
     companion object {
         private val ELEMENTS: Set<Element> = Element.entries.toSet()
 
