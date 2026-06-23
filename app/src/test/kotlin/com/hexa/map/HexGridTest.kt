@@ -48,6 +48,12 @@ class HexGridTest : StringSpec({
         grid.toH3String(cell) shouldNotBe grid.toH3String(other)
     }
 
+    "reconstruit l'index H3 numérique depuis sa forme textuelle (inverse de toH3String)" {
+        val cell = grid.cellAt(paris)
+        // Le pont String → Long que consomme le générateur de monde lors de la récolte (#25).
+        grid.toH3Index(grid.toH3String(cell)) shouldBe cell
+    }
+
     "expose le port TileCenterLocator pour le générateur de monde" {
         grid.shouldBeInstanceOf<TileCenterLocator>()
     }

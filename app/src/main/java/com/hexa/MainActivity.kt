@@ -25,24 +25,32 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.hexa.config.GameConfig
 import com.hexa.firstlaunch.FirstLaunchScreen
 import com.hexa.inventory.InventoryScreen
 import com.hexa.map.MapScreen
+import com.hexa.player.CollectHarvestUseCase
 import com.hexa.player.CraftBuildingUseCase
 import com.hexa.player.EnsurePlayerUseCase
 import com.hexa.player.FirebaseAuthGateway
 import com.hexa.player.FirestoreBuildingsRepository
 import com.hexa.player.FirestorePlayerRepository
+import com.hexa.player.HarvestCalculator
 import com.hexa.player.PlayerUiState
 import com.hexa.player.PlayerViewModel
 import com.hexa.ui.theme.HexaAction
 import com.hexa.ui.theme.HexaActionBar
 import com.hexa.ui.theme.HexaTheme
 import com.mapbox.common.MapboxOptions
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import java.time.Clock
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Unique activité de l'application (single-activity). Fournit le token public au SDK Mapbox, pose le
@@ -142,24 +150,44 @@ private fun InventoryOverlay(playerState: PlayerUiState, onCraftExtracteur: () -
 
 /**
  * Câble le [PlayerViewModel] sur les implémentations concrètes Firebase (compte anonyme + Firestore)
- * et l'horloge système. Le cache offline Firestore est configuré en amont (cf. [HexaApplication]).
+ * et l'horloge système. Le cache offline Firestore est configuré en amont (cf. [HexaApplication]), qui
+ * fournit aussi le contenu de tuile partagé ([HexaApplication.tileContentOf]) au calcul de récolte.
  */
 private val playerViewModelFactory =
     viewModelFactory {
         initializer {
-            // Le même compte et le même dépôt servent l'amorçage, l'observation temps réel et le craft.
+            val app = this[APPLICATION_KEY] as HexaApplication
+            // Le même compte et les mêmes dépôts servent l'amorçage, l'observation temps réel, le craft
+            // et la récolte ; l'horloge système est partagée par les cas d'usage à horloge injectée.
             val auth = FirebaseAuthGateway()
             val repository = FirestorePlayerRepository()
+            val buildings = FirestoreBuildingsRepository()
+            val clock = Clock.systemUTC()
             PlayerViewModel(
-                ensurePlayer =
-                EnsurePlayerUseCase(
-                    auth = auth,
-                    repository = repository,
-                    clock = Clock.systemUTC(),
-                ),
+                ensurePlayer = EnsurePlayerUseCase(auth = auth, repository = repository, clock = clock),
                 repository = repository,
-                buildings = FirestoreBuildingsRepository(),
+                buildings = buildings,
                 craftBuilding = CraftBuildingUseCase(auth = auth, players = repository),
+                collectHarvest = CollectHarvestUseCase(
+                    auth = auth,
+                    players = repository,
+                    buildings = buildings,
+                    calculator = HarvestCalculator(clock = clock, contentOf = app.tileContentOf),
+                ),
+                harvestTicks = collectRefreshTicks(),
             )
         }
     }
+
+/**
+ * Cadence de récolte : un tick **immédiat** (récolte à l'ouverture) puis un tick toutes les
+ * [GameConfig.COLLECT_REFRESH_SECONDS]. Collecté dans le `viewModelScope` (lié au cycle de vie), il
+ * **ne crée aucun service ni timer en arrière-plan** : la boucle s'arrête à la destruction du
+ * ViewModel et tout le temps app fermée est rattrapé au prochain tick d'ouverture.
+ */
+private fun collectRefreshTicks(): Flow<Unit> = flow {
+    while (true) {
+        emit(Unit)
+        delay(GameConfig.COLLECT_REFRESH_SECONDS.seconds)
+    }
+}

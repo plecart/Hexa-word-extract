@@ -26,7 +26,7 @@ import com.hexa.location.ChaseCameraConfig
 import com.hexa.location.PositionSource
 import com.hexa.player.PlacedBuilding
 import com.hexa.ui.theme.HexaActionButton
-import com.hexa.world.WorldGenerator
+import com.hexa.world.TileContent
 import com.mapbox.android.gestures.MoveGestureDetector
 import com.mapbox.android.gestures.StandardScaleGestureDetector
 import com.mapbox.geojson.Point
@@ -87,7 +87,13 @@ private fun ChaseCameraMap(placedBuildings: Flow<List<PlacedBuilding>>, modifier
     val gridViewModel: HexGridViewModel =
         viewModel(factory = hexGridViewModelFactory(app.sharedCurrentTile, app.sharedGrid))
     val inspectionViewModel: TileInspectionViewModel =
-        viewModel(factory = tileInspectionViewModelFactory(app.sharedGrid, app.sharedCurrentTile))
+        viewModel(
+            factory = tileInspectionViewModelFactory(
+                app.sharedGrid,
+                app.sharedWorldGenerator::contentOf,
+                app.sharedCurrentTile,
+            ),
+        )
 
     val camera by viewModel.cameraState.collectAsStateWithLifecycle()
     val mode by viewModel.mode.collectAsStateWithLifecycle()
@@ -236,18 +242,17 @@ private fun hexGridViewModelFactory(currentTile: StateFlow<Long?>, grid: HexGrid
 }
 
 /**
- * Fabrique le [TileInspectionViewModel] en câblant la **même** intégration H3 partagée ([grid]) et la
- * **même** tuile courante partagée ([currentTile]) que la grille. Le contenu d'une tuile vient du
- * [WorldGenerator] de `:domain`, instancié sur cette grille (elle joue le rôle de
- * [com.hexa.world.TileCenterLocator]) : la résolution tap → cellule et le générateur partagent ainsi
- * une seule façade native.
+ * Fabrique le [TileInspectionViewModel] en câblant la **même** intégration H3 partagée ([grid]), le
+ * **même** générateur de monde partagé ([contentOf], cf. [com.hexa.HexaApplication.sharedWorldGenerator])
+ * et la **même** tuile courante partagée ([currentTile]) que la grille : la résolution tap → cellule,
+ * le contenu de tuile et la récolte partagent une seule façade native et un seul générateur.
  */
-private fun tileInspectionViewModelFactory(grid: HexGrid, currentTile: StateFlow<Long?>) = viewModelFactory {
+private fun tileInspectionViewModelFactory(
+    grid: HexGrid,
+    contentOf: (Long) -> TileContent,
+    currentTile: StateFlow<Long?>,
+) = viewModelFactory {
     initializer {
-        TileInspectionViewModel(
-            grid = grid,
-            contentOf = WorldGenerator(centerLocator = grid)::contentOf,
-            currentTile = currentTile,
-        )
+        TileInspectionViewModel(grid = grid, contentOf = contentOf, currentTile = currentTile)
     }
 }

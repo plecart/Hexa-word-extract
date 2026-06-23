@@ -13,6 +13,8 @@ import com.hexa.map.FusedLocationSource
 import com.hexa.map.H3Grid
 import com.hexa.map.HexGrid
 import com.hexa.map.MapConfig
+import com.hexa.world.TileContent
+import com.hexa.world.WorldGenerator
 import com.uber.h3core.H3Core
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -72,11 +74,28 @@ class HexaApplication : Application() {
     val sharedGrid: HexGrid get() = h3Grid
 
     /**
+     * Générateur de monde **partagé** : recalcule à la volée le contenu d'une tuile (gisements et
+     * vitesses) à partir de la **même** intégration H3 partagée ([sharedGrid] comme
+     * [com.hexa.world.TileCenterLocator]). Une seule instance pour l'inspection de tuile (indexée par
+     * `Long`, cf. [com.hexa.map.MapScreen]) et la récolte (indexée par `String`, cf. [tileContentOf]).
+     */
+    val sharedWorldGenerator: WorldGenerator by lazy { WorldGenerator(centerLocator = sharedGrid) }
+
+    /**
      * Résout l'index H3 **textuel** d'une tuile (cellule d'un bâtiment lu depuis Firestore) en son
      * centre, pour poser les modèles 3D des bâtiments sur la carte (cf.
      * [com.hexa.map.buildingPlacements]). Adossé à la **même** intégration H3 partagée que [sharedGrid].
      */
     val centerOfCell: (String) -> LatLng get() = h3Grid::centerOf
+
+    /**
+     * Recalcule le contenu (gisements et vitesses) de la tuile d'un bâtiment depuis son index H3
+     * **textuel** — la source des vitesses du calcul de récolte ([com.hexa.player.HarvestCalculator]).
+     * Combine la conversion `String → Long` ([H3Grid.toH3Index]) et le [sharedWorldGenerator] : aucune
+     * donnée par tuile n'est stockée, tout est régénéré déterministiquement.
+     */
+    val tileContentOf: (String) -> TileContent
+        get() = { cell -> sharedWorldGenerator.contentOf(h3Grid.toH3Index(cell)) }
 
     /**
      * Tuile courante **partagée** : la cellule H3 sous le joueur, lissée par hystérésis

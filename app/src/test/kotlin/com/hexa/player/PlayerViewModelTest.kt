@@ -3,6 +3,8 @@
 package com.hexa.player
 
 import com.hexa.config.Element
+import com.hexa.world.ElementDeposit
+import com.hexa.world.TileContent
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +46,7 @@ class PlayerViewModelTest : StringSpec({
                 AbsentPlayerRepository,
                 ObservableBuildingsRepository(),
                 craftFor(AbsentPlayerRepository),
+                harvestFor(AbsentPlayerRepository),
             )
 
             viewModel.state.value shouldBe PlayerUiState.Loading
@@ -62,6 +65,7 @@ class PlayerViewModelTest : StringSpec({
                 AbsentPlayerRepository,
                 ObservableBuildingsRepository(),
                 craftFor(AbsentPlayerRepository),
+                harvestFor(AbsentPlayerRepository),
             )
 
             advanceUntilIdle()
@@ -74,7 +78,14 @@ class PlayerViewModelTest : StringSpec({
             val initial = Player.newPlayer(clock.instant())
             val repository = ObservablePlayerRepository(initial)
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
-            val viewModel = PlayerViewModel(useCase, repository, ObservableBuildingsRepository(), craftFor(repository))
+            val viewModel =
+                PlayerViewModel(
+                    useCase,
+                    repository,
+                    ObservableBuildingsRepository(),
+                    craftFor(repository),
+                    harvestFor(repository),
+                )
             advanceUntilIdle()
 
             viewModel.state.value shouldBe
@@ -94,7 +105,14 @@ class PlayerViewModelTest : StringSpec({
             val initial = Player.newPlayer(clock.instant()) // 250 Cendrite, 100 Givrelin, 0 extracteur
             val repository = ObservablePlayerRepository(initial)
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
-            val viewModel = PlayerViewModel(useCase, repository, ObservableBuildingsRepository(), craftFor(repository))
+            val viewModel =
+                PlayerViewModel(
+                    useCase,
+                    repository,
+                    ObservableBuildingsRepository(),
+                    craftFor(repository),
+                    harvestFor(repository),
+                )
             advanceUntilIdle()
 
             viewModel.craftExtracteur()
@@ -113,7 +131,8 @@ class PlayerViewModelTest : StringSpec({
             val repository = ObservablePlayerRepository(initial)
             val buildings = ObservableBuildingsRepository()
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
-            val viewModel = PlayerViewModel(useCase, repository, buildings, craftFor(repository))
+            val viewModel =
+                PlayerViewModel(useCase, repository, buildings, craftFor(repository), harvestFor(repository))
             advanceUntilIdle()
 
             viewModel.placedBuildings.value shouldBe emptyList()
@@ -126,12 +145,39 @@ class PlayerViewModelTest : StringSpec({
         }
     }
 
+    "à l'ouverture, un tick de récolte crédite l'inventaire du temps écoulé, reflété sans action" {
+        runTest(dispatcher) {
+            val initial = Player.newPlayer(clock.instant()) // 250 Cendrite
+            val repository = ObservablePlayerRepository(initial)
+            val cell = "8a1fb46622dffff"
+            val placedAt = clock.instant().minusSeconds(3600) // base posée il y a 1 h
+            val buildings =
+                ObservableBuildingsRepository(listOf(PlacedBuilding(cell, PlacedBuildingType.BASE, placedAt, placedAt)))
+            val world: (String) -> TileContent = { TileContent(listOf(ElementDeposit(Element.CENDRITE, 1.0, 60))) }
+            val collect =
+                CollectHarvestUseCase(AuthGateway { uid }, repository, buildings, HarvestCalculator(clock, world))
+            val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
+            val viewModel = PlayerViewModel(useCase, repository, buildings, craftFor(repository), collect, flowOf(Unit))
+
+            advanceUntilIdle()
+
+            (viewModel.state.value as PlayerUiState.Ready).inventory[Element.CENDRITE] shouldBe 310L // 250 + 60
+        }
+    }
+
     "une erreur du flux temps réel après chargement conserve le dernier inventaire" {
         runTest(dispatcher) {
             val initial = Player.newPlayer(clock.instant())
             val repository = FailingObserveRepository(initial)
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
-            val viewModel = PlayerViewModel(useCase, repository, ObservableBuildingsRepository(), craftFor(repository))
+            val viewModel =
+                PlayerViewModel(
+                    useCase,
+                    repository,
+                    ObservableBuildingsRepository(),
+                    craftFor(repository),
+                    harvestFor(repository),
+                )
             advanceUntilIdle()
 
             viewModel.state.value shouldBe
@@ -142,6 +188,17 @@ class PlayerViewModelTest : StringSpec({
 
 /** Cas d'usage de craft câblé sur [repository] et l'uid de test, pour construire le ViewModel. */
 private fun craftFor(repository: PlayerRepository) = CraftBuildingUseCase(AuthGateway { PlayerId("uid-1") }, repository)
+
+/**
+ * Récolte **neutre** (aucun bâtiment, tuiles sans gisement) pour les tests qui ne l'exercent pas :
+ * combinée à [kotlinx.coroutines.flow.emptyFlow] (cadence par défaut), elle ne se déclenche jamais.
+ */
+private fun harvestFor(repository: PlayerRepository) = CollectHarvestUseCase(
+    AuthGateway { PlayerId("uid-1") },
+    repository,
+    ObservableBuildingsRepository(),
+    HarvestCalculator(Clock.systemUTC()) { TileContent(emptyList()) },
+)
 
 /** Dépôt sans document : force le chemin « premier lancement » (création) et n'émet jamais de doc. */
 private object AbsentPlayerRepository : PlayerRepository {

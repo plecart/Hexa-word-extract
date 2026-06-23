@@ -2,9 +2,11 @@ package com.hexa.player
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -45,16 +47,26 @@ sealed interface PlayerUiState {
  * `null` (document transitoirement absent) et une éventuelle erreur du flux conservent le dernier
  * inventaire connu.
  *
+ * La **récolte paresseuse** (cf. PRD #5, user stories 12-13) est déclenchée sur [harvestTicks] : à
+ * chaque émission, [collectHarvest] règle les comptes des bâtiments et crédite l'inventaire — le
+ * crédit remonte ensuite seul par l'observation du document. La cadence est **injectée** (un tick à
+ * l'ouverture puis toutes les [com.hexa.config.GameConfig.COLLECT_REFRESH_SECONDS] en production) :
+ * aucun timer en arrière-plan, et la récolte reste pilotable en test par un flux fini.
+ *
  * @param ensurePlayer cas d'usage d'amorçage (compte anonyme + document joueur).
  * @param repository port d'observation du document joueur.
  * @param buildings port d'observation de la sous-collection des bâtiments posés.
  * @param craftBuilding cas d'usage de craft d'un bâtiment (débit inventaire + crédit stock, persisté).
+ * @param collectHarvest cas d'usage de récolte (crédit d'inventaire + avance des curseurs, persisté).
+ * @param harvestTicks cadence de récolte : une récolte par émission ; vide par défaut (aucune récolte).
  */
 class PlayerViewModel(
     private val ensurePlayer: EnsurePlayerUseCase,
     private val repository: PlayerRepository,
     private val buildings: BuildingsRepository,
     private val craftBuilding: CraftBuildingUseCase,
+    private val collectHarvest: CollectHarvestUseCase,
+    private val harvestTicks: Flow<Unit> = emptyFlow(),
 ) : ViewModel() {
     private val _state = MutableStateFlow<PlayerUiState>(PlayerUiState.Loading)
 
@@ -84,7 +96,24 @@ class PlayerViewModel(
 
             _state.value = player.toReady(id)
             launch { observeBuildings(id) }
+            launch { harvestOnTicks() }
             observePlayer(id)
+        }
+    }
+
+    /**
+     * Récolte à chaque émission de [harvestTicks] (ouverture puis cadence périodique). L'échec d'une
+     * passe (réseau, course) est avalé : on réessaiera au tick suivant, sans faire régresser l'affichage.
+     */
+    private suspend fun harvestOnTicks() {
+        harvestTicks.collect {
+            try {
+                collectHarvest()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Une passe de récolte a échoué : on conserve l'état courant et on réessaie au tick suivant.
+            }
         }
     }
 
