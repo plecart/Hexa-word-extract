@@ -52,10 +52,11 @@ class HexGridViewModelTest : StringSpec({
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
 
+            // Robuste au nombre d'anneaux du palier de poursuite : la cellule courante est COURANTE,
+            // toutes les autres NORMALE, quel que soit le rayon du disque.
             val byCell = vm.cells.value.associateBy { it.outline.first().latDeg.toLong() }
             byCell[48L]?.state shouldBe TileState.COURANTE
-            byCell[49L]?.state shouldBe TileState.NORMALE
-            byCell[50L]?.state shouldBe TileState.NORMALE
+            byCell.filterKeys { it != 48L }.values.forEach { it.state shouldBe TileState.NORMALE }
         }
     }
 

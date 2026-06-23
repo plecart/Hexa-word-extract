@@ -39,10 +39,12 @@ object MapConfig {
     const val PITCH: Double = 60.0
 
     /**
-     * Zoom maintenu en poursuite tant que l'utilisateur n'a pas pincé. Légèrement plus rapproché que
-     * [DEFAULT_ZOOM] pour cadrer ~150–300 m autour du joueur, en restant dans [MIN_ZOOM]–[MAX_ZOOM].
+     * Zoom maintenu en poursuite tant que l'utilisateur n'a pas pincé. Resserré au point de vue de jeu
+     * (retour de validation de #22 : la carte était trop dézoomée) une fois l'avatar posé : cadre de
+     * près le joueur et sa tuile, en gardant une marge de pincement jusqu'à [MAX_ZOOM]. **À affiner à
+     * la validation terrain.**
      */
-    const val FOLLOW_ZOOM: Double = 17.5
+    const val FOLLOW_ZOOM: Double = 18.5
 
     /**
      * Coefficient de lissage du cap de la boussole, dans `]0, 1]` (cf.
