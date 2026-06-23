@@ -140,4 +140,27 @@ object MapConfig {
      * franchement base ≠ extracteur tout en gardant un peu du modelé du glb. **Provisoire**.
      */
     const val BUILDING_MODEL_COLOR_MIX: Double = 0.7
+
+    /**
+     * Côté, en mètres, de l'empreinte au sol du **cube placeholder de l'avatar** (cf.
+     * [avatarFootprint], rendu par [Style.showAvatar]). Plus petit qu'un bâtiment
+     * ([BUILDING_MODEL_SCALE]) pour rester à l'échelle d'un joueur tout en restant lisible à la
+     * caméra inclinée. **À affiner à la validation terrain.** **Provisoire**, le temps d'un avatar
+     * définitif (probablement un modèle animé, hors périmètre MVP).
+     */
+    const val AVATAR_SIZE_M: Double = 6.0
+
+    /**
+     * Hauteur d'extrusion du cube de l'avatar, en mètres. Égale au côté ([AVATAR_SIZE_M]) : le
+     * placeholder est un **cube**. À dissocier le jour où l'avatar gagne une silhouette propre.
+     * **Provisoire**.
+     */
+    const val AVATAR_HEIGHT_M: Double = AVATAR_SIZE_M
+
+    /**
+     * Couleur du cube de l'avatar, au format `#RRGGBB`. Rouge corail vif : **distinct** du cyan de la
+     * grille ([GRID_LINE_COLOR]) et de l'ambre des bâtiments — le joueur se repère d'un coup d'œil sur
+     * le fond monochrome. **Provisoire** (placeholder).
+     */
+    const val AVATAR_COLOR: String = "#FF5252"
 }
