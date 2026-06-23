@@ -145,6 +145,11 @@ La configuration commune des modules Kotlin purs (toolchain JVM 17, ktlint, Kote
 **une seule fois** dans le plugin de convention `hexa.kotlin-pure-library` (build composite
 `build-logic/`) ; chaque module pur l'applique en une ligne.
 
+Les tests d'UI Compose de `:app` tournent **en JVM via Robolectric**, dans `src/test` (harnais
+`ui-test-junit4`), sans émulateur — l'instrumenté (`androidTest`) est volontairement écarté, fragile
+sur ce projet. JUnit 4 (Compose UI-test) et JUnit 5 (Kotest) cohabitent sous la même plateforme
+JUnit grâce à `junit-vintage-engine`. Ces tests pilotent l'arbre sémantique Compose, sans Mapbox/GPS.
+
 ## Pipeline de développement
 
 Le projet suit une pipeline pilotée par les issues (PRD → issues « tranches verticales » → triage →
