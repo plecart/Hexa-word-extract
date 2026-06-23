@@ -37,6 +37,7 @@ The following sections contain detailed, runnable examples for each testing patt
 - **TDD walkthrough** — Full RED/GREEN/REFACTOR cycle with EmailValidator in [TDD Workflow for Kotlin](#tdd-workflow-for-kotlin)
 - **Coverage** — Kover configuration and commands in [Kover Coverage](#kover-coverage)
 - **Ktor testing** — testApplication setup in [Ktor testApplication Testing](#ktor-testapplication-testing)
+- **Compose UI (Robolectric, JVM)** — render-and-assert a composable in `src/test` in [Compose UI Testing](#compose-ui-testing-robolectric-jvm)
 
 ### TDD Workflow for Kotlin
 
@@ -104,6 +105,61 @@ fun validateEmail(email: String): Result<String> {
 
 // Step 6: Refactor if needed, verify tests still pass
 ```
+
+### Compose UI Testing (Robolectric, JVM)
+
+Compose screens run on the **JUnit 4** Compose UI-test harness, executed in the JVM via Robolectric
+from `src/test` — **no instrumented `androidTest`** (the emulator is unreliable on this project). The
+harness coexists with Kotest/JUnit 5 under one JUnit platform thanks to `junit-vintage-engine`
+(already wired — do not reconfigure). See the project rule `.claude/rules/tests-ui-compose.md`.
+
+Conventions: a bare `Application` (so `@Config` doesn't pull Firebase/H3/GPS), labels resolved via
+`Context` (never hardcoded), assertions on the **semantic tree** only. When a screen or
+`ModalBottomSheet` is awkward to drive, extract a directly-renderable content composable and test
+that.
+
+```kotlin
+@RunWith(RobolectricTestRunner::class)
+@Config(application = Application::class) // bare Application: no Firebase/H3/GPS init
+class TileInspectionContentTest {
+    @get:Rule
+    val composeRule = createComposeRule()
+
+    private val context: Context
+        get() = ApplicationProvider.getApplicationContext()
+
+    @Test
+    fun `populated tile shows its deposit and the current-tile badge`() {
+        composeRule.setContent {
+            HexaTheme {
+                TileInspectionContent(
+                    TileInspection(
+                        deposits = listOf(ElementDeposit(Element.CENDRITE, richness = 0.82, ratePerHour = 52)),
+                        isCurrent = true,
+                    ),
+                )
+            }
+        }
+
+        // Labels resolved via Context, not copied — asserts the semantic tree, not pixels.
+        composeRule.onNodeWithText(context.getString(labelOf(Element.CENDRITE))).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.tile_inspection_here)).assertIsDisplayed()
+    }
+
+    @Test
+    fun `empty tile hides the current-tile badge`() {
+        composeRule.setContent {
+            HexaTheme { TileInspectionContent(TileInspection(deposits = emptyList(), isCurrent = false)) }
+        }
+
+        composeRule.onNodeWithText(context.getString(R.string.tile_inspection_here)).assertDoesNotExist()
+    }
+}
+```
+
+The matching Gradle setup (catalog aliases, `testImplementation`/`debugImplementation`/
+`testRuntimeOnly` deps, `testOptions.unitTests.isIncludeAndroidResources = true`) is already in
+`:app` — new UI tests just consume it.
 
 ### Kotest Spec Styles
 
