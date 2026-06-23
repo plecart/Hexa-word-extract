@@ -105,6 +105,12 @@ private fun ChaseCameraMap(placedBuildings: Flow<List<PlacedBuilding>>, modifier
     val buildings by placedBuildings.collectAsStateWithLifecycle(initialValue = emptyList())
     val placements = remember(buildings) { buildingPlacements(buildings, app.centerOfCell) }
 
+    // Position de l'avatar : la **même** position GPS filtrée partagée que la caméra (une seule
+    // trajectoire). Indépendante du mode caméra : l'avatar reste visible même en mode libre, quand la
+    // pose de poursuite est nulle.
+    val avatarPosition by remember { app.sharedPositionSource.positions() }
+        .collectAsStateWithLifecycle(initialValue = null)
+
     // La grille suit le palier d'anneaux du zoom de poursuite courant (et du zoom au pincement, qui
     // se répercute sur la pose). En mode libre, le dernier zoom de poursuite est conservé.
     LaunchedEffect(camera?.zoomLevel) {
@@ -161,6 +167,11 @@ private fun ChaseCameraMap(placedBuildings: Flow<List<PlacedBuilding>>, modifier
             // (apparition d'un bâtiment, changement de tuile) ; la source/couche n'est créée qu'une fois.
             MapEffect(placements) { mapView ->
                 mapView.mapboxMap.getStyle { style -> style.showBuildingModels(placements) }
+            }
+            // Repose le cube de l'avatar à chaque nouvelle position lissée ; la source/couche n'est
+            // créée qu'une fois, ensuite seul le polygone est réinjecté (suivi fluide en marche).
+            MapEffect(avatarPosition) { mapView ->
+                mapView.mapboxMap.getStyle { style -> style.showAvatar(avatarPosition) }
             }
             MapEffect(Unit) { mapView ->
                 mapView.mapboxMap.setBounds(

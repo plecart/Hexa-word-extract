@@ -16,8 +16,8 @@ class VisibleCellsTest : StringSpec({
         // Aux extrêmes de la plage de zoom : le plus large montre le plus d'anneaux, le plus serré le moins.
         VisibleCells.ringsForZoom(MapConfig.MAX_ZOOM) shouldBe MapConfig.GRID_MIN_RINGS
         VisibleCells.ringsForZoom(MapConfig.MIN_ZOOM) shouldBe MapConfig.GRID_MAX_RINGS
-        // Au zoom de poursuite par défaut, le palier intermédiaire.
-        VisibleCells.ringsForZoom(MapConfig.FOLLOW_ZOOM) shouldBe 3
+        // Le zoom de poursuite resserré (point de vue de jeu) cadre le palier le plus serré.
+        VisibleCells.ringsForZoom(MapConfig.FOLLOW_ZOOM) shouldBe MapConfig.GRID_MIN_RINGS
     }
 
     "le nombre d'anneaux reste dans les bornes et ne croît jamais avec le zoom" {
