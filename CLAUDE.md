@@ -8,6 +8,7 @@ décrit dans [CONTRIBUTING.md](CONTRIBUTING.md) et exécutable via le skill `cyc
 @.claude/rules/contraintes.md
 @.claude/rules/taille-pr.md
 @.claude/rules/cleanup-verbatim.md
+@.claude/rules/tests-ui-compose.md
 
 ## Vocabulaire
 
