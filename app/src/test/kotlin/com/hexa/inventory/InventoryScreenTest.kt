@@ -103,6 +103,17 @@ class InventoryScreenTest {
     }
 
     @Test
+    fun `taper construire quand la recette est couverte invoque le craft`() {
+        var crafted = false
+        render(ready(affordable), onCraft = { crafted = true })
+
+        openBuildingsTab()
+        composeRule.onNodeWithText(context.getString(R.string.inventory_craft_button)).performClick()
+
+        assertTrue(crafted)
+    }
+
+    @Test
     fun `bouton de fermeture invoque onClose`() {
         var closed = false
         render(ready(affordable), onClose = { closed = true })
