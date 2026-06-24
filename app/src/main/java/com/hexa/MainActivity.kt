@@ -87,7 +87,12 @@ private fun HexaRoot(viewModel: PlayerViewModel) {
     val playerState by viewModel.state.collectAsStateWithLifecycle()
 
     Box(Modifier.fillMaxSize()) {
-        MapScreen(placedBuildings = viewModel.placedBuildings, modifier = Modifier.fillMaxSize())
+        MapScreen(
+            placedBuildings = viewModel.placedBuildings,
+            extractorStock = viewModel.extractorStock,
+            onPlaceExtracteur = viewModel::placeExtracteur,
+            modifier = Modifier.fillMaxSize(),
+        )
 
         val ready = playerState as? PlayerUiState.Ready
         if (ready != null && ready.baseCell == null) {
