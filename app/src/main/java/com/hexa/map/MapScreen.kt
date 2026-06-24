@@ -208,13 +208,33 @@ private fun ChaseCameraMap(placedBuildings: Flow<List<PlacedBuilding>>, modifier
             TileInspectionSheet(inspection = open, onDismiss = inspectionViewModel::dismiss)
         }
 
-        if (mode == CameraMode.FREE) {
-            HexaActionButton(
-                text = stringResource(R.string.recenter_camera),
-                onClick = viewModel::recenter,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-            )
-        }
+        ChaseCameraOverlay(
+            mode = mode,
+            onRecenter = viewModel::recenter,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+        )
+    }
+}
+
+/**
+ * Habillage interactif posé **au-dessus** de la carte de poursuite : en mode libre
+ * ([CameraMode.FREE]), un bouton ramène la caméra sur l'avatar ; en poursuite ([CameraMode.FOLLOW]),
+ * aucun contrôle (la caméra suit déjà). Stateless et sans dépendance Mapbox/GPS, donc rendable et
+ * testable hors de la coquille `MapboxMap` (cf. convention d'extraction de #75) — c'est le seul bord
+ * de l'écran carte couvrable en JVM, le cœur Mapbox (ordre des `MapEffect`, glu de tap) ne l'étant pas.
+ *
+ * @param mode mode caméra courant ; décide la présence du bouton de recentrage.
+ * @param onRecenter invoqué au tap sur « Recentrer » (repasse la caméra en poursuite).
+ * @param modifier placement décidé par l'appelant (alignement, marges), appliqué au bouton.
+ */
+@Composable
+internal fun ChaseCameraOverlay(mode: CameraMode, onRecenter: () -> Unit, modifier: Modifier = Modifier) {
+    if (mode == CameraMode.FREE) {
+        HexaActionButton(
+            text = stringResource(R.string.recenter_camera),
+            onClick = onRecenter,
+            modifier = modifier,
+        )
     }
 }
 
