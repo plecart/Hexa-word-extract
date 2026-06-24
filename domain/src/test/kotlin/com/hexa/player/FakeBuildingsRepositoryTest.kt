@@ -68,4 +68,16 @@ class FakeBuildingsRepositoryTest : StringSpec({
             repository.observe(PlayerId("autre")).first() shouldBe emptyList()
         }
     }
+
+    "building retourne le bâtiment posé sur la tuile, ou null si elle est libre" {
+        runTest {
+            val repository = FakeBuildingsRepository()
+            val base = PlacedBuilding.base(cell, now)
+            repository.place(uid, base)
+
+            repository.building(uid, cell) shouldBe base
+            repository.building(uid, "8a1fb46622cffff") shouldBe null
+            repository.building(PlayerId("autre"), cell) shouldBe null
+        }
+    }
 })

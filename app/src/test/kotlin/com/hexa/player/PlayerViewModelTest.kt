@@ -234,6 +234,9 @@ private class ObservableBuildingsRepository(initial: List<PlacedBuilding> = empt
         stream.value = stream.value.filterNot { it.cell == building.cell } + building
     }
 
+    override suspend fun building(id: PlayerId, cell: String): PlacedBuilding? =
+        stream.value.firstOrNull { it.cell == cell }
+
     override fun observe(id: PlayerId): Flow<List<PlacedBuilding>> = stream.asStateFlow()
 }
 

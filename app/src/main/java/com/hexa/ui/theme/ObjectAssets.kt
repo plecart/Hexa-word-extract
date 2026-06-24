@@ -68,6 +68,7 @@ object ObjectAssets {
      */
     fun of(building: PlacedBuildingType): ObjectAsset = when (building) {
         PlacedBuildingType.BASE -> objectAsset("base", HexaBuildingColors.base)
+        PlacedBuildingType.EXTRACTEUR -> objectAsset("extracteur", HexaBuildingColors.extracteur)
     }
 
     /** Compose l'[ObjectAsset] d'un objet à partir de son dossier [name] et de sa couleur d'identité. */

@@ -7,12 +7,12 @@ import java.time.Instant
  * serveur lira ce nom dans le document `buildings/{h3Index}`, cf. spec F5).
  *
  * Distinct de [BuildingType], qui dénombre le **stock craftable** prêt à poser dans le document
- * joueur : ici on décrit ce qui est **déjà posé sur la grille**. Au MVP, seul le tout premier
- * placement — la base offerte — existe ; l'extracteur placé rejoindra cette énumération avec son
- * propre flux de placement.
+ * joueur : ici on décrit ce qui est **déjà posé sur la grille**. Au MVP, deux types coexistent — la
+ * base offerte (premier placement de la partie) et l'extracteur posé depuis le stock construit.
  */
 enum class PlacedBuildingType {
     BASE,
+    EXTRACTEUR,
 }
 
 /**
@@ -41,5 +41,12 @@ data class PlacedBuilding(
          */
         fun base(cell: String, at: Instant): PlacedBuilding =
             PlacedBuilding(cell = cell, type = PlacedBuildingType.BASE, placedAt = at, lastCollectedAt = at)
+
+        /**
+         * Construit un **extracteur posé** en [cell] à l'instant [at] : type [PlacedBuildingType.EXTRACTEUR],
+         * récolte amorcée au moment de la pose (`lastCollectedAt = placedAt = at`).
+         */
+        fun extracteur(cell: String, at: Instant): PlacedBuilding =
+            PlacedBuilding(cell = cell, type = PlacedBuildingType.EXTRACTEUR, placedAt = at, lastCollectedAt = at)
     }
 }

@@ -16,6 +16,13 @@ interface BuildingsRepository {
     suspend fun place(id: PlayerId, building: PlacedBuilding)
 
     /**
+     * Lit ponctuellement le bâtiment posé par le joueur [id] sur la tuile [cell], ou `null` si la
+     * tuile est libre. Sert à garantir « un bâtiment par tuile » **côté écriture** : la pose vérifie
+     * l'absence avant d'écrire (cf. [PlaceExtractorUseCase]) plutôt que d'écraser un document existant.
+     */
+    suspend fun building(id: PlayerId, cell: String): PlacedBuilding?
+
+    /**
      * Observe en continu les bâtiments posés par le joueur [id]. Émet la liste complète à chaque
      * écriture locale (pose) et à chaque synchronisation distante ; **source unique** pour le rendu 3D
      * des bâtiments et l'état « bâtie » des tuiles de la grille. L'ordre des bâtiments n'est pas garanti.

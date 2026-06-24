@@ -51,4 +51,18 @@ class BuildingDocumentMapperTest : StringSpec({
         val document = BuildingDocumentMapper.toDocument(building)
         BuildingDocumentMapper.fromDocument(building.cell, document) shouldBe building
     }
+
+    "un extracteur posé écrit le type contractuel extracteur et se relit à l'identique" {
+        val building = PlacedBuilding(
+            "8a1fb46622dffff",
+            PlacedBuildingType.EXTRACTEUR,
+            Instant.parse("2026-06-22T08:30:00.123456789Z"),
+            Instant.parse("2026-06-22T08:30:00.123456789Z"),
+        )
+
+        val document = BuildingDocumentMapper.toDocument(building)
+
+        document[BuildingDocumentMapper.FIELD_TYPE] shouldBe "extracteur"
+        BuildingDocumentMapper.fromDocument(building.cell, document) shouldBe building
+    }
 })

@@ -63,6 +63,8 @@ class FakeBuildingsRepository : BuildingsRepository {
         streamOf(id).value = byCell.values.toList()
     }
 
+    override suspend fun building(id: PlayerId, cell: String): PlacedBuilding? = documents[id]?.get(cell)
+
     override fun observe(id: PlayerId): Flow<List<PlacedBuilding>> = streamOf(id).asStateFlow()
 
     /** Bâtiments posés par le joueur [id], indexés par tuile, pour les assertions. */
