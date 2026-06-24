@@ -24,6 +24,15 @@ class FirestoreBuildingsRepository(
     }
 
     /**
+     * Lit le document `buildings/{cell}` du joueur [id] et le désérialise, ou renvoie `null` s'il
+     * n'existe pas (tuile libre). Le SDK sert d'abord le cache offline (cf. [com.hexa.HexaApplication]).
+     */
+    override suspend fun building(id: PlayerId, cell: String): PlacedBuilding? {
+        val data = buildings(id).document(cell).get().await().data ?: return null
+        return BuildingDocumentMapper.fromDocument(cell, data)
+    }
+
+    /**
      * Pont entre l'écouteur d'instantanés de la sous-collection et un [Flow] (cf.
      * [FirestorePlayerRepository.observe]). `addSnapshotListener` émet l'instantané en cache (offline)
      * puis ré-émet à chaque pose locale et synchronisation distante ; chaque document est désérialisé
