@@ -62,6 +62,16 @@ class ObjectAssetsTest : StringSpec({
         ObjectAssets.of(PlacedBuildingType.BASE).color shouldBe HexaBuildingColors.base
         ObjectAssets.of(PlacedBuildingType.BASE).color shouldNotBe HexaBuildingColors.extracteur
     }
+
+    "l'extracteur posé pointe son dossier objects/extracteur avec model.glb et icon.png présents sur disque" {
+        val extracteur = ObjectAssets.of(PlacedBuildingType.EXTRACTEUR)
+
+        extracteur.glb shouldBe "objects/extracteur/model.glb"
+        extracteur.icon shouldBe "objects/extracteur/icon.png"
+        extracteur.color shouldBe HexaBuildingColors.extracteur
+        assetFile(extracteur.glb).isFile shouldBe true
+        assetFile(extracteur.icon).isFile shouldBe true
+    }
 })
 
 /**
