@@ -41,5 +41,12 @@ data class PlacedBuilding(
          */
         fun base(cell: String, at: Instant): PlacedBuilding =
             PlacedBuilding(cell = cell, type = PlacedBuildingType.BASE, placedAt = at, lastCollectedAt = at)
+
+        /**
+         * Construit un **extracteur posé** en [cell] à l'instant [at] : type [PlacedBuildingType.EXTRACTEUR],
+         * récolte amorcée au moment de la pose (`lastCollectedAt = placedAt = at`).
+         */
+        fun extracteur(cell: String, at: Instant): PlacedBuilding =
+            PlacedBuilding(cell = cell, type = PlacedBuildingType.EXTRACTEUR, placedAt = at, lastCollectedAt = at)
     }
 }
