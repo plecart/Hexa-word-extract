@@ -2,7 +2,6 @@ package com.hexa.map
 
 import android.Manifest
 import android.app.Application
-import android.content.Context
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -30,10 +29,7 @@ class LocationPermissionGateTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val context: Context
-        get() = ApplicationProvider.getApplicationContext()
-
-    /** L'`Application` typée, pour piloter l'état de permission via son shadow Robolectric. */
+    /** L'`Application` : pilote l'état de permission via son shadow, et résout les libellés attendus. */
     private val app: Application
         get() = ApplicationProvider.getApplicationContext()
 
@@ -55,7 +51,7 @@ class LocationPermissionGateTest {
         renderGate()
 
         composeRule.onNodeWithText(protectedContent).assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.location_permission_retry)).assertDoesNotExist()
+        composeRule.onNodeWithText(app.getString(R.string.location_permission_retry)).assertDoesNotExist()
     }
 
     @Test
@@ -64,8 +60,8 @@ class LocationPermissionGateTest {
 
         renderGate()
 
-        composeRule.onNodeWithText(context.getString(R.string.location_permission_rationale)).assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.location_permission_retry)).assertIsDisplayed()
+        composeRule.onNodeWithText(app.getString(R.string.location_permission_rationale)).assertIsDisplayed()
+        composeRule.onNodeWithText(app.getString(R.string.location_permission_retry)).assertIsDisplayed()
         composeRule.onNodeWithText(protectedContent).assertDoesNotExist()
     }
 }
