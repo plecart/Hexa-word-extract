@@ -66,7 +66,7 @@ fun FirstLaunchScreen(modifier: Modifier = Modifier) {
  * lorsque [canPlace] ; tant que [awaitingPosition], un indice explique l'attente du GPS.
  */
 @Composable
-private fun FirstLaunchPanel(
+internal fun FirstLaunchPanel(
     canPlace: Boolean,
     awaitingPosition: Boolean,
     onPlaceBase: () -> Unit,
