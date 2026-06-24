@@ -40,6 +40,7 @@ import com.hexa.player.FirebaseAuthGateway
 import com.hexa.player.FirestoreBuildingsRepository
 import com.hexa.player.FirestorePlayerRepository
 import com.hexa.player.HarvestCalculator
+import com.hexa.player.PlaceExtractorUseCase
 import com.hexa.player.PlayerUiState
 import com.hexa.player.PlayerViewModel
 import com.hexa.ui.theme.HexaAction
@@ -168,6 +169,12 @@ private val playerViewModelFactory =
                 repository = repository,
                 buildings = buildings,
                 craftBuilding = CraftBuildingUseCase(auth = auth, players = repository),
+                placeExtractor = PlaceExtractorUseCase(
+                    auth = auth,
+                    players = repository,
+                    buildings = buildings,
+                    clock = clock,
+                ),
                 collectHarvest = CollectHarvestUseCase(
                     auth = auth,
                     players = repository,

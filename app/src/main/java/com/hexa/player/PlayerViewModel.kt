@@ -4,9 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -57,6 +60,8 @@ sealed interface PlayerUiState {
  * @param repository port d'observation du document joueur.
  * @param buildings port d'observation de la sous-collection des bâtiments posés.
  * @param craftBuilding cas d'usage de craft d'un bâtiment (débit inventaire + crédit stock, persisté).
+ * @param placeExtractor cas d'usage de pose d'un extracteur (décrément du stock + écriture du
+ *   bâtiment, persisté), opération inverse du craft sur la même map de stock.
  * @param collectHarvest cas d'usage de récolte (crédit d'inventaire + avance des curseurs, persisté).
  * @param harvestTicks cadence de récolte : une récolte par émission ; vide par défaut (aucune récolte).
  */
@@ -65,6 +70,7 @@ class PlayerViewModel(
     private val repository: PlayerRepository,
     private val buildings: BuildingsRepository,
     private val craftBuilding: CraftBuildingUseCase,
+    private val placeExtractor: PlaceExtractorUseCase,
     private val collectHarvest: CollectHarvestUseCase,
     private val harvestTicks: Flow<Unit> = emptyFlow(),
 ) : ViewModel() {
@@ -81,6 +87,16 @@ class PlayerViewModel(
      * ou un futur extracteur — s'y reflète sans recréer la carte. Vide tant qu'aucun n'est posé.
      */
     val placedBuildings: StateFlow<List<PlacedBuilding>> = _placedBuildings.asStateFlow()
+
+    /**
+     * Nombre d'extracteurs **construits prêts à poser** (`builtBuildings[EXTRACTEUR]`), projeté depuis
+     * [state] : pilote l'apparition du marqueur « + » sur la carte (cf. [com.hexa.map.extractorPlacementCell]).
+     * `0` tant que l'état n'est pas `Ready`.
+     */
+    val extractorStock: StateFlow<Int> =
+        state
+            .map { (it as? PlayerUiState.Ready)?.builtBuildings?.get(BuildingType.EXTRACTEUR) ?: 0 }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
     init {
         viewModelScope.launch {
@@ -130,6 +146,23 @@ class PlayerViewModel(
                 throw e
             } catch (e: Exception) {
                 // Le craft a échoué : on conserve le dernier état connu, sans régression.
+            }
+        }
+    }
+
+    /**
+     * Pose un extracteur sur la tuile [cell] (index H3 de la tuile courante). Le décrément du stock et
+     * le bâtiment posé **remontent seuls** par l'observation du document et de la sous-collection. Un
+     * échec (réseau, refus défensif si la tuile vient d'être bâtie) ne fait pas régresser l'affichage.
+     */
+    fun placeExtracteur(cell: String) {
+        viewModelScope.launch {
+            try {
+                placeExtractor(cell)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // La pose a échoué : on conserve le dernier état connu, sans régression.
             }
         }
     }
