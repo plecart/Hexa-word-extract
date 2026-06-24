@@ -39,6 +39,13 @@
     <!-- Vitesse d\'extraction d\'un gisement, en unités par heure (ex. « 42 u/h »). -->
     <string name="tile_deposit_rate">%1$d u/h</string>
 
+    <!-- Pose d'un bâtiment : marqueur « + » sur la tuile courante et liste des bâtiments à poser (#24). -->
+    <string name="placement_marker_description">Poser un bâtiment sur cette tuile</string>
+    <string name="placement_sheet_title">Bâtiments disponibles</string>
+    <string name="placement_place_button">Poser</string>
+    <!-- Nombre d\'exemplaires construits prêts à poser (ex. « 3 en stock »). -->
+    <string name="placement_stock">%1$d en stock</string>
+
 
     <!-- Libellés des cinq éléments, par rareté croissante (cf. com.hexa.config.Element). -->
     <string name="element_cendrite">Cendrite</string>
