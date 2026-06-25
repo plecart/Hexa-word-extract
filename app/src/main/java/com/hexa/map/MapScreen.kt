@@ -2,9 +2,16 @@ package com.hexa.map
 
 import android.content.Context
 import android.hardware.SensorManager
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -16,6 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -28,7 +38,8 @@ import com.hexa.location.CameraMode
 import com.hexa.location.ChaseCameraConfig
 import com.hexa.location.PositionSource
 import com.hexa.player.PlacedBuilding
-import com.hexa.ui.theme.HexaActionButton
+import com.hexa.ui.theme.HexaDimens
+import com.hexa.ui.theme.hexaGlowSurface
 import com.hexa.world.TileContent
 import com.mapbox.android.gestures.MoveGestureDetector
 import com.mapbox.android.gestures.StandardScaleGestureDetector
@@ -57,6 +68,9 @@ import kotlinx.coroutines.flow.StateFlow
  * l'ease-in-out, sans cesse relancé, figerait la caméra) et donne un suivi fluide.
  */
 private const val FOLLOW_EASE_MS = 200L
+
+/** Glyphe « localiser » du contrôle de recentrage, centré dans sa cible tactile (cf. [ChaseCameraOverlay]). */
+private val RECENTER_ICON_SIZE = 28.dp
 
 /**
  * Écran carte : derrière la **porte de permission de localisation**, affiche la caméra de poursuite.
@@ -92,7 +106,7 @@ fun MapScreen(
  *
  * La caméra suit la position GPS filtrée fournie par [ChaseCameraViewModel], inclinée et orientée
  * selon le cap lissé de la boussole. Un déplacement au doigt suspend la poursuite (mode libre) et
- * fait apparaître un bouton de recentrage ; le zoom au pincement reste actif et borné à
+ * fait apparaître une icône de recentrage ; le zoom au pincement reste actif et borné à
  * [MapConfig.MIN_ZOOM]–[MapConfig.MAX_ZOOM] pendant la poursuite.
  *
  * Le token public est fourni au SDK en amont (cf. [com.hexa.MainActivity]).
@@ -282,23 +296,38 @@ private fun ChaseCameraMap(
 
 /**
  * Habillage interactif posé **au-dessus** de la carte de poursuite : en mode libre
- * ([CameraMode.FREE]), un bouton ramène la caméra sur l'avatar ; en poursuite ([CameraMode.FOLLOW]),
- * aucun contrôle (la caméra suit déjà). Stateless et sans dépendance Mapbox/GPS, donc rendable et
- * testable hors de la coquille `MapboxMap` (cf. convention d'extraction de #75) — c'est le seul bord
- * de l'écran carte couvrable en JVM, le cœur Mapbox (ordre des `MapEffect`, glu de tap) ne l'étant pas.
+ * ([CameraMode.FREE]), une **icône « localiser »** ramène la caméra sur l'avatar ; en poursuite
+ * ([CameraMode.FOLLOW]), aucun contrôle (la caméra suit déjà). Contrôle de carte **distinct** de la
+ * barre d'actions de jeu ([com.hexa.ui.theme.HexaActionBar]) : pastille ronde à la DA « glow » cyan,
+ * dans une cible tactile ≥ [HexaDimens.minTouchTarget], portant sa description d'accessibilité.
  *
- * @param mode mode caméra courant ; décide la présence du bouton de recentrage.
- * @param onRecenter invoqué au tap sur « Recentrer » (repasse la caméra en poursuite).
- * @param modifier placement décidé par l'appelant (alignement, marges), appliqué au bouton.
+ * Stateless et sans dépendance Mapbox/GPS, donc rendable et testable hors de la coquille `MapboxMap`
+ * (cf. convention d'extraction de #75) — c'est le seul bord de l'écran carte couvrable en JVM, le
+ * cœur Mapbox (ordre des `MapEffect`, glu de tap) ne l'étant pas.
+ *
+ * @param mode mode caméra courant ; décide la présence de l'icône de recentrage.
+ * @param onRecenter invoqué au tap (restaure le cadrage de poursuite, cf. [ChaseCameraViewModel.recenter]).
+ * @param modifier placement décidé par l'appelant (alignement, marges), appliqué à l'icône.
  */
 @Composable
 internal fun ChaseCameraOverlay(mode: CameraMode, onRecenter: () -> Unit, modifier: Modifier = Modifier) {
     if (mode == CameraMode.FREE) {
-        HexaActionButton(
-            text = stringResource(R.string.recenter_camera),
-            onClick = onRecenter,
-            modifier = modifier,
-        )
+        val description = stringResource(R.string.recenter_camera)
+        Box(
+            modifier
+                .size(HexaDimens.minTouchTarget)
+                .hexaGlowSurface(shape = CircleShape, glow = MaterialTheme.colorScheme.primary)
+                .clickable(role = Role.Button, onClick = onRecenter)
+                .semantics(mergeDescendants = true) { contentDescription = description },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.MyLocation,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(RECENTER_ICON_SIZE),
+            )
+        }
     }
 }
 

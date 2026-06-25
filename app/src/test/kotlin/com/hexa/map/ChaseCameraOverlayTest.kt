@@ -4,7 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import com.hexa.R
@@ -42,25 +42,25 @@ class ChaseCameraOverlayTest {
     }
 
     @Test
-    fun `mode libre affiche le bouton de recentrage`() {
+    fun `mode libre affiche l icone de recentrage avec sa description`() {
         render(CameraMode.FREE)
 
-        composeRule.onNodeWithText(recenterLabel).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(recenterLabel).assertIsDisplayed()
     }
 
     @Test
-    fun `mode poursuite masque le bouton de recentrage`() {
+    fun `mode poursuite masque l icone de recentrage`() {
         render(CameraMode.FOLLOW)
 
-        composeRule.onNodeWithText(recenterLabel).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(recenterLabel).assertDoesNotExist()
     }
 
     @Test
-    fun `taper le bouton de recentrage declenche le recentrage`() {
+    fun `taper l icone de recentrage declenche le recentrage`() {
         var recentered = false
         render(CameraMode.FREE, onRecenter = { recentered = true })
 
-        composeRule.onNodeWithText(recenterLabel).performClick()
+        composeRule.onNodeWithContentDescription(recenterLabel).performClick()
 
         assertTrue(recentered)
     }

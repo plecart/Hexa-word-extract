@@ -63,7 +63,7 @@ private fun HexaThemePreview() {
                 )
             }
 
-            HexaActionButton(text = "Recentrer", onClick = {})
+            HexaActionButton(text = "Poser ma base", onClick = {})
         }
     }
 }
