@@ -10,7 +10,7 @@ Ce MVP est un **prototype de validation technique**, pas un jeu équilibré. Le 
 
 1. Peut-on afficher une carte du monde sobre avec une grille hexagonale H3 superposée, de façon fluide sur Android ?
 2. Le GPS est-il assez précis et stable pour positionner un avatar et déterminer de manière fiable la tuile H3 sur laquelle se trouve le joueur ?
-3. Peut-on afficher des objets 3D (cubes placeholders) ancrés sur des tuiles de la carte, avec une caméra de poursuite à la troisième personne ?
+3. Peut-on afficher des objets 3D (modèles `.glb` pour les bâtiments, cube extrudé pour l'avatar) ancrés sur des tuiles de la carte, avec une caméra de poursuite à la troisième personne ?
 4. La génération procédurale des ressources par seeding (position → contenu) fonctionne-t-elle de manière déterministe et performante, sans rien stocker ?
 5. La persistance des données joueur (inventaire, bâtiments placés) et le calcul de la récolte hors ligne fonctionnent-ils correctement ?
 
@@ -27,7 +27,7 @@ Tout ce qui ne sert pas à répondre à ces cinq questions est hors périmètre.
 - Inspection d'une tuile au tap : affichage des ressources qu'elle contient et de leur vitesse d'extraction.
 - Placement d'un bâtiment **uniquement sur la tuile où se trouve physiquement le joueur** (logique Pokémon Go). Un seul bâtiment par tuile. Tout placement est permanent.
 - Un seul type de bâtiment : **l'extracteur**. La **base** du joueur est elle-même un extracteur (premier bâtiment placé, non déplaçable).
-- Bâtiments représentés par des cubes 3D placeholders sur la tuile.
+- Bâtiments représentés par des modèles 3D (`.glb`) posés sur la tuile.
 - Inventaire à deux onglets : « Ressources » et « Bâtiments » (avec le craft intégré à l'onglet Bâtiments).
 - Récolte continue, y compris hors ligne, créditée directement dans l'inventaire. Stockage illimité, nombre d'extracteurs illimité.
 - Persistance des données joueur dans une base de données distante, avec authentification anonyme (pas de SSO pour ce prototype, mais une architecture qui permettra d'en ajouter un plus tard sans migration douloureuse).
@@ -44,7 +44,7 @@ Tout ce qui ne sert pas à répondre à ces cinq questions est hors périmètre.
 |---|---|---|
 | Plateforme | Android natif, **Kotlin + Jetpack Compose** | Pas de moteur de jeu nécessaire ; écosystème où l'assistance IA au développement est la plus efficace |
 | Carte | **Mapbox Maps SDK for Android v11** (avec l'extension Compose) | Rendu 3D natif (extrusions, modèles glTF), styles personnalisables à volonté via Mapbox Studio (idéal pour le rendu « sobre »), caméra librement contrôlable (pitch, bearing, zoom), offre gratuite généreuse pour un prototype |
-| 3D placeholders | **FillExtrusionLayer** (API stable) : un polygone extrudé = un cube | Zéro asset 3D à produire ; passage ultérieur aux vrais modèles via la **ModelLayer** (glTF, expérimentale en v11) sans changer d'architecture |
+| Rendu 3D | Bâtiments via **ModelLayer** (modèles `.glb`) ; avatar via **FillExtrusionLayer** (un polygone extrudé = un cube) | Le passage des extrusions placeholders aux modèles `.glb` (prévu sans changer d'architecture) est réalisé pour les bâtiments ; l'avatar reste un cube extrudé en attendant son propre modèle |
 | Grille | **H3** (bibliothèque Java officielle d'Uber, `com.uber:h3`) | Index unique et stable pour chaque hexagone du globe → sert directement de seed ; conversions position ↔ cellule et cellule → contour fournies |
 | GPS | FusedLocationProviderClient (Google Play Services) | Standard Android, fusion GPS/Wi-Fi/réseau |
 | Backend / DB | **Firebase** : Auth (mode anonyme) + Cloud Firestore | Gratuit au tier Spark pour un prototype, SDK Android natif, passage de l'auth anonyme vers Google/Apple SSO prévu par Firebase (account linking), synchronisation offline incluse |
@@ -109,11 +109,11 @@ Un tap sur une tuile ouvre un panneau (bottom sheet) affichant : la liste des é
 
 ### F5 — Placement de bâtiment
 
-Conditions : joueur physiquement sur la tuile, tuile libre, bâtiment disponible dans l'inventaire. Effets : décrément du stock de bâtiments construits, création du document `buildings/{h3Index}` avec `lastCollectedAt = now`, apparition immédiate du cube 3D sur la tuile. Cas particulier : le **tout premier placement** d'une partie est la base (offerte, voir game design) ; elle se comporte ensuite comme un extracteur normal.
+Conditions : joueur physiquement sur la tuile, tuile libre, bâtiment disponible dans l'inventaire. Effets : décrément du stock de bâtiments construits, création du document `buildings/{h3Index}` avec `lastCollectedAt = now`, apparition immédiate du modèle 3D sur la tuile. Cas particulier : le **tout premier placement** d'une partie est la base (offerte, voir game design) ; elle se comporte ensuite comme un extracteur normal.
 
 ### F6 — Rendu 3D des bâtiments
 
-Chaque bâtiment placé est rendu comme un cube : un petit polygone carré centré sur la tuile, extrudé à une hauteur fixe (ex. 15 m) via FillExtrusionLayer, avec une couleur par type (base ≠ extracteur). Le cube est visible dès que la tuile entre dans le champ. Le passage ultérieur à de vrais modèles 3D (glTF via ModelLayer) ne changera que cette couche de rendu.
+Chaque bâtiment placé est rendu par un modèle 3D (`model.glb`) posé sur le centre de la tuile via la **ModelLayer** de Mapbox, ancré au sol et teinté par une couleur d'identité par type (base ≠ extracteur). Le modèle est visible dès que la tuile entre dans le champ. Cette couche de rendu est isolée de la logique de position : passer à un autre modèle (art final) ne touche qu'elle. L'avatar, lui, reste un cube extrudé (FillExtrusionLayer), faute de modèle dédié.
 
 ### F7 — Inventaire et craft
 
@@ -129,14 +129,14 @@ Au premier lancement : création silencieuse d'un compte Firebase anonyme et du 
 
 ## 5. Écrans
 
-1. **Carte** (écran principal) : carte 3D, avatar, grille, cubes, bouton inventaire, bouton recentrage.
+1. **Carte** (écran principal) : carte 3D, avatar, grille, bâtiments 3D, bouton inventaire, bouton recentrage.
 2. **Panneau tuile** (bottom sheet sur la carte) : contenu de la tuile, action de placement le cas échéant.
 3. **Inventaire** : onglets Ressources / Bâtiments (+ craft).
 4. **Premier lancement** : écran minimal invitant à se rendre à l'endroit choisi et à poser sa base (un bouton « Poser ma base ici »).
 
 ## 6. Risques techniques identifiés (ce que le prototype doit révéler)
 
-Le risque principal est la **précision GPS vs taille de tuile** : en zone urbaine dense, une précision de 10–20 m sur des tuiles de 50 m provoquera des changements de tuile erratiques ; le lissage (F2) et éventuellement une hystérésis (ne changer de tuile courante que si la nouvelle position y est franchement) sont les parades à tester. Viennent ensuite : la performance du rendu de la grille + extrusions sur des appareils Android moyens de gamme ; la consommation batterie (GPS continu + rendu carte) ; les quotas gratuits Mapbox/Firebase si le prototype circule au-delà de quelques testeurs ; et le caractère expérimental de la ModelLayer si l'on veut des glTF rapidement (mitigation : rester sur les extrusions tant que les placeholders suffisent).
+Le risque principal est la **précision GPS vs taille de tuile** : en zone urbaine dense, une précision de 10–20 m sur des tuiles de 50 m provoquera des changements de tuile erratiques ; le lissage (F2) et éventuellement une hystérésis (ne changer de tuile courante que si la nouvelle position y est franchement) sont les parades à tester. Viennent ensuite : la performance du rendu de la grille + modèles 3D sur des appareils Android moyens de gamme ; la consommation batterie (GPS continu + rendu carte) ; les quotas gratuits Mapbox/Firebase si le prototype circule au-delà de quelques testeurs ; et le caractère **expérimental de la ModelLayer** (désormais utilisée pour les bâtiments) — un `.glb` non rendable peut faire planter Mapbox nativement, d'où des modèles validés au préalable.
 
 ## 7. Décisions actées
 
@@ -146,4 +146,4 @@ Le risque principal est la **précision GPS vs taille de tuile** : en zone urbai
 - Stockage et nombre d'extracteurs illimités ; récolte hors ligne créditée automatiquement.
 - Pas de données de terrain réel dans la génération ; clusters naturels via bruit procédural.
 - Le joueur démarre avec des ressources de base (quantités : voir document de game design).
-- Tous les objets 3D sont des cubes placeholders.
+- Bâtiments rendus par des modèles 3D (`.glb`) via la ModelLayer ; avatar rendu par un cube extrudé (FillExtrusionLayer) en attendant son propre modèle.
