@@ -25,7 +25,8 @@ class FirestoreBuildingsRepository(
 
     /**
      * Lit le document `buildings/{cell}` du joueur [id] et le désérialise, ou renvoie `null` s'il
-     * n'existe pas (tuile libre). Le SDK sert d'abord le cache offline (cf. [com.hexa.HexaApplication]).
+     * n'existe pas (tuile libre) **ou s'il est illisible** (malformé/légataire, écarté par le mapper).
+     * Le SDK sert d'abord le cache offline (cf. [com.hexa.HexaApplication]).
      */
     override suspend fun building(id: PlayerId, cell: String): PlacedBuilding? {
         val data = buildings(id).document(cell).get().await().data ?: return null
@@ -36,7 +37,9 @@ class FirestoreBuildingsRepository(
      * Pont entre l'écouteur d'instantanés de la sous-collection et un [Flow] (cf.
      * [FirestorePlayerRepository.observe]). `addSnapshotListener` émet l'instantané en cache (offline)
      * puis ré-émet à chaque pose locale et synchronisation distante ; chaque document est désérialisé
-     * sous son index H3 (= id du document). L'écouteur est retiré quand le flux n'est plus collecté.
+     * sous son index H3 (= id du document). Un document **illisible** (malformé/légataire) est écarté par
+     * le mapper sans rompre l'émission : les autres bâtiments restent rendus (cf. [BuildingDocumentMapper]).
+     * L'écouteur est retiré quand le flux n'est plus collecté.
      */
     override fun observe(id: PlayerId): Flow<List<PlacedBuilding>> = callbackFlow {
         val registration = buildings(id).addSnapshotListener { snapshot, error ->
