@@ -107,6 +107,21 @@ class ChaseCameraViewModelTest : StringSpec({
         }
     }
 
+    "le recentrage efface le zoom au pincement et restaure le cadrage par défaut" {
+        runTest {
+            val vm = viewModel(rawHeadingDeg = 90.0)
+            backgroundScope.launchCollector(vm)
+            advanceUntilIdle()
+            vm.onUserZoom(16.0)
+            advanceUntilIdle()
+
+            vm.recenter()
+            advanceUntilIdle()
+
+            vm.cameraState.value?.zoomLevel shouldBe 17.0
+        }
+    }
+
     "un zoom au pincement hors bornes est ramené dans la plage de jeu" {
         runTest {
             val vm = viewModel()

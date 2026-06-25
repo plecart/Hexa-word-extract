@@ -68,8 +68,16 @@ class ChaseCameraViewModel(
     /** À appeler quand l'utilisateur déplace la carte au doigt : suspend la poursuite. */
     fun onUserPan() = controller.update { it.releasedByGesture() }
 
-    /** À appeler sur le bouton de recentrage : réengage la poursuite. */
-    fun recenter() = controller.update { it.recentered() }
+    /**
+     * À appeler sur le contrôle de recentrage : restaure le **cadrage d'origine**. Réengage la
+     * poursuite **et** efface le zoom au pincement persisté ([userZoom] → `null`), de sorte que la
+     * pose reparte du `followZoom` par défaut (cf. [ChaseCameraController.cameraFor]) plutôt que de
+     * conserver la dernière distance au sol issue du pincement.
+     */
+    fun recenter() {
+        userZoom.value = null
+        controller.update { it.recentered() }
+    }
 
     /** À appeler quand l'utilisateur ajuste le zoom au pincement (sera borné par le contrôleur). */
     fun onUserZoom(zoomLevel: Double) {
