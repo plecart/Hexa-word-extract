@@ -6,6 +6,7 @@ import com.hexa.location.PositionSource
 import com.hexa.map.CurrentTileTracker.currentTile
 import com.hexa.map.HexGrid
 import com.hexa.map.MapConfig
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -47,16 +48,36 @@ class FirstLaunchViewModel(
 
     private val _placing = MutableStateFlow(false)
 
-    /** `true` pendant l'écriture de la pose : empêche un double envoi. */
+    /** `true` pendant l'écriture de la pose : empêche un double envoi (cf. garde dans [placeBase]). */
     val placing: StateFlow<Boolean> = _placing.asStateFlow()
 
-    /** Pose la base sur la tuile courante. Sans tuile connue, n'a aucun effet. */
+    private val _placementFailed = MutableStateFlow(false)
+
+    /**
+     * `true` quand la **dernière** tentative de pose a échoué (réseau, Firestore), pour inviter le
+     * joueur à réessayer. Contrairement aux flux récurrents de [com.hexa.player.PlayerViewModel]
+     * (récolte/craft) où un échec est avalé car une prochaine passe le rattrape, la pose de base est
+     * un **acte unique sans réessai automatique** : un échec silencieux laisserait le joueur croire
+     * que la pose a réussi. On le rend donc visible. Remis à `false` au début de chaque tentative.
+     */
+    val placementFailed: StateFlow<Boolean> = _placementFailed.asStateFlow()
+
+    /**
+     * Pose la base sur la tuile courante. Sans tuile connue ou pendant qu'une pose est déjà en cours,
+     * n'a aucun effet (anti-double-envoi). En cas d'échec de persistance, lève [placementFailed].
+     */
     fun placeBase() {
         val cell = currentTile.value ?: return
+        if (_placing.value) return
+        _placing.value = true
+        _placementFailed.value = false
         viewModelScope.launch {
-            _placing.value = true
             try {
                 placeBaseAt(grid.toH3String(cell))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _placementFailed.value = true
             } finally {
                 _placing.value = false
             }
