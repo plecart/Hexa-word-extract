@@ -15,6 +15,16 @@
 - qa-plan → `qa-plan`
 - qa-finding → `qa-finding`
 
+## Portée des labels et milestones (issue vs PR)
+- Labels de **workflow de triage** (`needs-triage`, `needs-info`, `ready-for-agent`,
+  `ready-for-human`, `qa-plan`, `qa-finding`) : **issues uniquement**. Jamais sur une PR — ils
+  décrivent l'état d'une issue dans la machine de triage.
+- Labels de **type** (`bug`, `enhancement`, `documentation`) : issues **et** PR.
+- **Milestone** : **issues uniquement**. Jamais sur une PR — le lien `Closes #N` rattache déjà la
+  PR au jalon de son issue.
+- **Lien PR → issue** : mot-clé de clôture **anglais** `Closes #N` (pas `Ferme`/`Clôt`, pas de
+  backticks). Une PR purement outillage/pipeline sans issue est **exemptée** de ce lien.
+
 ## Langue
 - skills / issues / PRD / descriptions : français
 - préfixe conventional commit : anglais (feat/fix/chore/docs/refactor)
