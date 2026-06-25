@@ -4,8 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeGesturesPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Backpack
@@ -56,9 +56,11 @@ data class HexaAction(
  * liste, sans toucher au composant.
  *
  * Ancrée **en bas, centrée** : la barre épouse la largeur de son contenu et applique elle-même
- * [navigationBarsPadding] pour ne pas être recouverte par la barre de navigation / zone de geste.
- * Le **placement** (alignement bas, centrage) est laissé à l'appelant via [modifier], comme
- * [HexaActionButton] — typiquement `Modifier.align(Alignment.BottomCenter)`.
+ * [safeGesturesPadding] pour rester **hors de la zone de geste système**. En mode immersif (barres
+ * masquées), l'inset de barre de navigation retombe à zéro : seul l'inset de **geste** garde la barre
+ * à l'écart du swipe (bord du bas en navigation gestuelle, barre 3 boutons via `tappableElement`).
+ * Le **placement** (alignement bas, centrage) est laissé à l'appelant via [modifier] — typiquement
+ * `Modifier.align(Alignment.BottomCenter)`.
  *
  * @param actions actions à présenter, dans l'ordre d'affichage (gauche → droite).
  * @param modifier agencement décidé par l'appelant (alignement, marges) ; appliqué avant les insets
@@ -70,7 +72,7 @@ fun HexaActionBar(actions: List<HexaAction>, modifier: Modifier = Modifier) {
     Row(
         modifier =
         modifier
-            .navigationBarsPadding()
+            .safeGesturesPadding()
             .clip(shape)
             .hexaGlowSurface(shape = shape)
             .padding(horizontal = 8.dp, vertical = 6.dp),

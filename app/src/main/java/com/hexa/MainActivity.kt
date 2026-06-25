@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.initializer
@@ -67,6 +68,8 @@ class MainActivity : ComponentActivity() {
         // Le SDK Mapbox lit le token public ici, avant toute instanciation de carte.
         MapboxOptions.accessToken = BuildConfig.MAPBOX_PUBLIC_TOKEN
         enableEdgeToEdge()
+        // Carte en plein écran : barres système masquées (immersif « sticky »), réapparition au swipe.
+        WindowCompat.getInsetsController(window, window.decorView).enableImmersiveSystemBars()
         setContent {
             HexaTheme {
                 HexaRoot(playerViewModel)
