@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -51,10 +52,12 @@ fun FirstLaunchScreen(modifier: Modifier = Modifier) {
     val viewModel: FirstLaunchViewModel = viewModel(factory = firstLaunchViewModelFactory(app))
     val currentTile by viewModel.currentTile.collectAsStateWithLifecycle()
     val placing by viewModel.placing.collectAsStateWithLifecycle()
+    val placementFailed by viewModel.placementFailed.collectAsStateWithLifecycle()
 
     FirstLaunchPanel(
         canPlace = currentTile != null && !placing,
         awaitingPosition = currentTile == null,
+        placementFailed = placementFailed,
         onPlaceBase = viewModel::placeBase,
         modifier = modifier,
     )
@@ -63,12 +66,15 @@ fun FirstLaunchScreen(modifier: Modifier = Modifier) {
 /**
  * Panneau d'invitation, sans état : un encart sombre en bas de l'écran (la carte reste visible
  * au-dessus) portant le message et le bouton « Poser ma base ici ». Le bouton n'est actif que
- * lorsque [canPlace] ; tant que [awaitingPosition], un indice explique l'attente du GPS.
+ * lorsque [canPlace] ; tant que [awaitingPosition], un indice explique l'attente du GPS ; après un
+ * [placementFailed], un message d'erreur invite à réessayer (la pose étant un acte unique sans
+ * réessai automatique, son échec doit être visible).
  */
 @Composable
 internal fun FirstLaunchPanel(
     canPlace: Boolean,
     awaitingPosition: Boolean,
+    placementFailed: Boolean,
     onPlaceBase: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -103,15 +109,30 @@ internal fun FirstLaunchPanel(
                 enabled = canPlace,
             )
             if (awaitingPosition) {
-                Text(
+                PanelHint(
                     text = stringResource(R.string.first_launch_awaiting_position),
-                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
+                )
+            }
+            if (placementFailed) {
+                PanelHint(
+                    text = stringResource(R.string.first_launch_placement_failed),
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
         }
     }
+}
+
+/** Indice secondaire du panneau : une ligne `bodySmall` centrée, dont seule la [color] varie. */
+@Composable
+private fun PanelHint(text: String, color: Color) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = color,
+        textAlign = TextAlign.Center,
+    )
 }
 
 /**
@@ -140,7 +161,7 @@ private fun firstLaunchViewModelFactory(app: HexaApplication) = viewModelFactory
 @Composable
 private fun FirstLaunchPanelReadyPreview() {
     HexaTheme {
-        FirstLaunchPanel(canPlace = true, awaitingPosition = false, onPlaceBase = {})
+        FirstLaunchPanel(canPlace = true, awaitingPosition = false, placementFailed = false, onPlaceBase = {})
     }
 }
 
@@ -148,6 +169,14 @@ private fun FirstLaunchPanelReadyPreview() {
 @Composable
 private fun FirstLaunchPanelAwaitingPreview() {
     HexaTheme {
-        FirstLaunchPanel(canPlace = false, awaitingPosition = true, onPlaceBase = {})
+        FirstLaunchPanel(canPlace = false, awaitingPosition = true, placementFailed = false, onPlaceBase = {})
+    }
+}
+
+@Preview
+@Composable
+private fun FirstLaunchPanelFailedPreview() {
+    HexaTheme {
+        FirstLaunchPanel(canPlace = true, awaitingPosition = false, placementFailed = true, onPlaceBase = {})
     }
 }

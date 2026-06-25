@@ -8,6 +8,7 @@ import com.hexa.map.HexGrid
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,12 +43,7 @@ class FirstLaunchViewModelTest : StringSpec({
 
     "la tuile courante suit la position reçue" {
         runTest {
-            val vm =
-                FirstLaunchViewModel(
-                    PositionSource { MutableStateFlow(LatLng(48.0, 2.0)) },
-                    FakeGrid(),
-                    placeBaseAt = {},
-                )
+            val vm = positionedViewModel(placeBaseAt = {})
             backgroundScope.collectCurrentTile(vm)
             advanceUntilIdle()
 
@@ -58,12 +54,7 @@ class FirstLaunchViewModelTest : StringSpec({
     "poser la base délègue avec l'index H3 textuel de la tuile courante" {
         runTest {
             val placed = mutableListOf<String>()
-            val vm =
-                FirstLaunchViewModel(
-                    PositionSource { MutableStateFlow(LatLng(48.0, 2.0)) },
-                    FakeGrid(),
-                    placeBaseAt = { placed += it },
-                )
+            val vm = positionedViewModel(placeBaseAt = { placed += it })
             backgroundScope.collectCurrentTile(vm)
             advanceUntilIdle()
 
@@ -87,7 +78,84 @@ class FirstLaunchViewModelTest : StringSpec({
             placed.shouldBeEmpty()
         }
     }
+
+    "l'état placing suit le cycle false → true → false autour de la pose" {
+        runTest {
+            val gate = CompletableDeferred<Unit>()
+            val vm = positionedViewModel(placeBaseAt = { gate.await() })
+            backgroundScope.collectCurrentTile(vm)
+            advanceUntilIdle()
+
+            vm.placing.value shouldBe false
+            vm.placeBase()
+            advanceUntilIdle()
+            vm.placing.value shouldBe true
+
+            gate.complete(Unit)
+            advanceUntilIdle()
+            vm.placing.value shouldBe false
+        }
+    }
+
+    "poser à nouveau pendant une pose en cours n'envoie pas une seconde fois" {
+        runTest {
+            val gate = CompletableDeferred<Unit>()
+            val placed = mutableListOf<String>()
+            val vm = positionedViewModel(placeBaseAt = {
+                placed += it
+                gate.await()
+            })
+            backgroundScope.collectCurrentTile(vm)
+            advanceUntilIdle()
+
+            vm.placeBase()
+            advanceUntilIdle()
+            vm.placeBase()
+            advanceUntilIdle()
+
+            gate.complete(Unit)
+            advanceUntilIdle()
+
+            placed shouldBe listOf("h3-48")
+        }
+    }
+
+    "une pose qui échoue rend l'échec visible et réarme la pose" {
+        runTest {
+            val vm = positionedViewModel(placeBaseAt = { error("persistance indisponible") })
+            backgroundScope.collectCurrentTile(vm)
+            advanceUntilIdle()
+
+            vm.placementFailed.value shouldBe false
+            vm.placeBase()
+            advanceUntilIdle()
+
+            vm.placementFailed.value shouldBe true
+            vm.placing.value shouldBe false
+        }
+    }
+
+    "une nouvelle tentative efface l'échec précédent" {
+        runTest {
+            var attempts = 0
+            val vm = positionedViewModel(placeBaseAt = { if (attempts++ == 0) error("échec transitoire") })
+            backgroundScope.collectCurrentTile(vm)
+            advanceUntilIdle()
+
+            vm.placeBase()
+            advanceUntilIdle()
+            vm.placementFailed.value shouldBe true
+
+            vm.placeBase()
+            advanceUntilIdle()
+            vm.placementFailed.value shouldBe false
+        }
+    }
 })
+
+/** ViewModel dont la position est fixée (tuile `48L`, index `h3-48`), pour piloter la pose. */
+private fun positionedViewModel(placeBaseAt: suspend (String) -> Unit) =
+    FirstLaunchViewModel(PositionSource { MutableStateFlow(LatLng(48.0, 2.0)) }, FakeGrid(), placeBaseAt = placeBaseAt)
 
 /** Un collecteur de fond active le suivi de tuile (StateFlow `WhileSubscribed`) le temps du test. */
 private fun CoroutineScope.collectCurrentTile(vm: FirstLaunchViewModel) = launch { vm.currentTile.collect {} }

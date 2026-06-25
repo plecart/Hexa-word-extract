@@ -33,12 +33,18 @@ class FirstLaunchPanelTest {
     private val context: Context
         get() = ApplicationProvider.getApplicationContext()
 
-    private fun render(canPlace: Boolean, awaitingPosition: Boolean, onPlaceBase: () -> Unit = {}) {
+    private fun render(
+        canPlace: Boolean,
+        awaitingPosition: Boolean,
+        placementFailed: Boolean = false,
+        onPlaceBase: () -> Unit = {},
+    ) {
         composeRule.setContent {
             HexaTheme {
                 FirstLaunchPanel(
                     canPlace = canPlace,
                     awaitingPosition = awaitingPosition,
+                    placementFailed = placementFailed,
                     onPlaceBase = onPlaceBase,
                 )
             }
@@ -69,5 +75,19 @@ class FirstLaunchPanelTest {
         composeRule.onNodeWithText(context.getString(R.string.first_launch_place_base)).performClick()
 
         assertTrue(placed)
+    }
+
+    @Test
+    fun `un echec de pose affiche le message d erreur`() {
+        render(canPlace = true, awaitingPosition = false, placementFailed = true)
+
+        composeRule.onNodeWithText(context.getString(R.string.first_launch_placement_failed)).assertIsDisplayed()
+    }
+
+    @Test
+    fun `sans echec de pose le message d erreur est absent`() {
+        render(canPlace = true, awaitingPosition = false, placementFailed = false)
+
+        composeRule.onNodeWithText(context.getString(R.string.first_launch_placement_failed)).assertDoesNotExist()
     }
 }
