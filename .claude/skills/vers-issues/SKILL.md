@@ -35,7 +35,7 @@ Les tranches peuvent être 'HITL' ou 'AFK'. Les tranches HITL nécessitent une i
 
 Présente le découpage proposé sous forme de liste numérotée. Pour chaque tranche, montre :
 
-- **Titre** : nom court et descriptif
+- **Titre** : nom court et descriptif, en langage métier. **Jamais de préfixe conventional commit** (`feat(scope):`, `fix:`, …) : ce format est réservé aux commits et titres de PR, pas aux issues.
 - **Type** : HITL / AFK
 - **Bloquée par** : quelles autres tranches (le cas échéant) doivent être terminées d'abord
 - **User stories couvertes** : quelles user stories cette tranche adresse (si le matériel source en contient)
