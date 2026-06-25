@@ -148,25 +148,42 @@ Une fois l'auto-review propre → `git push`.
 Dès la création, la PR a :
 
 - **Titre** conventional commit (préfixe EN + description FR).
-- **Assignee** + **labels** (un label de type + un label de catégorie/phase, via le mapping de
-  `.claude/pipeline.config.md`).
+- **Lien d'issue** : le body **doit** contenir une ligne de clôture GitHub `Closes #N` — mot-clé
+  **anglais** (`Closes` / `Fixes` / `Resolves`), **hors backticks**, **jamais en français**
+  (`Ferme` / `Clôt` ne déclenchent pas l'auto-link et laissent la PR orpheline). PR en deux
+  tranches : seule la **dernière** clôt (`Closes #N`) ; la première **référence sans fermer**
+  (`Tranche 1/2 de #N`, sans mot-clé de clôture).
+  **Exception tooling/meta** : une PR purement outillage/pipeline (skills, `.claude/rules`,
+  `.gitignore`, config CI…) qui ne correspond à aucune issue n'a **pas** de `Closes #N` — c'est
+  un cas légitime, pas une erreur à corriger.
+- **Assignee** : le mainteneur responsable (par défaut, le propriétaire du repo).
+- **Labels** : **uniquement un label de type** (`enhancement` / `bug` / `documentation`).
+  **Aucun label de workflow de triage** sur une PR (`ready-for-agent`, `ready-for-human`,
+  `needs-triage`, `needs-info`, `qa-plan`, `qa-finding`) : ces labels décrivent l'état d'une
+  **issue** dans la machine de triage et n'ont aucun sens sur une PR. Cf. `.claude/pipeline.config.md`.
+- **Pas de milestone sur une PR.** Le jalon vit sur l'**issue** ; le lien `Closes #N` rattache
+  déjà la PR au jalon. Ne jamais recopier le milestone de l'issue sur la PR.
 - Un **body structuré** :
 
 ```markdown
 ## Summary
 <1-3 phrases : l'intention de la PR>
 
+Closes #N   <!-- « Tranche 1/2 de #N » si PR non-finale ; ligne omise si PR tooling/meta sans issue -->
+
 ## Changes
 <commits regroupés par thème : infra / feature / tests / docs>
 
 ## Test plan
-- [x] CI locale verte
-- [x] CI verte
-- [x] <vérifs manuelles si pertinent>
+- [ ] CI verte
+- [ ] <vérifs manuelles / validation device si pertinent>
 
 ## Notes
 <décisions, follow-ups différés, hors-scope>
 ```
+
+Les cases du Test plan sont **non cochées à l'ouverture** (le travail de vérif n'est pas encore
+fait) et se cochent **au fil de l'eau** ; l'étape 6 vérifie qu'aucune ne reste vide avant le merge.
 
 Au-delà de **~10 fichiers** ou **~500 lignes** de diff, découper la PR.
 
@@ -187,6 +204,17 @@ filet final pour les findings inter-commits.
 
 - Findings → présenter, corriger (cycle complet), re-tester, push, *puis* merger.
 - Sinon → verdict explicite « code propre, prêt à merger ».
+
+**Hygiène finale de la PR avant merge** (relire la PR, pas seulement le code) :
+
+- **Test plan** : cocher chaque case au fil de l'eau ; **avant de merger, aucune case ne reste
+  `- [ ]`**. Une case non cochée = un travail non fait → soit on le fait, soit on le sort
+  explicitement du périmètre (et on retire la case). Une PR ne se merge pas avec des cases vides.
+- **Métadonnées** : assignee posé, **label de type seul** (aucun label de triage), **aucun
+  milestone**, lien `Closes #N` présent (sauf PR tooling/meta). Corriger avant merge.
+- **Retours de validation au bon endroit** : les retours de **validation device / QA / recette**
+  (résultats du point d'arrêt humain) se consignent sur l'**issue** liée, **pas** en commentaire
+  de la PR — l'issue est la mémoire durable du comportement ; la PR sort du flux après merge.
 
 **Jamais d'auto-merge.** Même CI verte + audit propre, toujours attendre un « go » / « merge »
 humain explicite.
