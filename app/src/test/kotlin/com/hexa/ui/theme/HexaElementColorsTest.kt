@@ -8,8 +8,8 @@ import io.kotest.matchers.shouldBe
  * Verrouille les tokens de couleur d'élément : cinq couleurs **distinctes** et **opaques**.
  *
  * Pendant de [com.hexa.inventory.labelOf] côté libellés : ce test attrape les copier-coller (deux
- * éléments partageant la même teinte) et les alphas oubliés, avant que la tranche identité des
- * éléments (#44) ne consomme ces tokens.
+ * éléments partageant la même teinte) et les alphas oubliés, ces tokens étant consommés via le
+ * registre [ObjectAssets] (couleur d'identité des éléments).
  */
 class HexaElementColorsTest : StringSpec({
     "les cinq couleurs d'élément sont distinctes" {
