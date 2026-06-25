@@ -12,6 +12,7 @@
     <string name="first_launch_rationale">Rends-toi à l\'endroit où tu veux t\'établir, puis pose ta base sur ta tuile actuelle. Elle est offerte et produira comme un extracteur.</string>
     <string name="first_launch_place_base">Poser ma base ici</string>
     <string name="first_launch_awaiting_position">En attente de ta position…</string>
+    <string name="first_launch_placement_failed">La pose a échoué, réessaie.</string>
 
     <!-- Inventaire : page à deux onglets ouverte depuis la carte. -->
     <string name="inventory_open">Ouvrir l\'inventaire</string>
