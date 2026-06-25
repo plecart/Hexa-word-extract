@@ -32,8 +32,9 @@ object HexaSurfaceTokens {
  * Cendrite orange braise, Givrelin cyan givre, Lithosève vert sève, Échofer magenta résonant,
  * Nyctite violet nuit.
  *
- * Cette tranche n'expose que les **tokens** ; le mapping `Element → couleur` (icônes, tuiles) arrive
- * en #44. [all] suit l'ordre de `Element.entries`, pour un appariement positionnel direct.
+ * Cette tranche n'expose que les **tokens** ; le mapping `Element → couleur` (icônes, tuiles) est
+ * assuré par le registre [ObjectAssets], qui les consomme. [all] suit l'ordre de `Element.entries`,
+ * pour un appariement positionnel direct.
  */
 object HexaElementColors {
     val cendrite = Color(0xFFFF6A33)

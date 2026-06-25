@@ -11,10 +11,12 @@ import com.hexa.player.PlacedBuildingType
  *
  * Convention durable (cf. issue #51) : chaque objet possède un dossier `assets/objects/<nom>/`
  * contenant `model.glb` + `icon.png`. Le PNG sert toute surface UI (tuiles d'inventaire…) ; le GLB
- * est posé pour le futur rendu 3D sur la carte (Mapbox) mais **pas encore consommé**. La couleur est
- * autorée par la DA — jamais dérivée des pixels du PNG — et reste sourcée depuis [HexaElementColors].
+ * alimente le rendu 3D sur la carte (Mapbox) — déjà consommé pour les **bâtiments** (couche de
+ * modèles `showBuildingModels`), pas encore pour les **éléments**. La couleur est autorée par la DA
+ * — jamais dérivée des pixels du PNG — et reste sourcée depuis [HexaElementColors].
  *
- * @property glb chemin du modèle 3D dans `assets/` (ex. `objects/cendrite/model.glb`), futur usage.
+ * @property glb chemin du modèle 3D dans `assets/` (ex. `objects/cendrite/model.glb`) — rendu sur la
+ *   carte pour les bâtiments, futur usage pour les éléments.
  * @property icon chemin de l'icône PNG dans `assets/` (ex. `objects/cendrite/icon.png`), affichée par
  *   [ElementObject].
  * @property color teinte d'identité, reprise telle quelle de [HexaElementColors].

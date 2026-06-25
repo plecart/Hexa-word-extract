@@ -20,8 +20,9 @@ private val BORDER_WIDTH = 1.dp
  *
  * @param shape forme des coins, à prendre dans `MaterialTheme.shapes` ([HexaShapes]).
  * @param glow couleur de la bordure lumineuse ; par défaut la bordure glacée neutre
- *   ([HexaSurfaceTokens.border]). Passer une couleur d'élément ([HexaElementColors]) donne un halo
- *   coloré (consommé par la tranche identité des éléments, #44).
+ *   ([HexaSurfaceTokens.border]). Passer une couleur d'identité ([HexaElementColors] /
+ *   [HexaBuildingColors]) donne un halo coloré, comme le font les tuiles d'inventaire qui prennent la
+ *   couleur de l'objet via [ObjectAssets].
  */
 fun Modifier.hexaGlowSurface(shape: Shape, glow: Color = HexaSurfaceTokens.border): Modifier = this
     .background(color = HexaSurfaceTokens.translucentSurface, shape = shape)

@@ -8,9 +8,10 @@ import kotlinx.coroutines.flow.first
  * puis n'écrit **que** si quelque chose a été produit.
  *
  * Déclenchée à l'ouverture de l'app puis toutes les [com.hexa.config.GameConfig.COLLECT_REFRESH_SECONDS]
- * (cf. [PlayerViewModel]) — **sans aucun service ni timer en arrière-plan** : c'est le cycle de vie de
- * l'app qui rythme l'appel. Tout le temps passé app fermée est rattrapé en un seul calcul à la
- * réouverture (le curseur [PlacedBuilding.lastCollectedAt] porte la mémoire de la dernière récolte).
+ * (cf. le `PlayerViewModel` de `:app`) — **sans aucun service ni timer en arrière-plan** : c'est le
+ * cycle de vie de l'app qui rythme l'appel. Tout le temps passé app fermée est rattrapé en un seul
+ * calcul à la réouverture (le curseur [PlacedBuilding.lastCollectedAt] porte la mémoire de la
+ * dernière récolte).
  *
  * Les écritures (crédit d'inventaire via [PlayerRepository.save] en read-modify-write, avance des
  * curseurs via [BuildingsRepository.place]) passent par le SDK Firestore (cache offline) ; au MVP,
