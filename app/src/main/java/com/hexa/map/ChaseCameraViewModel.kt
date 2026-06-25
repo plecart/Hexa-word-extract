@@ -59,7 +59,7 @@ class ChaseCameraViewModel(
             chaseController.cameraFor(position, headingDeg, zoom)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(MapConfig.SOURCE_STOP_TIMEOUT_MS), null)
 
-    /** Mode courant de la caméra — pilote l'affichage du bouton de recentrage. */
+    /** Mode courant de la caméra — pilote l'affichage de l'icône de recentrage. */
     val mode: StateFlow<CameraMode> =
         controller
             .map { it.mode }

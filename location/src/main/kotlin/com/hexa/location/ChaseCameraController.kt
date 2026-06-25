@@ -22,7 +22,7 @@ class ChaseCameraController private constructor(
     /** Passe en mode libre — à appeler quand l'utilisateur déplace la carte au doigt. */
     fun releasedByGesture(): ChaseCameraController = ChaseCameraController(config, CameraMode.FREE)
 
-    /** Réengage la poursuite — à appeler sur le bouton de recentrage. */
+    /** Réengage la poursuite — à appeler sur l'icône de recentrage. */
     fun recentered(): ChaseCameraController = ChaseCameraController(config, CameraMode.FOLLOW)
 
     /**
