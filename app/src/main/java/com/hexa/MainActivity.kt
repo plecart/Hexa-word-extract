@@ -40,6 +40,7 @@ import com.hexa.player.FirebaseAuthGateway
 import com.hexa.player.FirestoreBuildingsRepository
 import com.hexa.player.FirestorePlayerRepository
 import com.hexa.player.HarvestCalculator
+import com.hexa.player.PlaceExtractorUseCase
 import com.hexa.player.PlayerUiState
 import com.hexa.player.PlayerViewModel
 import com.hexa.ui.theme.HexaAction
@@ -86,7 +87,12 @@ private fun HexaRoot(viewModel: PlayerViewModel) {
     val playerState by viewModel.state.collectAsStateWithLifecycle()
 
     Box(Modifier.fillMaxSize()) {
-        MapScreen(placedBuildings = viewModel.placedBuildings, modifier = Modifier.fillMaxSize())
+        MapScreen(
+            placedBuildings = viewModel.placedBuildings,
+            extractorStock = viewModel.extractorStock,
+            onPlaceExtracteur = viewModel::placeExtracteur,
+            modifier = Modifier.fillMaxSize(),
+        )
 
         val ready = playerState as? PlayerUiState.Ready
         if (ready != null && ready.baseCell == null) {
@@ -168,6 +174,12 @@ private val playerViewModelFactory =
                 repository = repository,
                 buildings = buildings,
                 craftBuilding = CraftBuildingUseCase(auth = auth, players = repository),
+                placeExtractor = PlaceExtractorUseCase(
+                    auth = auth,
+                    players = repository,
+                    buildings = buildings,
+                    clock = clock,
+                ),
                 collectHarvest = CollectHarvestUseCase(
                     auth = auth,
                     players = repository,

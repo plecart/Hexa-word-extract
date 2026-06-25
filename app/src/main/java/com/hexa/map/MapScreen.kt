@@ -8,7 +8,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -30,11 +33,14 @@ import com.hexa.world.TileContent
 import com.mapbox.android.gestures.MoveGestureDetector
 import com.mapbox.android.gestures.StandardScaleGestureDetector
 import com.mapbox.geojson.Point
+import com.mapbox.maps.AnnotatedFeature
 import com.mapbox.maps.CameraBoundsOptions
 import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.ViewAnnotationOptions
 import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
+import com.mapbox.maps.extension.compose.annotation.ViewAnnotation
 import com.mapbox.maps.extension.compose.style.MapStyle
 import com.mapbox.maps.plugin.animation.MapAnimationOptions
 import com.mapbox.maps.plugin.animation.easeTo
@@ -60,11 +66,24 @@ private const val FOLLOW_EASE_MS = 200L
  *
  * @param placedBuildings flux des bâtiments posés, rendus en **modèles 3D** sur la carte (cf.
  *   [com.hexa.player.PlayerViewModel.placedBuildings]).
+ * @param extractorStock flux du nombre d'extracteurs prêts à poser, qui conditionne l'apparition du
+ *   marqueur « + » sur la tuile courante (cf. [com.hexa.player.PlayerViewModel.extractorStock]).
+ * @param onPlaceExtracteur pose un extracteur sur la tuile dont l'index H3 est fourni.
  */
 @Composable
-fun MapScreen(placedBuildings: Flow<List<PlacedBuilding>>, modifier: Modifier = Modifier) {
+fun MapScreen(
+    placedBuildings: Flow<List<PlacedBuilding>>,
+    extractorStock: StateFlow<Int>,
+    onPlaceExtracteur: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     LocationPermissionGate(modifier = modifier) {
-        ChaseCameraMap(placedBuildings = placedBuildings, modifier = Modifier.fillMaxSize())
+        ChaseCameraMap(
+            placedBuildings = placedBuildings,
+            extractorStock = extractorStock,
+            onPlaceExtracteur = onPlaceExtracteur,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
 
@@ -79,7 +98,12 @@ fun MapScreen(placedBuildings: Flow<List<PlacedBuilding>>, modifier: Modifier = 
  * Le token public est fourni au SDK en amont (cf. [com.hexa.MainActivity]).
  */
 @Composable
-private fun ChaseCameraMap(placedBuildings: Flow<List<PlacedBuilding>>, modifier: Modifier = Modifier) {
+private fun ChaseCameraMap(
+    placedBuildings: Flow<List<PlacedBuilding>>,
+    extractorStock: StateFlow<Int>,
+    onPlaceExtracteur: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
     val app = context.applicationContext as HexaApplication
     val viewModel: ChaseCameraViewModel =
@@ -104,6 +128,17 @@ private fun ChaseCameraMap(placedBuildings: Flow<List<PlacedBuilding>>, modifier
     // l'intégration partagée de l'application, la même que la grille et l'inspection.
     val buildings by placedBuildings.collectAsStateWithLifecycle(initialValue = emptyList())
     val placements = remember(buildings) { buildingPlacements(buildings, app.centerOfCell) }
+
+    // Pose d'un extracteur : la tuile courante porte un marqueur « + » dès qu'elle est libre et qu'il
+    // reste du stock. La décision est purement dérivée de l'état observé (cf. extractorPlacementCell) ;
+    // un tap sur le marqueur ouvre la liste des bâtiments à poser.
+    val currentTile by app.sharedCurrentTile.collectAsStateWithLifecycle()
+    val stock by extractorStock.collectAsStateWithLifecycle()
+    val placementCell =
+        remember(currentTile, buildings, stock) {
+            extractorPlacementCell(currentTile, buildings, stock, app.sharedGrid::toH3String)
+        }
+    var placementSheetOpen by rememberSaveable { mutableStateOf(false) }
 
     // Position de l'avatar : la **même** position GPS filtrée partagée que la caméra (une seule
     // trajectoire). Indépendante du mode caméra : l'avatar reste visible même en mode libre, quand la
@@ -173,6 +208,20 @@ private fun ChaseCameraMap(placedBuildings: Flow<List<PlacedBuilding>>, modifier
             MapEffect(avatarPosition) { mapView ->
                 mapView.mapboxMap.getStyle { style -> style.showAvatar(avatarPosition) }
             }
+            // Marqueur « + » de pose, ancré au centre de la tuile courante tant qu'une pose est possible
+            // ([placementCell] non nul). Un tap ouvre la liste des bâtiments ; la pose le fait disparaître
+            // (tuile devenue occupée / stock épuisé), la décision étant recalculée à chaque émission.
+            placementCell?.let { cell ->
+                val center = app.centerOfCell(cell)
+                ViewAnnotation(
+                    options = ViewAnnotationOptions.Builder()
+                        .annotatedFeature(AnnotatedFeature(Point.fromLngLat(center.lngDeg, center.latDeg)))
+                        .allowOverlap(true)
+                        .build(),
+                ) {
+                    ExtractorPlacementMarker(onClick = { placementSheetOpen = true })
+                }
+            }
             MapEffect(Unit) { mapView ->
                 mapView.mapboxMap.setBounds(
                     CameraBoundsOptions.Builder()
@@ -206,6 +255,21 @@ private fun ChaseCameraMap(placedBuildings: Flow<List<PlacedBuilding>>, modifier
 
         inspection?.let { open ->
             TileInspectionSheet(inspection = open, onDismiss = inspectionViewModel::dismiss)
+        }
+
+        // Liste des bâtiments à poser, ouverte par le marqueur « + ». Bornée à une pose possible
+        // ([placementCell] non nul) : la pose referme le panneau et le marqueur s'efface de lui-même.
+        if (placementSheetOpen) {
+            placementCell?.let { cell ->
+                BuildingPlacementSheet(
+                    extractorStock = stock,
+                    onPlaceExtracteur = {
+                        onPlaceExtracteur(cell)
+                        placementSheetOpen = false
+                    },
+                    onDismiss = { placementSheetOpen = false },
+                )
+            }
         }
 
         ChaseCameraOverlay(

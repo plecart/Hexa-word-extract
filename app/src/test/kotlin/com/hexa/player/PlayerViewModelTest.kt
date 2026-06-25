@@ -46,6 +46,7 @@ class PlayerViewModelTest : StringSpec({
                 AbsentPlayerRepository,
                 ObservableBuildingsRepository(),
                 craftFor(AbsentPlayerRepository),
+                placeFor(AbsentPlayerRepository),
                 harvestFor(AbsentPlayerRepository),
             )
 
@@ -65,6 +66,7 @@ class PlayerViewModelTest : StringSpec({
                 AbsentPlayerRepository,
                 ObservableBuildingsRepository(),
                 craftFor(AbsentPlayerRepository),
+                placeFor(AbsentPlayerRepository),
                 harvestFor(AbsentPlayerRepository),
             )
 
@@ -84,6 +86,7 @@ class PlayerViewModelTest : StringSpec({
                     repository,
                     ObservableBuildingsRepository(),
                     craftFor(repository),
+                    placeFor(repository),
                     harvestFor(repository),
                 )
             advanceUntilIdle()
@@ -111,6 +114,7 @@ class PlayerViewModelTest : StringSpec({
                     repository,
                     ObservableBuildingsRepository(),
                     craftFor(repository),
+                    placeFor(repository),
                     harvestFor(repository),
                 )
             advanceUntilIdle()
@@ -125,6 +129,28 @@ class PlayerViewModelTest : StringSpec({
         }
     }
 
+    "poser un extracteur décrémente le stock et l'ajoute aux bâtiments posés, reflété sans action" {
+        runTest(dispatcher) {
+            val cell = "8a1fb46622dffff"
+            val initial = Player.newPlayer(clock.instant()).copy(builtBuildings = mapOf(BuildingType.EXTRACTEUR to 1))
+            val repository = ObservablePlayerRepository(initial)
+            val buildings = ObservableBuildingsRepository()
+            val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
+            val place = PlaceExtractorUseCase(AuthGateway { uid }, repository, buildings, clock)
+            val viewModel =
+                PlayerViewModel(useCase, repository, buildings, craftFor(repository), place, harvestFor(repository))
+            advanceUntilIdle()
+            viewModel.extractorStock.value shouldBe 1
+
+            viewModel.placeExtracteur(cell)
+            advanceUntilIdle()
+
+            (viewModel.state.value as PlayerUiState.Ready).builtBuildings.getValue(BuildingType.EXTRACTEUR) shouldBe 0
+            viewModel.extractorStock.value shouldBe 0
+            viewModel.placedBuildings.value shouldBe listOf(PlacedBuilding.extracteur(cell, clock.instant()))
+        }
+    }
+
     "un bâtiment posé dans la sous-collection alimente placedBuildings" {
         runTest(dispatcher) {
             val initial = Player.newPlayer(clock.instant())
@@ -132,7 +158,14 @@ class PlayerViewModelTest : StringSpec({
             val buildings = ObservableBuildingsRepository()
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
             val viewModel =
-                PlayerViewModel(useCase, repository, buildings, craftFor(repository), harvestFor(repository))
+                PlayerViewModel(
+                    useCase,
+                    repository,
+                    buildings,
+                    craftFor(repository),
+                    placeFor(repository),
+                    harvestFor(repository),
+                )
             advanceUntilIdle()
 
             viewModel.placedBuildings.value shouldBe emptyList()
@@ -157,7 +190,16 @@ class PlayerViewModelTest : StringSpec({
             val collect =
                 CollectHarvestUseCase(AuthGateway { uid }, repository, buildings, HarvestCalculator(clock, world))
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
-            val viewModel = PlayerViewModel(useCase, repository, buildings, craftFor(repository), collect, flowOf(Unit))
+            val viewModel =
+                PlayerViewModel(
+                    useCase,
+                    repository,
+                    buildings,
+                    craftFor(repository),
+                    placeFor(repository),
+                    collect,
+                    flowOf(Unit),
+                )
 
             advanceUntilIdle()
 
@@ -176,6 +218,7 @@ class PlayerViewModelTest : StringSpec({
                     repository,
                     ObservableBuildingsRepository(),
                     craftFor(repository),
+                    placeFor(repository),
                     harvestFor(repository),
                 )
             advanceUntilIdle()
@@ -188,6 +231,17 @@ class PlayerViewModelTest : StringSpec({
 
 /** Cas d'usage de craft câblé sur [repository] et l'uid de test, pour construire le ViewModel. */
 private fun craftFor(repository: PlayerRepository) = CraftBuildingUseCase(AuthGateway { PlayerId("uid-1") }, repository)
+
+/**
+ * Cas d'usage de pose **inerte** (sous-collection jetable, horloge système) pour les tests qui ne
+ * l'exercent pas : il n'est appelé que via [PlayerViewModel.placeExtracteur], jamais déclenché ici.
+ */
+private fun placeFor(repository: PlayerRepository) = PlaceExtractorUseCase(
+    AuthGateway { PlayerId("uid-1") },
+    repository,
+    ObservableBuildingsRepository(),
+    Clock.systemUTC(),
+)
 
 /**
  * Récolte **neutre** (aucun bâtiment, tuiles sans gisement) pour les tests qui ne l'exercent pas :
