@@ -21,7 +21,8 @@ déterministe, persistance + récolte hors ligne) sont détaillées dans les sp�
 |---|---|
 | Plateforme | Android natif, Kotlin + Jetpack Compose |
 | Carte | Mapbox Maps SDK for Android v11 (extension Compose) |
-| 3D placeholders | FillExtrusionLayer (cubes extrudés) |
+| Rendu 3D — bâtiments | ModelLayer (modèles `.glb`) |
+| Rendu 3D — avatar | FillExtrusionLayer (cube extrudé) |
 | Grille | H3 (`com.uber:h3`), résolution 11 |
 | GPS | FusedLocationProviderClient |
 | Backend | Firebase Auth (anonyme) + Cloud Firestore |
@@ -112,8 +113,8 @@ attendue.
 L'APK généré se trouve sous `app/build/outputs/apk/debug/`. Au lancement, l'application amorce
 silencieusement le compte joueur puis affiche la carte plein écran ; un bouton flottant ouvre la
 page d'inventaire à deux onglets (« Ressources », « Bâtiments »). L'onglet Ressources liste les cinq
-éléments avec leur quantité, mise à jour en temps réel depuis le document joueur (l'onglet Bâtiments
-arrive dans une tranche dédiée).
+éléments avec leur quantité, mise à jour en temps réel depuis le document joueur ; l'onglet Bâtiments
+montre le stock d'extracteurs prêts à poser et leur recette de craft, avec un bouton « Construire ».
 
 La même chaîne qualité s'exécute sur chaque PR via GitHub Actions
 ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
