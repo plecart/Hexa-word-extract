@@ -65,4 +65,47 @@ class BuildingDocumentMapperTest : StringSpec({
         document[BuildingDocumentMapper.FIELD_TYPE] shouldBe "extracteur"
         BuildingDocumentMapper.fromDocument(building.cell, document) shouldBe building
     }
+
+    "fromDocument écarte (null) un document au type inconnu plutôt que de lever" {
+        val data = mapOf<String, Any?>(
+            BuildingDocumentMapper.FIELD_TYPE to "centrale_a_fusion",
+            BuildingDocumentMapper.FIELD_PLACED_AT to Timestamp(0, 0),
+            BuildingDocumentMapper.FIELD_LAST_COLLECTED_AT to Timestamp(0, 0),
+        )
+
+        BuildingDocumentMapper.fromDocument("8a1fb46622dffff", data) shouldBe null
+    }
+
+    "fromDocument écarte (null) un document sans aucun champ" {
+        BuildingDocumentMapper.fromDocument("8a1fb46622dffff", emptyMap()) shouldBe null
+    }
+
+    "fromDocument écarte (null) un document dont le type n'est pas une chaîne" {
+        val data = mapOf<String, Any?>(
+            BuildingDocumentMapper.FIELD_TYPE to 42L,
+            BuildingDocumentMapper.FIELD_PLACED_AT to Timestamp(0, 0),
+            BuildingDocumentMapper.FIELD_LAST_COLLECTED_AT to Timestamp(0, 0),
+        )
+
+        BuildingDocumentMapper.fromDocument("8a1fb46622dffff", data) shouldBe null
+    }
+
+    "fromDocument écarte (null) un document dont placedAt n'est pas un Timestamp" {
+        val data = mapOf<String, Any?>(
+            BuildingDocumentMapper.FIELD_TYPE to "base",
+            BuildingDocumentMapper.FIELD_PLACED_AT to "pas-un-timestamp",
+            BuildingDocumentMapper.FIELD_LAST_COLLECTED_AT to Timestamp(0, 0),
+        )
+
+        BuildingDocumentMapper.fromDocument("8a1fb46622dffff", data) shouldBe null
+    }
+
+    "fromDocument écarte (null) un document dont lastCollectedAt est absent" {
+        val data = mapOf<String, Any?>(
+            BuildingDocumentMapper.FIELD_TYPE to "base",
+            BuildingDocumentMapper.FIELD_PLACED_AT to Timestamp(0, 0),
+        )
+
+        BuildingDocumentMapper.fromDocument("8a1fb46622dffff", data) shouldBe null
+    }
 })

@@ -14,6 +14,14 @@ import java.time.Instant
  *
  * Écriture et lecture sont symétriques ([toDocument] / [fromDocument]) : un aller-retour restitue le
  * bâtiment d'origine, nanosecondes comprises. Pur et sans dépendance Android : testable directement.
+ *
+ * **Lecture tolérante** (cohérente avec celle du document joueur, cf. [PlayerDocumentMapper]) : appelé
+ * dans le flux temps réel qui alimente le rendu, [fromDocument] ne **lève jamais**. Un document
+ * malformé, incomplet ou légataire (type renommé/supprimé d'une version future, écriture offline
+ * partielle) est **écarté** (`null`), si bien que les autres bâtiments restent rendus. Contrairement au
+ * document joueur — qui dégrade champ par champ vers des valeurs neutres — un bâtiment n'a pas de repli
+ * sûr par champ : un type inconnu n'a pas de modèle à afficher, et un `lastCollectedAt` replié sur
+ * l'epoch créditerait une récolte démesurée. L'unité de tolérance est donc le **document entier**.
  */
 object BuildingDocumentMapper {
     const val FIELD_TYPE = "type"
@@ -28,15 +36,16 @@ object BuildingDocumentMapper {
     )
 
     /**
-     * Désérialise les [data] d'un document `buildings/{h3Index}` en [PlacedBuilding]. L'index H3 n'est
-     * pas un champ : il est fourni par l'appelant via [cell] (= identifiant du document Firestore).
+     * Désérialise les [data] d'un document `buildings/{h3Index}` en [PlacedBuilding], ou `null` si le
+     * document est illisible (champ requis absent, de mauvais type, ou type de bâtiment inconnu). L'index
+     * H3 n'est pas un champ : il est fourni par l'appelant via [cell] (= identifiant du document Firestore).
      */
-    fun fromDocument(cell: String, data: Map<String, Any?>): PlacedBuilding = PlacedBuilding(
-        cell = cell,
-        type = (data[FIELD_TYPE] as String).toPlacedBuildingType(),
-        placedAt = (data[FIELD_PLACED_AT] as Timestamp).toInstant(),
-        lastCollectedAt = (data[FIELD_LAST_COLLECTED_AT] as Timestamp).toInstant(),
-    )
+    fun fromDocument(cell: String, data: Map<String, Any?>): PlacedBuilding? {
+        val type = (data[FIELD_TYPE] as? String)?.toPlacedBuildingTypeOrNull() ?: return null
+        val placedAt = (data[FIELD_PLACED_AT] as? Timestamp)?.toInstant() ?: return null
+        val lastCollectedAt = (data[FIELD_LAST_COLLECTED_AT] as? Timestamp)?.toInstant() ?: return null
+        return PlacedBuilding(cell, type, placedAt, lastCollectedAt)
+    }
 
     /** Timestamp Firestore préservant les nanosecondes (le constructeur `Timestamp(Date)` les perdrait). */
     private fun Instant.toTimestamp(): Timestamp = Timestamp(epochSecond, nano)
@@ -46,6 +55,10 @@ object BuildingDocumentMapper {
 
     private val PlacedBuildingType.fieldKey: String get() = name.lowercase()
 
-    /** Type relu depuis son libellé contractuel ([fieldKey]) — inverse de [fieldKey]. */
-    private fun String.toPlacedBuildingType(): PlacedBuildingType = PlacedBuildingType.valueOf(uppercase())
+    /**
+     * Type relu depuis son libellé contractuel ([fieldKey]) — inverse de [fieldKey] — ou `null` si le
+     * libellé ne correspond à aucun type connu (forward-compat : type retiré/renommé côté serveur).
+     */
+    private fun String.toPlacedBuildingTypeOrNull(): PlacedBuildingType? =
+        PlacedBuildingType.entries.firstOrNull { it.name == uppercase() }
 }
