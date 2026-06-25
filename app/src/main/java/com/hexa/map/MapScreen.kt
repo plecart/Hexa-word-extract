@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeGesturesPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -305,9 +306,14 @@ private fun ChaseCameraMap(
  * (cf. convention d'extraction de #75) — c'est le seul bord de l'écran carte couvrable en JVM, le
  * cœur Mapbox (ordre des `MapEffect`, glu de tap) ne l'étant pas.
  *
+ * Ancré en bas, il applique lui-même [safeGesturesPadding] pour rester **hors de la zone de geste
+ * système** : en mode immersif (barres masquées), l'inset de barre de navigation est nul et seul
+ * l'inset de geste écarte l'icône du swipe du bord.
+ *
  * @param mode mode caméra courant ; décide la présence de l'icône de recentrage.
  * @param onRecenter invoqué au tap (restaure le cadrage de poursuite, cf. [ChaseCameraViewModel.recenter]).
- * @param modifier placement décidé par l'appelant (alignement, marges), appliqué à l'icône.
+ * @param modifier placement décidé par l'appelant (alignement, marges) ; appliqué avant les insets de
+ *   geste, de sorte que la marge épouse le bord sûr (hors zone de swipe).
  */
 @Composable
 internal fun ChaseCameraOverlay(mode: CameraMode, onRecenter: () -> Unit, modifier: Modifier = Modifier) {
@@ -315,6 +321,7 @@ internal fun ChaseCameraOverlay(mode: CameraMode, onRecenter: () -> Unit, modifi
         val description = stringResource(R.string.recenter_camera)
         Box(
             modifier
+                .safeGesturesPadding()
                 .size(HexaDimens.minTouchTarget)
                 .hexaGlowSurface(shape = CircleShape, glow = MaterialTheme.colorScheme.primary)
                 .clickable(role = Role.Button, onClick = onRecenter)
