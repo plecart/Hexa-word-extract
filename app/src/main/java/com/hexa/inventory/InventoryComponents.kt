@@ -29,7 +29,7 @@ import com.hexa.ui.theme.AnimatedCount
 import com.hexa.ui.theme.hexaGlowSurface
 
 /**
- * Briques DA partagées par les pages plein écran logées au-dessus de la carte ([InventoryScreen],
+ * Briques DA partagées par les pages plein écran logées au-dessus de la carte ([ResourcesScreen],
  * [BuildingsScreen]) : la coquille d'écran à top bar + bouton fermer ([OverlayScaffold]), la tuile à
  * liseré coloré ([GlowTile]) et le panneau de message d'état centré ([CenteredPanel]). Extraites ici
  * pour rester l'unique source des deux écrans, sans qu'aucun ne dépende d'un `internal` logé dans

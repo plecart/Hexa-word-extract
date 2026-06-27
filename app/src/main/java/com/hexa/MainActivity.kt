@@ -36,7 +36,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.hexa.config.GameConfig
 import com.hexa.firstlaunch.FirstLaunchScreen
 import com.hexa.inventory.BuildingsScreen
-import com.hexa.inventory.InventoryScreen
+import com.hexa.inventory.ResourcesScreen
 import com.hexa.map.LocationPermissionGate
 import com.hexa.map.MapScreen
 import com.hexa.player.CollectHarvestUseCase
@@ -142,7 +142,7 @@ private fun GameScene(viewModel: PlayerViewModel, playerState: PlayerUiState, fi
 }
 
 /** Pages plein écran superposables à la carte, ouvertes depuis la barre flottante. */
-private enum class OverlayPanel { INVENTORY, BUILDINGS }
+private enum class OverlayPanel { RESOURCES, BUILDINGS }
 
 /**
  * Superpose à la carte les pages plein écran de jeu (inventaire, bâtiments), une fois la base posée (ou
@@ -159,8 +159,8 @@ private fun GameOverlays(playerState: PlayerUiState, onCraftExtracteur: () -> Un
     var open by rememberSaveable { mutableStateOf<OverlayPanel?>(null) }
 
     Box(Modifier.fillMaxSize()) {
-        OverlayPage(visible = open == OverlayPanel.INVENTORY) {
-            InventoryScreen(
+        OverlayPage(visible = open == OverlayPanel.RESOURCES) {
+            ResourcesScreen(
                 state = playerState,
                 onClose = { open = null },
                 modifier = Modifier.fillMaxSize(),
@@ -191,7 +191,7 @@ private fun GameOverlays(playerState: PlayerUiState, onCraftExtracteur: () -> Un
                     HexaAction(
                         icon = Icons.Outlined.Backpack,
                         contentDescription = stringResource(R.string.inventory_open),
-                        onClick = { open = OverlayPanel.INVENTORY },
+                        onClick = { open = OverlayPanel.RESOURCES },
                     ),
                     HexaAction(
                         icon = Icons.Outlined.Factory,
