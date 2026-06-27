@@ -32,7 +32,7 @@ import com.hexa.ui.theme.hexaGlowSurface
  * Page **Bâtiments** plein écran, ouverte par-dessus la carte depuis la barre flottante, habillée par
  * la DA « carte sci-fi sombre » via [OverlayScaffold] (fond anthracite plein, top bar translucide +
  * bouton fermer). Elle montre le **stock d'extracteurs** prêts à poser et la **recette de craft**, avec
- * un bouton « Construire » désactivé tant que la recette n'est pas couverte (cf. [BuildingsContent]).
+ * un bouton « Construire » désactivé tant que la recette n'est pas couverte (cf. [CraftCard]).
  *
  * Pendant l'amorçage du compte ou après un échec, un panneau d'état centré remplace le contenu ; en
  * état prêt, les compteurs se mettent à jour sans action de l'utilisateur (le ViewModel observe le
@@ -55,22 +55,14 @@ fun BuildingsScreen(
         onClose = onClose,
         modifier = modifier,
     ) { contentModifier ->
-        BuildingsContent(state, onCraftExtracteur, contentModifier)
-    }
-}
-
-/** Contenu de la page selon l'état : panneau centré pendant/à l'échec, le craft sinon. */
-@Composable
-private fun BuildingsContent(state: PlayerUiState, onCraftExtracteur: () -> Unit, modifier: Modifier = Modifier) {
-    when (state) {
-        PlayerUiState.Loading -> CenteredPanel(stringResource(R.string.inventory_loading), modifier)
-        PlayerUiState.Failed -> CenteredPanel(stringResource(R.string.inventory_error), modifier)
-        is PlayerUiState.Ready -> ExtracteurSection(
-            inventory = state.inventory,
-            stock = state.builtBuildings[BuildingType.EXTRACTEUR] ?: 0,
-            onCraft = onCraftExtracteur,
-            modifier = modifier,
-        )
+        OverlayStateContent(state, contentModifier) { ready, readyModifier ->
+            ExtracteurSection(
+                inventory = ready.inventory,
+                stock = ready.builtBuildings[BuildingType.EXTRACTEUR] ?: 0,
+                onCraft = onCraftExtracteur,
+                modifier = readyModifier,
+            )
+        }
     }
 }
 

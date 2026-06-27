@@ -20,8 +20,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.hexa.R
+import com.hexa.player.PlayerUiState
 import com.hexa.ui.theme.AnimatedCount
 import com.hexa.ui.theme.hexaGlowSurface
 
@@ -71,6 +74,29 @@ internal fun OverlayScaffold(
         },
     ) { padding ->
         content(Modifier.padding(padding).fillMaxSize())
+    }
+}
+
+/**
+ * Porte d'état commune aux corps de page : pendant l'amorçage du compte ([PlayerUiState.Loading]) ou
+ * après un échec ([PlayerUiState.Failed]), affiche le panneau de message centré idoine ; en état prêt,
+ * délègue à [ready] le rendu propre à la page (liste de ressources, stock + craft…). Centralise le
+ * traitement Loading/Failed pour que chaque page ne décrive que son contenu prêt.
+ *
+ * @param state état du compte joueur.
+ * @param modifier appliqué au panneau d'état comme au contenu prêt.
+ * @param ready rendu du contenu en état prêt ; reçoit l'état prêt et le `Modifier` à appliquer.
+ */
+@Composable
+internal fun OverlayStateContent(
+    state: PlayerUiState,
+    modifier: Modifier = Modifier,
+    ready: @Composable (PlayerUiState.Ready, Modifier) -> Unit,
+) {
+    when (state) {
+        PlayerUiState.Loading -> CenteredPanel(stringResource(R.string.inventory_loading), modifier)
+        PlayerUiState.Failed -> CenteredPanel(stringResource(R.string.inventory_error), modifier)
+        is PlayerUiState.Ready -> ready(state, modifier)
     }
 }
 

@@ -45,17 +45,9 @@ fun InventoryScreen(state: PlayerUiState, onClose: () -> Unit, modifier: Modifie
         onClose = onClose,
         modifier = modifier,
     ) { contentModifier ->
-        ResourcesContent(state, contentModifier)
-    }
-}
-
-/** Contenu de la page selon l'état : panneau centré pendant/à l'échec, liste des ressources sinon. */
-@Composable
-private fun ResourcesContent(state: PlayerUiState, modifier: Modifier = Modifier) {
-    when (state) {
-        PlayerUiState.Loading -> CenteredPanel(stringResource(R.string.inventory_loading), modifier)
-        PlayerUiState.Failed -> CenteredPanel(stringResource(R.string.inventory_error), modifier)
-        is PlayerUiState.Ready -> ResourceList(state.inventory, modifier)
+        OverlayStateContent(state, contentModifier) { ready, readyModifier ->
+            ResourceList(ready.inventory, readyModifier)
+        }
     }
 }
 
