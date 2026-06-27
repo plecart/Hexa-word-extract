@@ -1,6 +1,5 @@
 package com.hexa.core.geo
 
-import kotlin.math.PI
 import kotlin.math.asin
 import kotlin.math.cos
 import kotlin.math.sin
@@ -16,8 +15,6 @@ import kotlin.math.sqrt
  * négligeable, et la haversine reste stable même pour de très petites distances.
  */
 object GreatCircle {
-    private const val DEGREES_TO_RADIANS = PI / 180.0
-
     /** Rayon terrestre moyen, en mètres (sphère de référence WGS84). */
     private const val EARTH_RADIUS_M = 6_371_008.8
 
