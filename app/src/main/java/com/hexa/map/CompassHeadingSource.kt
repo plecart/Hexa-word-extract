@@ -4,6 +4,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import com.hexa.core.geo.wrapDegrees
 import com.hexa.location.HeadingSource
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.awaitClose
@@ -47,7 +48,7 @@ class CompassHeadingSource(private val sensorManager: SensorManager) : HeadingSo
                     SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
                     SensorManager.getOrientation(rotationMatrix, orientation)
                     val rawDeg = Math.toDegrees(orientation[AZIMUTH].toDouble())
-                    trySend((rawDeg + FULL_TURN_DEG) % FULL_TURN_DEG)
+                    trySend(rawDeg.wrapDegrees())
                 }
 
                 override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
@@ -62,7 +63,6 @@ class CompassHeadingSource(private val sensorManager: SensorManager) : HeadingSo
         const val MATRIX_SIZE = 9
         const val ORIENTATION_SIZE = 3
         const val AZIMUTH = 0
-        const val FULL_TURN_DEG = 360.0
 
         /** Période d'échantillonnage du cap (ms) : ~10 Hz, fluide sans saturer la caméra ni le CPU. */
         const val SAMPLE_MS = 100L
