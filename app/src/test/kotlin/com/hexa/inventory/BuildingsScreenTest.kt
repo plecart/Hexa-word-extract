@@ -106,13 +106,13 @@ class BuildingsScreenTest {
     fun `etat chargement affiche le message de chargement`() {
         render(PlayerUiState.Loading)
 
-        composeRule.onNodeWithText(context.getString(R.string.inventory_loading)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.overlay_loading)).assertIsDisplayed()
     }
 
     @Test
     fun `etat echec affiche le message d erreur`() {
         render(PlayerUiState.Failed)
 
-        composeRule.onNodeWithText(context.getString(R.string.inventory_error)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.overlay_error)).assertIsDisplayed()
     }
 }

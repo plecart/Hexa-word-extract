@@ -77,7 +77,7 @@ class ResourcesScreenTest {
         var closed = false
         render(ready(affordable), onClose = { closed = true })
 
-        composeRule.onNodeWithContentDescription(context.getString(R.string.inventory_close)).performClick()
+        composeRule.onNodeWithContentDescription(context.getString(R.string.resources_close)).performClick()
 
         assertTrue(closed)
     }
@@ -86,13 +86,13 @@ class ResourcesScreenTest {
     fun `etat chargement affiche le message de chargement`() {
         render(PlayerUiState.Loading)
 
-        composeRule.onNodeWithText(context.getString(R.string.inventory_loading)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.overlay_loading)).assertIsDisplayed()
     }
 
     @Test
     fun `etat echec affiche le message d erreur`() {
         render(PlayerUiState.Failed)
 
-        composeRule.onNodeWithText(context.getString(R.string.inventory_error)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.overlay_error)).assertIsDisplayed()
     }
 }

@@ -94,8 +94,8 @@ internal fun OverlayStateContent(
     ready: @Composable (PlayerUiState.Ready, Modifier) -> Unit,
 ) {
     when (state) {
-        PlayerUiState.Loading -> CenteredPanel(stringResource(R.string.inventory_loading), modifier)
-        PlayerUiState.Failed -> CenteredPanel(stringResource(R.string.inventory_error), modifier)
+        PlayerUiState.Loading -> CenteredPanel(stringResource(R.string.overlay_loading), modifier)
+        PlayerUiState.Failed -> CenteredPanel(stringResource(R.string.overlay_error), modifier)
         is PlayerUiState.Ready -> ready(state, modifier)
     }
 }

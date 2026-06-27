@@ -64,9 +64,9 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * Unique activité de l'application (single-activity). Fournit le token public au SDK Mapbox, pose le
- * thème Compose et affiche la carte plein écran avec, par-dessus, la page d'inventaire ouverte par un
- * bouton flottant. Au démarrage, l'amorçage silencieux du compte joueur ([PlayerViewModel]) alimente
- * l'inventaire en temps réel.
+ * thème Compose et affiche la carte plein écran avec, par-dessus, la page Ressources ouverte depuis la
+ * barre flottante. Au démarrage, l'amorçage silencieux du compte joueur ([PlayerViewModel]) alimente
+ * les ressources en temps réel.
  */
 class MainActivity : ComponentActivity() {
     private val playerViewModel: PlayerViewModel by viewModels { playerViewModelFactory }
@@ -120,8 +120,8 @@ private fun HexaRoot(viewModel: PlayerViewModel) {
  * Scène de jeu (états « fix connu ») : la carte **reste composée dessous** (son état caméra est
  * préservé) et une surcouche s'affiche selon l'état du compte. Tant que la base n'est pas posée
  * ([firstLaunch]), l'**écran de premier lancement** invite à la poser par-dessus la carte ; sinon
- * (base posée, ou amorçage en cours/échoué) c'est l'**inventaire** qui est superposable. La carte
- * reçoit les bâtiments posés à rendre en 3D ([PlayerViewModel.placedBuildings]).
+ * (base posée, ou amorçage en cours/échoué) ce sont les **pages de jeu** (Ressources, Bâtiments) qui
+ * sont superposables. La carte reçoit les bâtiments posés à rendre en 3D ([PlayerViewModel.placedBuildings]).
  */
 @Composable
 private fun GameScene(viewModel: PlayerViewModel, playerState: PlayerUiState, firstLaunch: Boolean) {
@@ -145,7 +145,7 @@ private fun GameScene(viewModel: PlayerViewModel, playerState: PlayerUiState, fi
 private enum class OverlayPanel { RESOURCES, BUILDINGS }
 
 /**
- * Superpose à la carte les pages plein écran de jeu (inventaire, bâtiments), une fois la base posée (ou
+ * Superpose à la carte les pages plein écran de jeu (ressources, bâtiments), une fois la base posée (ou
  * pendant l'amorçage/échec). Une seule page est ouverte à la fois ([open]) ; chacune descend en fondu
  * sur la carte à l'ouverture et remonte à la fermeture. La **barre d'actions** (ancrée en bas, centrée)
  * fait le fondu inverse : elle disparaît dès qu'une page est ouverte et porte une action par page. Le
@@ -190,7 +190,7 @@ private fun GameOverlays(playerState: PlayerUiState, onCraftExtracteur: () -> Un
                 listOf(
                     HexaAction(
                         icon = Icons.Outlined.Backpack,
-                        contentDescription = stringResource(R.string.inventory_open),
+                        contentDescription = stringResource(R.string.resources_open),
                         onClick = { open = OverlayPanel.RESOURCES },
                     ),
                     HexaAction(

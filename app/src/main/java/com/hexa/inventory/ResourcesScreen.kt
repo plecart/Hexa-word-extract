@@ -40,8 +40,8 @@ import com.hexa.ui.theme.hexaGlowSurface
 @Composable
 fun ResourcesScreen(state: PlayerUiState, onClose: () -> Unit, modifier: Modifier = Modifier) {
     OverlayScaffold(
-        title = stringResource(R.string.inventory_title),
-        closeContentDescription = stringResource(R.string.inventory_close),
+        title = stringResource(R.string.resources_title),
+        closeContentDescription = stringResource(R.string.resources_close),
         onClose = onClose,
         modifier = modifier,
     ) { contentModifier ->
