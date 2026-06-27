@@ -46,8 +46,8 @@ object Craft {
             .filterValues { it > 0 }
         if (missing.isNotEmpty()) return CraftOutcome.Refused(missing)
 
-        val stock = player.builtBuildings + (type to player.builtBuildings.getValue(type) + 1)
-        return CraftOutcome.Built(player.copy(inventory = player.inventory.minus(recipe), builtBuildings = stock))
+        val built = player.copy(inventory = player.inventory.minus(recipe)).incrementStock(type)
+        return CraftOutcome.Built(built)
     }
 
     /** Recette du [type], en unités par élément (cf. [GameConfig]). */

@@ -6,9 +6,10 @@ import java.time.Clock
  * Pose d'un **extracteur** depuis le stock construit (cf. PRD #4, user stories 5-9 ; spec F5).
  *
  * Pendant en écriture de [PlaceBaseUseCase], mais payant : sur la tuile [cell] (index H3 de la tuile
- * courante, déjà résolu côté `:app`), la pose **décrémente** `builtBuildings[EXTRACTEUR]` et crée le
- * document `players/{uid}/buildings/{h3Index}` de type `extracteur`, `lastCollectedAt = now` pour
- * amorcer la récolte. C'est l'opération inverse du craft ([Craft]) sur la même map de stock.
+ * courante, déjà résolu côté `:app`), la pose **décrémente** le stock d'extracteur
+ * ([Player.decrementStock]) et crée le document `players/{uid}/buildings/{h3Index}` de type
+ * `extracteur`, `lastCollectedAt = now` pour amorcer la récolte. C'est l'opération inverse du craft
+ * ([Craft]), qui l'incrémente.
  *
  * La décision est déléguée à [PlacementRules] et **rien n'est écrit en cas de refus** (calque de
  * [CraftBuildingUseCase] : décider d'abord, persister seulement si succès). L'affordance n'étant
@@ -41,13 +42,12 @@ class PlaceExtractorUseCase(
         val player =
             players.load(id)
                 ?: error("Pose d'un extracteur impossible : document joueur absent (amorçage requis).")
-        val stock = player.builtBuildings.getValue(BuildingType.EXTRACTEUR)
+        val stock = player.stockOf(BuildingType.EXTRACTEUR)
         val occupied = buildings.building(id, cell) != null
 
         val decision = PlacementRules.decide(isCurrentTile = true, isTileOccupied = occupied, stock = stock)
         if (decision is PlacementDecision.Placeable) {
-            val decremented = player.builtBuildings + (BuildingType.EXTRACTEUR to stock - 1)
-            players.save(id, player.copy(builtBuildings = decremented))
+            players.save(id, player.decrementStock(BuildingType.EXTRACTEUR))
             buildings.place(id, PlacedBuilding.extracteur(cell, clock.instant()))
         }
         return decision
