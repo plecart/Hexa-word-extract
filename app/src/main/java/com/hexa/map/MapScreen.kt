@@ -224,8 +224,8 @@ private fun ChaseCameraMap(
             MapEffect(placements) { mapView ->
                 mapView.mapboxMap.getStyle { style -> style.showBuildingModels(placements) }
             }
-            // Repose le cube de l'avatar à chaque nouvelle position lissée ; la source/couche n'est
-            // créée qu'une fois, ensuite seul le polygone est réinjecté (suivi fluide en marche).
+            // Repose le modèle de l'avatar à chaque nouvelle position lissée ; la source/couche n'est
+            // créée qu'une fois, ensuite seul le point est réinjecté (suivi fluide en marche).
             MapEffect(avatarPosition) { mapView ->
                 mapView.mapboxMap.getStyle { style -> style.showAvatar(avatarPosition) }
             }

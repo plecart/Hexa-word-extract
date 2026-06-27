@@ -157,26 +157,28 @@ object MapConfig {
      */
     const val BUILDING_MODEL_COLOR_MIX: Double = 0.7
 
-    /**
-     * Côté, en mètres, de l'empreinte au sol du **cube placeholder de l'avatar** (cf.
-     * [avatarFootprint], rendu par [Style.showAvatar]). Plus petit qu'un bâtiment
-     * ([BUILDING_MODEL_SCALE]) pour rester à l'échelle d'un joueur tout en restant lisible à la
-     * caméra inclinée. **À affiner à la validation terrain.** **Provisoire**, le temps d'un avatar
-     * définitif (probablement un modèle animé, hors périmètre MVP).
-     */
-    const val AVATAR_SIZE_M: Double = 6.0
+    /** Chemin, dans `assets/`, du `model.glb` de l'avatar (rendu par [Style.showAvatar]). */
+    const val AVATAR_MODEL_GLB: String = "objects/avatar/model.glb"
 
     /**
-     * Hauteur d'extrusion du cube de l'avatar, en mètres. Égale au côté ([AVATAR_SIZE_M]) : le
-     * placeholder est un **cube**. À dissocier le jour où l'avatar gagne une silhouette propre.
-     * **Provisoire**.
+     * Facteur d'échelle du modèle 3D de l'avatar. Plus petit qu'un bâtiment ([BUILDING_MODEL_SCALE])
+     * pour rester à l'échelle d'un joueur tout en restant lisible à la caméra inclinée. **À affiner à
+     * la validation terrain.** **Provisoire**.
      */
-    const val AVATAR_HEIGHT_M: Double = AVATAR_SIZE_M
+    const val AVATAR_MODEL_SCALE: Double = 12.0
 
     /**
-     * Couleur du cube de l'avatar, au format `#RRGGBB`. Rouge corail vif : **distinct** du cyan de la
-     * grille ([GRID_LINE_COLOR]) et de l'ambre des bâtiments — le joueur se repère d'un coup d'œil sur
-     * le fond monochrome. **Provisoire** (placeholder).
+     * Remontée verticale, en mètres, pour poser la base du modèle au sol — le modèle étant centré sur
+     * son origine, sa moitié basse s'enterrerait sinon (= demi-[AVATAR_MODEL_SCALE]). **À ajuster sur
+     * device** si le glb est modélisé base-à-l'origine (mettre alors `0.0`). **Provisoire**.
      */
-    const val AVATAR_COLOR: String = "#FF5252"
+    const val AVATAR_MODEL_GROUND_LIFT_M: Double = AVATAR_MODEL_SCALE / 2.0
+
+    /**
+     * Lacet (rotation autour de +Z, en degrés) appliqué par défaut au modèle de l'avatar. Le mesh a son
+     * avant modélisé vers **+X** ; cette rotation l'aligne sur la direction de référence pour cette
+     * tranche à orientation fixe. **À valider sur device.** Les tranches d'orientation suivantes
+     * piloteront ce lacet dynamiquement (cap boussole / GPS). **Provisoire**.
+     */
+    const val AVATAR_MODEL_FACING_DEG: Double = 90.0
 }
