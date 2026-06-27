@@ -41,10 +41,9 @@ class MapCameraConfigTest : StringSpec({
         (MapConfig.GPS_INTERVAL_MS > 0L) shouldBe true
     }
 
-    "les dimensions et la couleur de l'avatar forment une configuration valide" {
-        (MapConfig.AVATAR_SIZE_M > 0.0) shouldBe true
-        (MapConfig.AVATAR_HEIGHT_M > 0.0) shouldBe true
-        // Teinte centralisée au format #RRGGBB, attendu par la couche d'extrusion.
-        MapConfig.AVATAR_COLOR.matches(Regex("^#[0-9A-Fa-f]{6}$")) shouldBe true
+    "le modèle 3D de l'avatar forme une configuration valide" {
+        (MapConfig.AVATAR_MODEL_SCALE > 0.0) shouldBe true
+        (MapConfig.AVATAR_MODEL_GROUND_LIFT_M >= 0.0) shouldBe true
+        MapConfig.AVATAR_MODEL_GLB.isNotBlank() shouldBe true
     }
 })

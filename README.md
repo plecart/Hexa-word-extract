@@ -22,7 +22,7 @@ déterministe, persistance + récolte hors ligne) sont détaillées dans les sp�
 | Plateforme | Android natif, Kotlin + Jetpack Compose |
 | Carte | Mapbox Maps SDK for Android v11 (extension Compose) |
 | Rendu 3D — bâtiments | ModelLayer (modèles `.glb`) |
-| Rendu 3D — avatar | FillExtrusionLayer (cube extrudé) |
+| Rendu 3D — avatar | ModelLayer (modèle `.glb`) |
 | Grille | H3 (`com.uber:h3`), résolution 11 |
 | GPS | FusedLocationProviderClient |
 | Backend | Firebase Auth (anonyme) + Cloud Firestore |

@@ -10,7 +10,7 @@ Ce MVP est un **prototype de validation technique**, pas un jeu équilibré. Le 
 
 1. Peut-on afficher une carte du monde sobre avec une grille hexagonale H3 superposée, de façon fluide sur Android ?
 2. Le GPS est-il assez précis et stable pour positionner un avatar et déterminer de manière fiable la tuile H3 sur laquelle se trouve le joueur ?
-3. Peut-on afficher des objets 3D (modèles `.glb` pour les bâtiments, cube extrudé pour l'avatar) ancrés sur des tuiles de la carte, avec une caméra de poursuite à la troisième personne ?
+3. Peut-on afficher des objets 3D (modèles `.glb` pour les bâtiments comme pour l'avatar) ancrés sur des tuiles de la carte, avec une caméra de poursuite à la troisième personne ?
 4. La génération procédurale des ressources par seeding (position → contenu) fonctionne-t-elle de manière déterministe et performante, sans rien stocker ?
 5. La persistance des données joueur (inventaire, bâtiments placés) et le calcul de la récolte hors ligne fonctionnent-ils correctement ?
 
@@ -44,7 +44,7 @@ Tout ce qui ne sert pas à répondre à ces cinq questions est hors périmètre.
 |---|---|---|
 | Plateforme | Android natif, **Kotlin + Jetpack Compose** | Pas de moteur de jeu nécessaire ; écosystème où l'assistance IA au développement est la plus efficace |
 | Carte | **Mapbox Maps SDK for Android v11** (avec l'extension Compose) | Rendu 3D natif (extrusions, modèles glTF), styles personnalisables à volonté via Mapbox Studio (idéal pour le rendu « sobre »), caméra librement contrôlable (pitch, bearing, zoom), offre gratuite généreuse pour un prototype |
-| Rendu 3D | Bâtiments via **ModelLayer** (modèles `.glb`) ; avatar via **FillExtrusionLayer** (un polygone extrudé = un cube) | Le passage des extrusions placeholders aux modèles `.glb` (prévu sans changer d'architecture) est réalisé pour les bâtiments ; l'avatar reste un cube extrudé en attendant son propre modèle |
+| Rendu 3D | Bâtiments **et** avatar via **ModelLayer** (modèles `.glb`) | Le passage des extrusions placeholders aux modèles `.glb` (prévu sans changer d'architecture) est réalisé pour les bâtiments comme pour l'avatar (modèle à l'avant identifiable, orientation dynamique à venir) |
 | Grille | **H3** (bibliothèque Java officielle d'Uber, `com.uber:h3`) | Index unique et stable pour chaque hexagone du globe → sert directement de seed ; conversions position ↔ cellule et cellule → contour fournies |
 | GPS | FusedLocationProviderClient (Google Play Services) | Standard Android, fusion GPS/Wi-Fi/réseau |
 | Backend / DB | **Firebase** : Auth (mode anonyme) + Cloud Firestore | Gratuit au tier Spark pour un prototype, SDK Android natif, passage de l'auth anonyme vers Google/Apple SSO prévu par Firebase (account linking), synchronisation offline incluse |
@@ -97,7 +97,7 @@ La vue principale affiche la carte Mapbox dans un style personnalisé monochrome
 
 ### F2 — Avatar
 
-Un marqueur 3D (cube placeholder d'une couleur distincte) positionné sur la position GPS lissée du joueur. La position brute du GPS est filtrée (lissage exponentiel + rejet des points aberrants de faible précision) pour éviter les tremblements et les sauts de tuile intempestifs.
+Un modèle 3D (`.glb`) à l'avant identifiable, positionné sur la position GPS lissée du joueur. La position brute du GPS est filtrée (lissage exponentiel + rejet des points aberrants de faible précision) pour éviter les tremblements et les sauts de tuile intempestifs.
 
 ### F3 — Grille hexagonale
 
@@ -113,7 +113,7 @@ Conditions : joueur physiquement sur la tuile, tuile libre, bâtiment disponible
 
 ### F6 — Rendu 3D des bâtiments
 
-Chaque bâtiment placé est rendu par un modèle 3D (`model.glb`) posé sur le centre de la tuile via la **ModelLayer** de Mapbox, ancré au sol et teinté par une couleur d'identité par type (base ≠ extracteur). Le modèle est visible dès que la tuile entre dans le champ. Cette couche de rendu est isolée de la logique de position : passer à un autre modèle (art final) ne touche qu'elle. L'avatar, lui, reste un cube extrudé (FillExtrusionLayer), faute de modèle dédié.
+Chaque bâtiment placé est rendu par un modèle 3D (`model.glb`) posé sur le centre de la tuile via la **ModelLayer** de Mapbox, ancré au sol et teinté par une couleur d'identité par type (base ≠ extracteur). Le modèle est visible dès que la tuile entre dans le champ. Cette couche de rendu est isolée de la logique de position : passer à un autre modèle (art final) ne touche qu'elle. L'avatar est rendu de la même manière, par un modèle 3D (`model.glb`) via la **ModelLayer**, ancré au sol sur la position lissée.
 
 ### F7 — Inventaire et craft
 
@@ -146,4 +146,4 @@ Le risque principal est la **précision GPS vs taille de tuile** : en zone urbai
 - Stockage et nombre d'extracteurs illimités ; récolte hors ligne créditée automatiquement.
 - Pas de données de terrain réel dans la génération ; clusters naturels via bruit procédural.
 - Le joueur démarre avec des ressources de base (quantités : voir document de game design).
-- Bâtiments rendus par des modèles 3D (`.glb`) via la ModelLayer ; avatar rendu par un cube extrudé (FillExtrusionLayer) en attendant son propre modèle.
+- Bâtiments **et** avatar rendus par des modèles 3D (`.glb`) via la ModelLayer.
