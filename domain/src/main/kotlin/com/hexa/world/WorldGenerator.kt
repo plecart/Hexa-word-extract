@@ -81,7 +81,16 @@ class WorldGenerator(private val centerLocator: TileCenterLocator) {
     }
 
     private companion object {
-        /** Rayon terrestre moyen, en mètres — base du calcul de circonférence. */
+        /**
+         * Rayon terrestre moyen, en mètres — base du calcul de circonférence.
+         *
+         * Sert **uniquement de facteur d'échelle** au bruit procédural (`fréquence = circonférence /
+         * longueur d'onde`) : la circonférence fixe la taille des clusters, elle n'est jamais une
+         * mesure au sol. La précision du rayon est donc **sans objet** ici, d'où une valeur ronde,
+         * **volontairement indépendante** du rayon WGS84 (`6_371_008.8`) qu'emploie la géodésie réelle
+         * ([com.hexa.core.geo.GreatCircle]). Aligner les deux couplerait à tort le paramétrage du
+         * bruit à la constante géodésique.
+         */
         const val EARTH_RADIUS_M = 6_371_000.0
 
         /** Circonférence terrestre, en mètres : `fréquence = circonférence / longueur d'onde`. */

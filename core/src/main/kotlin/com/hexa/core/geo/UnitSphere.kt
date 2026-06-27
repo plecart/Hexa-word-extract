@@ -1,6 +1,5 @@
 package com.hexa.core.geo
 
-import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -17,8 +16,6 @@ import kotlin.math.sin
  * Convention : longitude 0° → +X, +90° → +Y, latitude +90° (pôle Nord) → +Z.
  */
 object UnitSphere {
-    private const val DEGREES_TO_RADIANS = PI / 180.0
-
     /**
      * Convertit une position géographique en vecteur unitaire sur la sphère.
      *
