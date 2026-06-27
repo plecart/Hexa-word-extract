@@ -17,3 +17,6 @@ google-services.json
 .cxx/
 captures/
 .kotlin/
+# Lib native H3 x86_64 cross-compilée localement (NDK) pour les runs sur émulateur x86.
+# Dev-only, non publiée upstream par com.uber:h3 — chaque poste la régénère au besoin.
+app/src/debug/jniLibs/
