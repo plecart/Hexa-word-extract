@@ -3,10 +3,19 @@ package com.hexa.inventory
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,11 +26,53 @@ import com.hexa.ui.theme.AnimatedCount
 import com.hexa.ui.theme.hexaGlowSurface
 
 /**
- * Briques DA partagées par les pages logées au-dessus de la carte ([InventoryScreen],
- * [BuildingsScreen]) : la tuile à liseré coloré ([GlowTile]) et le panneau de message d'état centré
- * ([CenteredPanel]). Extraites ici pour rester l'unique source des deux écrans, sans qu'aucun ne
- * dépende d'un `internal` logé dans l'autre.
+ * Briques DA partagées par les pages plein écran logées au-dessus de la carte ([InventoryScreen],
+ * [BuildingsScreen]) : la coquille d'écran à top bar + bouton fermer ([OverlayScaffold]), la tuile à
+ * liseré coloré ([GlowTile]) et le panneau de message d'état centré ([CenteredPanel]). Extraites ici
+ * pour rester l'unique source des deux écrans, sans qu'aucun ne dépende d'un `internal` logé dans
+ * l'autre.
  */
+
+/**
+ * Coquille commune des pages plein écran ouvertes par-dessus la carte : fond anthracite plein
+ * ([MaterialTheme.colorScheme.background]) et **top bar translucide** portant le [title] à gauche et un
+ * unique bouton fermer (icône `Close`, décrit par [closeContentDescription]) à droite. Le [content]
+ * reçoit un `Modifier` déjà inseté de la top bar et étiré plein écran, prêt à recevoir le corps de la
+ * page. Factorise le shell identique de l'inventaire et des bâtiments (un seul endroit où l'habillage
+ * DA de page évolue).
+ *
+ * @param title titre affiché en haut à gauche.
+ * @param closeContentDescription libellé d'accessibilité du bouton fermer (décrit l'action, pas l'icône).
+ * @param onClose invoqué au tap sur le bouton fermer.
+ * @param content corps de la page ; reçoit le `Modifier` inseté + plein écran à appliquer à sa racine.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun OverlayScaffold(
+    title: String,
+    closeContentDescription: String,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable (Modifier) -> Unit,
+) {
+    Scaffold(
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = { Text(title, style = MaterialTheme.typography.titleLarge) },
+                actions = {
+                    IconButton(onClick = onClose) {
+                        Icon(imageVector = Icons.Filled.Close, contentDescription = closeContentDescription)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+            )
+        },
+    ) { padding ->
+        content(Modifier.padding(padding).fillMaxSize())
+    }
+}
 
 /**
  * Tuile DA générique : une [icon] + un [label] à gauche, un compteur animé ([amount]) à droite, le

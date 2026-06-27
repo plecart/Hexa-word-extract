@@ -20,16 +20,18 @@
     <string name="loading_status">Localisation en cours…</string>
     <string name="loading_slow_hint">Vérifie que la localisation est activée et place-toi à l\'extérieur.</string>
 
-    <!-- Inventaire : page à deux onglets ouverte depuis la carte. -->
+    <!-- Inventaire (sac à dos) : page plein écran des ressources, ouverte depuis la carte. -->
     <string name="inventory_open">Ouvrir l\'inventaire</string>
     <string name="inventory_close">Fermer l\'inventaire</string>
     <string name="inventory_title">Inventaire</string>
-    <string name="inventory_tab_resources">Ressources</string>
-    <string name="inventory_tab_buildings">Bâtiments</string>
     <string name="inventory_loading">Chargement de l\'inventaire…</string>
     <string name="inventory_error">Impossible de charger l\'inventaire.</string>
 
-    <!-- Onglet Bâtiments : stock prêt à poser + craft de l'extracteur (cf. PRD #5, user stories 8-11). -->
+    <!-- Bâtiments : page plein écran (stock prêt à poser + craft de l'extracteur), ouverte depuis la
+         carte ; titre + fermeture propres (cf. PRD #5, user stories 8-11). -->
+    <string name="buildings_open">Ouvrir les bâtiments</string>
+    <string name="buildings_title">Bâtiments</string>
+    <string name="buildings_close">Fermer les bâtiments</string>
     <string name="building_extracteur">Extracteur</string>
     <string name="inventory_craft_title">Construire un extracteur</string>
     <string name="inventory_craft_button">Construire</string>
