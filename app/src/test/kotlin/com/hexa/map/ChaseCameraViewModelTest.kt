@@ -3,13 +3,11 @@
 package com.hexa.map
 
 import com.hexa.core.geo.LatLng
-import com.hexa.location.CameraMode
 import com.hexa.location.CameraState
 import com.hexa.location.ChaseCameraConfig
 import com.hexa.location.HeadingSource
 import com.hexa.location.PositionSource
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,9 +30,10 @@ private fun CoroutineScope.launchCollector(vm: ChaseCameraViewModel) {
 
 /**
  * [ChaseCameraViewModel] est la glu d'app : il combine le flux de position et le flux de cap lissé,
- * délègue la pose à [com.hexa.location.ChaseCameraController] et relaie les gestes (déplacement,
- * recentrage, zoom). On vérifie cette orchestration avec des sources factices, sans device ni
- * Mapbox — la pose elle-même est déjà testée dans `:location`.
+ * délègue la pose à [com.hexa.location.ChaseCameraController] et relaie le zoom au pincement. La
+ * caméra reste verrouillée sur le joueur (pas de mode libre ni de recentrage). On vérifie cette
+ * orchestration avec des sources factices, sans device ni Mapbox — la pose elle-même est déjà testée
+ * dans `:location`.
  */
 class ChaseCameraViewModelTest : StringSpec({
     val config = ChaseCameraConfig(pitchDeg = 60.0, followZoom = 17.0, minZoom = 14.0, maxZoom = 19.0)
@@ -52,43 +51,12 @@ class ChaseCameraViewModelTest : StringSpec({
         headingSmoothingFactor = 1.0,
     )
 
-    "en poursuite, expose la pose centrée sur la position au cap lissé et au zoom configuré" {
+    "expose la pose centrée sur la position au cap lissé et au zoom configuré" {
         runTest {
             val vm = viewModel(rawHeadingDeg = 90.0)
             backgroundScope.launchCollector(vm)
             advanceUntilIdle()
 
-            vm.cameraState.value shouldBe
-                CameraState(center = paris, zoomLevel = 17.0, pitchDeg = 60.0, bearingDeg = 90.0)
-        }
-    }
-
-    "un déplacement manuel passe en mode libre et libère la caméra" {
-        runTest {
-            val vm = viewModel()
-            backgroundScope.launchCollector(vm)
-            advanceUntilIdle()
-
-            vm.onUserPan()
-            advanceUntilIdle()
-
-            vm.mode.value shouldBe CameraMode.FREE
-            vm.cameraState.value.shouldBeNull()
-        }
-    }
-
-    "le recentrage réengage la poursuite" {
-        runTest {
-            val vm = viewModel(rawHeadingDeg = 90.0)
-            backgroundScope.launchCollector(vm)
-            advanceUntilIdle()
-            vm.onUserPan()
-            advanceUntilIdle()
-
-            vm.recenter()
-            advanceUntilIdle()
-
-            vm.mode.value shouldBe CameraMode.FOLLOW
             vm.cameraState.value shouldBe
                 CameraState(center = paris, zoomLevel = 17.0, pitchDeg = 60.0, bearingDeg = 90.0)
         }
@@ -104,21 +72,6 @@ class ChaseCameraViewModelTest : StringSpec({
             advanceUntilIdle()
 
             vm.cameraState.value?.zoomLevel shouldBe 16.0
-        }
-    }
-
-    "le recentrage efface le zoom au pincement et restaure le cadrage par défaut" {
-        runTest {
-            val vm = viewModel(rawHeadingDeg = 90.0)
-            backgroundScope.launchCollector(vm)
-            advanceUntilIdle()
-            vm.onUserZoom(16.0)
-            advanceUntilIdle()
-
-            vm.recenter()
-            advanceUntilIdle()
-
-            vm.cameraState.value?.zoomLevel shouldBe 17.0
         }
     }
 
