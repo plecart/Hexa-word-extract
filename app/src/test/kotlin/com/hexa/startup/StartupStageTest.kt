@@ -19,26 +19,26 @@ class StartupStageTest : StringSpec({
     fun ready(baseCell: String?) = PlayerUiState.Ready("uid", Inventory.EMPTY, emptyMap(), baseCell)
 
     "sans premier fix, l'écran de chargement prime même compte prêt et base posée" {
-        startupStage(firstFix = null, playerState = ready(baseCell = "8a1f")) shouldBe StartupStage.LOADING
+        startupStage(premierFix = null, playerState = ready(baseCell = "8a1f")) shouldBe StartupStage.LOADING
     }
 
     "sans premier fix pendant l'amorçage du compte, écran de chargement" {
-        startupStage(firstFix = null, playerState = PlayerUiState.Loading) shouldBe StartupStage.LOADING
+        startupStage(premierFix = null, playerState = PlayerUiState.Loading) shouldBe StartupStage.LOADING
     }
 
     "premier fix connu et base non posée affiche la pose de base" {
-        startupStage(firstFix = position, playerState = ready(baseCell = null)) shouldBe StartupStage.FIRST_LAUNCH
+        startupStage(premierFix = position, playerState = ready(baseCell = null)) shouldBe StartupStage.FIRST_LAUNCH
     }
 
     "premier fix connu et base posée affiche la carte de jeu" {
-        startupStage(firstFix = position, playerState = ready(baseCell = "8a1f")) shouldBe StartupStage.GAME
+        startupStage(premierFix = position, playerState = ready(baseCell = "8a1f")) shouldBe StartupStage.GAME
     }
 
     "premier fix connu pendant l'amorçage du compte affiche la carte de jeu" {
-        startupStage(firstFix = position, playerState = PlayerUiState.Loading) shouldBe StartupStage.GAME
+        startupStage(premierFix = position, playerState = PlayerUiState.Loading) shouldBe StartupStage.GAME
     }
 
     "premier fix connu après un échec d'amorçage affiche la carte de jeu" {
-        startupStage(firstFix = position, playerState = PlayerUiState.Failed) shouldBe StartupStage.GAME
+        startupStage(premierFix = position, playerState = PlayerUiState.Failed) shouldBe StartupStage.GAME
     }
 })

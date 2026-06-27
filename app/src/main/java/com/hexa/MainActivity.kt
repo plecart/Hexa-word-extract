@@ -98,8 +98,8 @@ private fun HexaRoot(viewModel: PlayerViewModel) {
     val playerState by viewModel.state.collectAsStateWithLifecycle()
 
     LocationPermissionGate(modifier = Modifier.fillMaxSize()) {
-        val firstFix by app.premierFix.collectAsStateWithLifecycle()
-        val stage = startupStage(firstFix, playerState)
+        val premierFix by app.premierFix.collectAsStateWithLifecycle()
+        val stage = startupStage(premierFix, playerState)
         Crossfade(targetState = stage == StartupStage.LOADING, label = "startup-loading") { isLoading ->
             if (isLoading) {
                 LoadingScreen(modifier = Modifier.fillMaxSize())
