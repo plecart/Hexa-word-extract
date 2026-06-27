@@ -11,8 +11,8 @@ import io.kotest.matchers.shouldBe
  * les listes indexées par rareté ont toutes la même longueur que [Element.entries].
  */
 class GameConfigTest : StringSpec({
-    "la résolution H3 est 11" {
-        GameConfig.H3_RESOLUTION shouldBe 11
+    "la résolution H3 est 10" {
+        GameConfig.H3_RESOLUTION shouldBe 10
     }
 
     "les listes indexées par rareté couvrent les cinq éléments" {

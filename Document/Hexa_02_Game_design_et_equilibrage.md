@@ -112,7 +112,7 @@ Avec la base + 2 extracteurs de départ sur des tuiles moyennes (richesse ~0,5 ;
 ## 6. Constantes de configuration (récapitulatif)
 
 ```
-H3_RESOLUTION            = 11
+H3_RESOLUTION            = 10              ; res-10, arête ≈ 66 m (provisoire, à valider terrain)
 WORLD_SEED               = <constante globale>
 WAVELENGTHS_M            = [2000, 1500, 1000, 600, 400]
 PRESENCE_THRESHOLDS      = [0.474, 0.604, 0.698, 0.769, 0.825]   ; recalés empiriquement (#16)

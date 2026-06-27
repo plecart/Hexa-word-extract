@@ -26,7 +26,7 @@ object MapConfig {
     /** Zoom minimal autorisé au pincement — empêche de dézoomer au-delà de l'échelle de quartier. */
     const val MIN_ZOOM: Double = 14.0
 
-    /** Zoom maximal autorisé au pincement — échelle rue, cohérente avec les hexagones H3 res-11. */
+    /** Zoom maximal autorisé au pincement — échelle rue, cohérente avec les hexagones H3 res-10. */
     const val MAX_ZOOM: Double = 19.0
 
     /** Zoom appliqué au lancement, à mi-plage de [MIN_ZOOM]–[MAX_ZOOM]. */
@@ -89,8 +89,11 @@ object MapConfig {
      * [CurrentTileTracker]). On ne bascule sur la cellule voisine que si son centre est plus proche
      * d'au moins cette marge que celui de la tuile courante : à l'arrêt en bordure, le tremblement
      * résiduel du GPS lissé ne fait alors plus clignoter la tuile. Même famille que
-     * [POSITION_SMOOTHING_FACTOR]/[ACCURACY_THRESHOLD_M] : robustesse au jitter GPS. 8 m ≈ un tiers
-     * d'arête de cellule res-11 (~25 m), assez pour stabiliser sans retarder un vrai changement.
+     * [POSITION_SMOOTHING_FACTOR]/[ACCURACY_THRESHOLD_M] : robustesse au jitter GPS. Calée sur
+     * l'amplitude **physique** du jitter lissé (quelques mètres), indépendante de la taille de tuile :
+     * 8 m couvre le tremblement sans retarder un vrai changement. Sur une arête res-10 (~66 m), cela
+     * ne pèse plus que ~1/8 d'arête (vs ~1/3 en res-11) — d'autant plus réactif que les tuiles sont
+     * larges, sans rien perdre en stabilité.
      */
     const val TILE_HYSTERESIS_MARGIN_M: Double = 8.0
 
@@ -104,14 +107,17 @@ object MapConfig {
      * Paliers de zoom → nombre d'anneaux de la grille, **ordonnés du plus zoomé au plus large**.
      * Chaque palier `(zoom plancher, anneaux)` s'applique tant que le zoom reste au-dessus du plancher.
      * Plus on dézoome, plus on affiche d'anneaux pour garder la grille pleine écran ; la grille n'est
-     * recalculée que lorsque le zoom **franchit** un palier, pas à chaque micro-variation. Les trois
-     * paliers couvrent : `≥ 18` échelle rue (19 cellules), `[16,5 ; 18[` (37 cellules), `[14 ; 16,5[`
+     * recalculée que lorsque le zoom **franchit** un palier, pas à chaque micro-variation. Calés sur la
+     * tuile res-10 (~130 m de large, ~2,6× la res-11) : à tuile plus large, le même nombre d'anneaux
+     * remplit l'écran à un zoom ~1,4 niveau plus bas, d'où des planchers abaissés d'autant (arrondis à
+     * 0,5 : 18→16,5 et 16,5→15). Les trois
+     * paliers couvrent : `≥ 16,5` échelle rue (19 cellules), `[15 ; 16,5[` (37 cellules), `[14 ; 15[`
      * échelle quartier (61 cellules).
      */
     val GRID_RING_STEPS: List<Pair<Double, Int>> =
         listOf(
-            18.0 to GRID_MIN_RINGS,
-            16.5 to 3,
+            16.5 to GRID_MIN_RINGS,
+            15.0 to 3,
             MIN_ZOOM to GRID_MAX_RINGS,
         )
 

@@ -23,7 +23,7 @@ déterministe, persistance + récolte hors ligne) sont détaillées dans les sp�
 | Carte | Mapbox Maps SDK for Android v11 (extension Compose) |
 | Rendu 3D — bâtiments | ModelLayer (modèles `.glb`) |
 | Rendu 3D — avatar | ModelLayer (modèle `.glb`) |
-| Grille | H3 (`com.uber:h3`), résolution 11 |
+| Grille | H3 (`com.uber:h3`), résolution 10 |
 | GPS | FusedLocationProviderClient |
 | Backend | Firebase Auth (anonyme) + Cloud Firestore |
 | Génération | Bruit simplex 3D en Kotlin, déterministe |
