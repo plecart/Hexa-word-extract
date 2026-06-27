@@ -14,6 +14,12 @@
     <string name="first_launch_awaiting_position">En attente de ta position…</string>
     <string name="first_launch_placement_failed">La pose a échoué, réessaie.</string>
 
+    <!-- Écran de chargement au lancement : affiché jusqu'au premier fix GPS, jamais un centre
+         arbitraire (#61). Le wordmark est un placeholder en attendant un asset de marque dédié. -->
+    <string name="loading_wordmark" translatable="false">HEXA</string>
+    <string name="loading_status">Localisation en cours…</string>
+    <string name="loading_slow_hint">Vérifie que la localisation est activée et place-toi à l\'extérieur.</string>
+
     <!-- Inventaire : page à deux onglets ouverte depuis la carte. -->
     <string name="inventory_open">Ouvrir l\'inventaire</string>
     <string name="inventory_close">Fermer l\'inventaire</string>

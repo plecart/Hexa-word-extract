@@ -74,10 +74,12 @@ private const val FOLLOW_EASE_MS = 200L
 private val RECENTER_ICON_SIZE = 28.dp
 
 /**
- * Écran carte : derrière la **porte de permission de localisation**, affiche la caméra de poursuite.
+ * Écran carte : la **caméra de poursuite** à la troisième personne.
  *
- * Tant que `ACCESS_FINE_LOCATION` n'est pas accordée, [LocationPermissionGate] présente la demande
- * puis, en cas de refus, un état explicite ; une fois accordée, [ChaseCameraMap] s'affiche.
+ * La permission de localisation **et** le premier fix GPS sont garantis **en amont** par la machine à
+ * états de démarrage ([com.hexa.startup.startupStage], cf. [com.hexa.MainActivity]) : cet écran n'est
+ * composé qu'une fois la position du joueur connue, ce qui permet d'amorcer le viewport directement
+ * sur lui (jamais de centre arbitraire visible).
  *
  * @param placedBuildings flux des bâtiments posés, rendus en **modèles 3D** sur la carte (cf.
  *   [com.hexa.player.PlayerViewModel.placedBuildings]).
@@ -92,14 +94,12 @@ fun MapScreen(
     onPlaceExtracteur: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LocationPermissionGate(modifier = modifier) {
-        ChaseCameraMap(
-            placedBuildings = placedBuildings,
-            extractorStock = extractorStock,
-            onPlaceExtracteur = onPlaceExtracteur,
-            modifier = Modifier.fillMaxSize(),
-        )
-    }
+    ChaseCameraMap(
+        placedBuildings = placedBuildings,
+        extractorStock = extractorStock,
+        onPlaceExtracteur = onPlaceExtracteur,
+        modifier = modifier,
+    )
 }
 
 /**
@@ -167,10 +167,16 @@ private fun ChaseCameraMap(
         camera?.zoomLevel?.let(gridViewModel::onZoomChanged)
     }
 
+    // Viewport amorcé **directement sur le joueur** : cet écran n'étant composé qu'une fois le premier
+    // fix connu (cf. machine à états de démarrage), la position partagée est déjà disponible, et la
+    // carte s'affiche centrée sur lui sans glisser depuis un centre de repli. [MapConfig.DEFAULT_CENTER]
+    // ne sert que de garde défensive si la valeur manquait — jamais montré en pratique.
+    val initialCenter = app.premierFix.value
+        ?: LatLng(MapConfig.DEFAULT_CENTER_LAT, MapConfig.DEFAULT_CENTER_LON)
     val viewportState =
         rememberMapViewportState {
             setCameraOptions {
-                center(Point.fromLngLat(MapConfig.DEFAULT_CENTER_LON, MapConfig.DEFAULT_CENTER_LAT))
+                center(Point.fromLngLat(initialCenter.lngDeg, initialCenter.latDeg))
                 zoom(MapConfig.DEFAULT_ZOOM)
             }
         }
