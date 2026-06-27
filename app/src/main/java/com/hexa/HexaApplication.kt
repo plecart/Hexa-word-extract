@@ -8,6 +8,7 @@ import com.google.firebase.firestore.PersistentCacheSettings
 import com.hexa.core.geo.LatLng
 import com.hexa.location.PositionSource
 import com.hexa.location.SharedPositionSource
+import com.hexa.location.firstFixPosition
 import com.hexa.map.CurrentTileTracker.currentTile
 import com.hexa.map.FusedLocationSource
 import com.hexa.map.H3Grid
@@ -60,6 +61,22 @@ class HexaApplication : Application() {
                 accuracyThresholdM = MapConfig.ACCURACY_THRESHOLD_M,
             ),
             scope = appScope,
+        )
+    }
+
+    /**
+     * Signal de **premier fix GPS** : `null` tant qu'aucune position filtrée n'est connue, puis la
+     * dernière position. Observé par la **machine à états de démarrage** ([com.hexa.startup.startupStage])
+     * pour ne quitter l'écran de chargement qu'une fois la position du joueur disponible — jamais sur
+     * un centre arbitraire. Dérivé de la **même** position partagée que la caméra et la grille, **sans**
+     * instancier la caméra de poursuite ; sa valeur courante amorce aussi le viewport de la carte
+     * directement sur le joueur (cf. [com.hexa.map.MapScreen]). Tenu chaud tant qu'une vue l'observe.
+     */
+    val premierFix: StateFlow<LatLng?> by lazy {
+        firstFixPosition(
+            positions = sharedPositionSource.positions(),
+            scope = appScope,
+            started = SharingStarted.WhileSubscribed(MapConfig.SOURCE_STOP_TIMEOUT_MS),
         )
     }
 
