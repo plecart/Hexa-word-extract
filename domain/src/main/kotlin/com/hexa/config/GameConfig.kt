@@ -13,8 +13,13 @@ package com.hexa.config
  * **indexées par rareté** dans l'ordre de [Element] : l'indice `i` décrit `Element.entries[i]`.
  */
 object GameConfig {
-    /** Résolution de la grille hexagonale H3 (≈ 25 m d'arête à la résolution 11). */
-    const val H3_RESOLUTION: Int = 11
+    /**
+     * Résolution de la grille hexagonale H3 (≈ 66 m d'arête à la résolution 10, soit une tuile
+     * d'environ 130 m de large). **Choix provisoire**, à valider sur le terrain : tuiles plus larges
+     * = tuile courante plus stable vis-à-vis du bruit GPS. La changer ré-indexe **toute** la grille et
+     * le monde (base et bâtiments sont indexés H3) — un wipe, pas une migration, au stade proto.
+     */
+    const val H3_RESOLUTION: Int = 10
 
     /** Graine globale du monde procédural — fixe pour garantir un monde déterministe. */
     const val WORLD_SEED: Long = 0x48455841L // "HEXA" en ASCII

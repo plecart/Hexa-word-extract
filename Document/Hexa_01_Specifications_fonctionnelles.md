@@ -58,11 +58,11 @@ La cible initiale était une tuile d'environ 25 m. Correspondances H3 (valeurs m
 
 | Résolution | Arête moyenne | Largeur approximative | Surface moyenne |
 |---|---|---|---|
-| 10 | ~66 m | ~130 m | ~15 000 m² |
-| **11 (retenue)** | **~25 m** | **~50 m** | **~2 150 m²** |
+| **10 (retenue)** | **~66 m** | **~130 m** | **~15 000 m²** |
+| 11 | ~25 m | ~50 m | ~2 150 m² |
 | 12 | ~9 m | ~19 m | ~310 m² |
 
-**Choix provisoire : résolution 11** (arête ≈ 25 m, soit un hexagone d'environ 50 m de large — proche de l'intention, et une taille où la précision GPS grand public, typiquement 5 à 15 m, reste fiable pour déterminer la tuile courante). La résolution 12 collerait mieux à « 25 m de large » mais la précision GPS deviendrait un vrai problème (le joueur « sauterait » de tuile en tuile). À valider sur le terrain : c'est précisément l'un des objectifs du prototype. La résolution sera une constante de configuration unique dans le code.
+**Choix provisoire : résolution 10** (arête ≈ 66 m, soit un hexagone d'environ 130 m de large). Plus large que la cible initiale de 25 m, mais la marge confortable vis-à-vis de la précision GPS grand public (typiquement 5 à 15 m) rend la tuile courante très stable, sans que le joueur « saute » de tuile en tuile en bordure. La résolution 11 (~50 m de large) collait mieux à l'intention de taille mais reste plus sensible au bruit GPS ; la 12 (~19 m) serait franchement trop fine. À valider sur le terrain : c'est précisément l'un des objectifs du prototype. La résolution est une constante de configuration unique dans le code (`GameConfig.H3_RESOLUTION`).
 
 ### Schéma de données (Firestore)
 
@@ -101,7 +101,7 @@ Un modèle 3D (`.glb`) à l'avant identifiable, positionné sur la position GPS 
 
 ### F3 — Grille hexagonale
 
-Les hexagones H3 (résolution 11) sont dessinés en surcouche fine au-dessus de la carte, uniquement dans la zone visible autour du joueur (calcul par `gridDisk` autour de la cellule courante, rayon adapté au zoom — typiquement 2 à 4 anneaux, soit 19 à 61 cellules). La tuile sur laquelle se trouve le joueur est surlignée. Les tuiles contenant un bâtiment du joueur sont visuellement distinctes.
+Les hexagones H3 (résolution 10) sont dessinés en surcouche fine au-dessus de la carte, uniquement dans la zone visible autour du joueur (calcul par `gridDisk` autour de la cellule courante, rayon adapté au zoom — typiquement 2 à 4 anneaux, soit 19 à 61 cellules). La tuile sur laquelle se trouve le joueur est surlignée. Les tuiles contenant un bâtiment du joueur sont visuellement distinctes.
 
 ### F4 — Inspection de tuile
 
@@ -141,7 +141,7 @@ Le risque principal est la **précision GPS vs taille de tuile** : en zone urbai
 ## 7. Décisions actées
 
 - Android uniquement pour le prototype ; pas de SSO (auth anonyme) ; pas d'anti-triche ; gameplay réduit au strict minimum.
-- H3 confirmé comme système de grille (résolution 11 provisoire).
+- H3 confirmé comme système de grille (résolution 10 provisoire).
 - La base est un extracteur non déplaçable ; tout placement est permanent.
 - Stockage et nombre d'extracteurs illimités ; récolte hors ligne créditée automatiquement.
 - Pas de données de terrain réel dans la génération ; clusters naturels via bruit procédural.
