@@ -3,7 +3,6 @@ package com.hexa.inventory
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -34,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.hexa.R
@@ -43,7 +41,6 @@ import com.hexa.config.GameConfig
 import com.hexa.player.BuildingType
 import com.hexa.player.Inventory
 import com.hexa.player.PlayerUiState
-import com.hexa.ui.theme.AnimatedCount
 import com.hexa.ui.theme.BuildingObject
 import com.hexa.ui.theme.ElementObject
 import com.hexa.ui.theme.HexaActionButton
@@ -171,48 +168,6 @@ private fun ResourceRow(element: Element, amount: Long) {
     }
 }
 
-/**
- * Tuile DA générique : une [icon] + un [label] à gauche, un compteur animé ([amount]) à droite, le
- * tout en panneau dont le **liseré prend la couleur [glow]** — l'identité saute aux yeux sans lire le
- * nom. Brique commune des tuiles de ressource ([ResourceRow]) et de bâtiment ([BuildingStockRow]) :
- * le nom reste en corps système, la quantité ressort en accent cyan à chiffres tabulaires (slot
- * compteur posé par la DA).
- *
- * @param glow couleur d'identité du liseré.
- * @param label nom affiché à gauche de l'icône.
- * @param amount quantité affichée à droite (défile à chaque variation).
- * @param icon contenu de l'icône (taille fixée par l'appelant), à gauche du nom.
- */
-@Composable
-private fun GlowTile(glow: Color, label: String, amount: Long, icon: @Composable () -> Unit) {
-    Row(
-        modifier =
-        Modifier
-            .fillMaxWidth()
-            .hexaGlowSurface(shape = MaterialTheme.shapes.small, glow = glow)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            icon()
-            Text(
-                label,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-        AnimatedCount(
-            amount = amount,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-        )
-    }
-}
-
 /** Contenu de l'onglet Bâtiments selon l'état : panneau centré pendant/à l'échec, le craft sinon. */
 @Composable
 private fun BuildingsTab(state: PlayerUiState, onCraftExtracteur: () -> Unit, modifier: Modifier = Modifier) {
@@ -323,23 +278,6 @@ private fun RecipeRow(element: Element, owned: Long, required: Int) {
             stringResource(R.string.inventory_craft_amount, owned, required),
             style = MaterialTheme.typography.titleSmall,
             color = if (enough) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
-        )
-    }
-}
-
-/** Message d'état (chargement, échec) centré dans un panneau DA discret. */
-@Composable
-private fun CenteredPanel(text: String, modifier: Modifier = Modifier) {
-    Box(modifier.padding(24.dp), contentAlignment = Alignment.Center) {
-        Text(
-            text,
-            modifier =
-            Modifier
-                .hexaGlowSurface(shape = MaterialTheme.shapes.medium)
-                .padding(horizontal = 24.dp, vertical = 20.dp),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
         )
     }
 }
