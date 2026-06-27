@@ -54,11 +54,18 @@ class HeadingSmootherTest : StringSpec({
         }
     }
 
-    "l'opérateur de flux émet le premier cap tel quel puis lisse les suivants" {
+    "l'opérateur de flux émet le premier cap normalisé puis lisse les suivants" {
         val smoothed = flowOf(0.0, 90.0, 90.0).smoothedHeading(factor = 0.5).toList()
-        smoothed[0] shouldBe (0.0 plusOrMinus eps) // amorçage : premier cap brut
+        smoothed[0] shouldBe (0.0 plusOrMinus eps) // amorçage : premier cap normalisé
         smoothed[1] shouldBe (45.0 plusOrMinus eps) // 0 → 90 à 0,5
         smoothed[2] shouldBe (67.5 plusOrMinus eps) // 45 → 90 à 0,5
+    }
+
+    "l'opérateur de flux normalise aussi le premier cap dans [0, 360)" {
+        // L'invariant [0,360) tient par construction : le smoother ne dépend pas d'une source
+        // qui aurait déjà normalisé. Un premier cap brut hors borne ressort dans [0,360).
+        val smoothed = flowOf(-10.0).smoothedHeading(factor = 0.5).toList()
+        smoothed[0] shouldBe (350.0 plusOrMinus eps)
     }
 
     "l'opérateur de flux franchit la couture 0/360 sans à-coup" {
