@@ -2,7 +2,7 @@ package com.hexa.ui.theme
 
 import android.app.Application
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Backpack
+import androidx.compose.material.icons.outlined.Diamond
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -17,7 +17,7 @@ import org.robolectric.annotation.Config
 /**
  * Couvre la **barre d'actions de la carte** ([HexaActionBar]) : chaque [HexaAction] est rendue en item
  * accessible portant son `contentDescription` (lu par TalkBack) et son `onClick` est câblé au tap.
- * C'est le contrat dont dépend l'ouverture de l'inventaire depuis la carte (cf. répercussion #54).
+ * C'est le contrat dont dépend l'ouverture des pages de jeu depuis la carte (cf. répercussion #54).
  * Assertions sur l'arbre sémantique, sans dépendance Mapbox/GPS.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -27,7 +27,7 @@ class HexaActionBarTest {
     val composeRule = createComposeRule()
 
     /** Libellé d'accessibilité de l'action (déjà résolu côté appelant — la barre le reçoit en clair). */
-    private val openInventory = "Ouvrir l'inventaire"
+    private val openResources = "Ouvrir les ressources"
 
     private fun renderBar(onClick: () -> Unit = {}) {
         composeRule.setContent {
@@ -35,8 +35,8 @@ class HexaActionBarTest {
                 HexaActionBar(
                     actions = listOf(
                         HexaAction(
-                            icon = Icons.Outlined.Backpack,
-                            contentDescription = openInventory,
+                            icon = Icons.Outlined.Diamond,
+                            contentDescription = openResources,
                             onClick = onClick,
                         ),
                     ),
@@ -49,7 +49,7 @@ class HexaActionBarTest {
     fun `l action affiche son content description`() {
         renderBar()
 
-        composeRule.onNodeWithContentDescription(openInventory).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(openResources).assertIsDisplayed()
     }
 
     @Test
@@ -57,7 +57,7 @@ class HexaActionBarTest {
         var clicked = false
         renderBar(onClick = { clicked = true })
 
-        composeRule.onNodeWithContentDescription(openInventory).performClick()
+        composeRule.onNodeWithContentDescription(openResources).performClick()
 
         assertTrue(clicked)
     }

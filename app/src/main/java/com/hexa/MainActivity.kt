@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Backpack
+import androidx.compose.material.icons.outlined.Diamond
 import androidx.compose.material.icons.outlined.Factory
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -189,7 +189,7 @@ private fun GameOverlays(playerState: PlayerUiState, onCraftExtracteur: () -> Un
                 actions =
                 listOf(
                     HexaAction(
-                        icon = Icons.Outlined.Backpack,
+                        icon = Icons.Outlined.Diamond,
                         contentDescription = stringResource(R.string.resources_open),
                         onClick = { open = OverlayPanel.RESOURCES },
                     ),
