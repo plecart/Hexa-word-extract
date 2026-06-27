@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -23,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
@@ -33,6 +35,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.hexa.config.GameConfig
 import com.hexa.firstlaunch.FirstLaunchScreen
 import com.hexa.inventory.InventoryScreen
+import com.hexa.map.LocationPermissionGate
 import com.hexa.map.MapScreen
 import com.hexa.player.CollectHarvestUseCase
 import com.hexa.player.CraftBuildingUseCase
@@ -44,6 +47,9 @@ import com.hexa.player.HarvestCalculator
 import com.hexa.player.PlaceExtractorUseCase
 import com.hexa.player.PlayerUiState
 import com.hexa.player.PlayerViewModel
+import com.hexa.startup.LoadingScreen
+import com.hexa.startup.StartupStage
+import com.hexa.startup.startupStage
 import com.hexa.ui.theme.HexaAction
 import com.hexa.ui.theme.HexaActionBar
 import com.hexa.ui.theme.HexaTheme
@@ -79,16 +85,44 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * Racine de l'UI : la carte **reste toujours composée dessous** (son état caméra est préservé), et
- * une surcouche s'affiche selon l'état du compte. Tant que la base n'est pas posée
- * ([PlayerUiState.Ready] avec `baseCell` nul), l'**écran de premier lancement** invite à la poser
- * par-dessus la carte ; sinon (base posée, ou amorçage en cours/échoué) c'est l'**inventaire** qui
- * est superposable. La carte reçoit les bâtiments posés à rendre en 3D ([PlayerViewModel.placedBuildings]).
+ * Racine de l'UI : la **machine à états de démarrage** ([startupStage]). La porte de permission
+ * ([LocationPermissionGate]) enveloppe le tout — refus → écran dédié inchangé. Une fois la permission
+ * accordée, tant que la position du joueur n'est pas connue, l'**écran de chargement** ([LoadingScreen])
+ * masque carte **et** overlays — on ne montre jamais un centre arbitraire ni la pose de base avant le
+ * fix. Au premier fix, la bascule vers le jeu se fait en **fondu** ([Crossfade]) ; la carte ([GameScene])
+ * apparaît alors centrée sur le joueur.
  */
 @Composable
 private fun HexaRoot(viewModel: PlayerViewModel) {
+    val app = LocalContext.current.applicationContext as HexaApplication
     val playerState by viewModel.state.collectAsStateWithLifecycle()
 
+    LocationPermissionGate(modifier = Modifier.fillMaxSize()) {
+        val firstFix by app.premierFix.collectAsStateWithLifecycle()
+        val stage = startupStage(firstFix, playerState)
+        Crossfade(targetState = stage == StartupStage.LOADING, label = "startup-loading") { isLoading ->
+            if (isLoading) {
+                LoadingScreen(modifier = Modifier.fillMaxSize())
+            } else {
+                GameScene(
+                    viewModel = viewModel,
+                    playerState = playerState,
+                    firstLaunch = stage == StartupStage.FIRST_LAUNCH,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Scène de jeu (états « fix connu ») : la carte **reste composée dessous** (son état caméra est
+ * préservé) et une surcouche s'affiche selon l'état du compte. Tant que la base n'est pas posée
+ * ([firstLaunch]), l'**écran de premier lancement** invite à la poser par-dessus la carte ; sinon
+ * (base posée, ou amorçage en cours/échoué) c'est l'**inventaire** qui est superposable. La carte
+ * reçoit les bâtiments posés à rendre en 3D ([PlayerViewModel.placedBuildings]).
+ */
+@Composable
+private fun GameScene(viewModel: PlayerViewModel, playerState: PlayerUiState, firstLaunch: Boolean) {
     Box(Modifier.fillMaxSize()) {
         MapScreen(
             placedBuildings = viewModel.placedBuildings,
@@ -97,8 +131,7 @@ private fun HexaRoot(viewModel: PlayerViewModel) {
             modifier = Modifier.fillMaxSize(),
         )
 
-        val ready = playerState as? PlayerUiState.Ready
-        if (ready != null && ready.baseCell == null) {
+        if (firstLaunch) {
             FirstLaunchScreen(modifier = Modifier.fillMaxSize())
         } else {
             InventoryOverlay(playerState, onCraftExtracteur = viewModel::craftExtracteur)
