@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Backpack
+import androidx.compose.material.icons.outlined.Factory
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +35,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.hexa.config.GameConfig
 import com.hexa.firstlaunch.FirstLaunchScreen
+import com.hexa.inventory.BuildingsScreen
 import com.hexa.inventory.InventoryScreen
 import com.hexa.map.LocationPermissionGate
 import com.hexa.map.MapScreen
@@ -134,39 +136,48 @@ private fun GameScene(viewModel: PlayerViewModel, playerState: PlayerUiState, fi
         if (firstLaunch) {
             FirstLaunchScreen(modifier = Modifier.fillMaxSize())
         } else {
-            InventoryOverlay(playerState, onCraftExtracteur = viewModel::craftExtracteur)
+            GameOverlays(playerState, onCraftExtracteur = viewModel::craftExtracteur)
         }
     }
 }
 
+/** Pages plein écran superposables à la carte, ouvertes depuis la barre flottante. */
+private enum class OverlayPanel { INVENTORY, BUILDINGS }
+
 /**
- * Superpose l'inventaire à la carte, une fois la base posée (ou pendant l'amorçage/échec). La bascule
- * `inventoryOpen` est **animée** (transition carte ↔ inventaire) : l'inventaire descend en fondu sur
- * la carte à l'ouverture et remonte à la fermeture, tandis que la barre d'actions (ancrée en bas,
- * centrée) fait un simple fondu inverse. Le bouton retour système ferme l'inventaire (avec la même
- * transition) plutôt que de quitter l'app.
+ * Superpose à la carte les pages plein écran de jeu (inventaire, bâtiments), une fois la base posée (ou
+ * pendant l'amorçage/échec). Une seule page est ouverte à la fois ([open]) ; chacune descend en fondu
+ * sur la carte à l'ouverture et remonte à la fermeture. La **barre d'actions** (ancrée en bas, centrée)
+ * fait le fondu inverse : elle disparaît dès qu'une page est ouverte et porte une action par page. Le
+ * bouton retour système referme la page courante (même transition) plutôt que de quitter l'app.
+ *
+ * @param playerState état du compte joueur, transmis aux deux pages.
+ * @param onCraftExtracteur déclenche le craft d'un extracteur depuis la page Bâtiments.
  */
 @Composable
-private fun InventoryOverlay(playerState: PlayerUiState, onCraftExtracteur: () -> Unit) {
-    var inventoryOpen by rememberSaveable { mutableStateOf(false) }
+private fun GameOverlays(playerState: PlayerUiState, onCraftExtracteur: () -> Unit) {
+    var open by rememberSaveable { mutableStateOf<OverlayPanel?>(null) }
 
     Box(Modifier.fillMaxSize()) {
-        AnimatedVisibility(
-            visible = inventoryOpen,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
-            exit = fadeOut() + slideOutVertically(targetOffsetY = { -it }),
-            modifier = Modifier.fillMaxSize(),
-        ) {
+        OverlayPage(visible = open == OverlayPanel.INVENTORY) {
             InventoryScreen(
                 state = playerState,
-                onClose = { inventoryOpen = false },
+                onClose = { open = null },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        OverlayPage(visible = open == OverlayPanel.BUILDINGS) {
+            BuildingsScreen(
+                state = playerState,
+                onClose = { open = null },
                 onCraftExtracteur = onCraftExtracteur,
                 modifier = Modifier.fillMaxSize(),
             )
         }
 
         AnimatedVisibility(
-            visible = !inventoryOpen,
+            visible = open == null,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier =
@@ -180,13 +191,35 @@ private fun InventoryOverlay(playerState: PlayerUiState, onCraftExtracteur: () -
                     HexaAction(
                         icon = Icons.Outlined.Backpack,
                         contentDescription = stringResource(R.string.inventory_open),
-                        onClick = { inventoryOpen = true },
+                        onClick = { open = OverlayPanel.INVENTORY },
+                    ),
+                    HexaAction(
+                        icon = Icons.Outlined.Factory,
+                        contentDescription = stringResource(R.string.buildings_open),
+                        onClick = { open = OverlayPanel.BUILDINGS },
                     ),
                 ),
             )
         }
 
-        BackHandler(enabled = inventoryOpen) { inventoryOpen = false }
+        BackHandler(enabled = open != null) { open = null }
+    }
+}
+
+/**
+ * Coquille d'animation commune aux pages superposables : la page descend en fondu sur la carte quand
+ * [visible] passe à vrai et remonte en fondu à la fermeture. Factorise la transition partagée par
+ * l'inventaire et les bâtiments.
+ */
+@Composable
+private fun OverlayPage(visible: Boolean, content: @Composable () -> Unit) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
+        exit = fadeOut() + slideOutVertically(targetOffsetY = { -it }),
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        content()
     }
 }
 
