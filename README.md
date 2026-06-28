@@ -111,10 +111,11 @@ attendue.
 | Mesurer la distribution du monde (rapport mesuré vs cibles + seuils proposés) | `./gradlew :domain:worldDistributionReport` |
 
 L'APK généré se trouve sous `app/build/outputs/apk/debug/`. Au lancement, l'application amorce
-silencieusement le compte joueur puis affiche la carte plein écran ; un bouton flottant ouvre la
-page d'inventaire à deux onglets (« Ressources », « Bâtiments »). L'onglet Ressources liste les cinq
-éléments avec leur quantité, mise à jour en temps réel depuis le document joueur ; l'onglet Bâtiments
-montre le stock d'extracteurs prêts à poser et leur recette de craft, avec un bouton « Construire ».
+silencieusement le compte joueur puis affiche la carte plein écran ; une barre flottante porte deux
+actions (« Ressources », « Bâtiments »), chacune ouvrant sa propre page plein écran indépendante. La
+page Ressources liste les cinq éléments avec leur quantité, mise à jour en temps réel depuis le
+document joueur ; la page Bâtiments montre le stock d'extracteurs prêts à poser et leur recette de
+craft, avec un bouton « Construire ».
 
 La même chaîne qualité s'exécute sur chaque PR via GitHub Actions
 ([.github/workflows/ci.yml](.github/workflows/ci.yml)).

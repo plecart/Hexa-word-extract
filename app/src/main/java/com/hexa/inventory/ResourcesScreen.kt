@@ -24,24 +24,24 @@ import com.hexa.ui.theme.ObjectAssets
 import com.hexa.ui.theme.hexaGlowSurface
 
 /**
- * Page d'inventaire (sac à dos) plein écran, ouverte par-dessus la carte, habillée par la DA « carte
- * sci-fi sombre » via [OverlayScaffold] (fond anthracite plein, top bar translucide + bouton fermer),
- * ses ressources en tuiles dont le liseré prend la couleur de l'élément (cf. [hexaGlowSurface],
+ * Page **Ressources** plein écran, ouverte par-dessus la carte, habillée par la DA « carte sci-fi
+ * sombre » via [OverlayScaffold] (fond anthracite plein, top bar translucide + bouton fermer), ses
+ * ressources en tuiles dont le liseré prend la couleur de l'élément (cf. [hexaGlowSurface],
  * [ObjectAssets]).
  *
  * Elle liste les cinq éléments (par rareté croissante) avec leur quantité courante, lue depuis [state] :
  * comme le ViewModel observe le document joueur en continu, les compteurs se mettent à jour sans action
- * de l'utilisateur. Le stock de bâtiments et le craft vivent désormais sur leur propre page
- * ([BuildingsScreen]), ouverte par une action dédiée de la barre flottante.
+ * de l'utilisateur. Le stock de bâtiments et le craft vivent sur leur propre page ([BuildingsScreen]),
+ * ouverte par une action dédiée de la barre flottante.
  *
  * @param state état du compte joueur (chargement, prêt, échec).
  * @param onClose ferme la page et redonne la carte (état de carte préservé : elle reste composée).
  */
 @Composable
-fun InventoryScreen(state: PlayerUiState, onClose: () -> Unit, modifier: Modifier = Modifier) {
+fun ResourcesScreen(state: PlayerUiState, onClose: () -> Unit, modifier: Modifier = Modifier) {
     OverlayScaffold(
-        title = stringResource(R.string.inventory_title),
-        closeContentDescription = stringResource(R.string.inventory_close),
+        title = stringResource(R.string.resources_title),
+        closeContentDescription = stringResource(R.string.resources_close),
         onClose = onClose,
         modifier = modifier,
     ) { contentModifier ->

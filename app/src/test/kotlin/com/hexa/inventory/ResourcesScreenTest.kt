@@ -23,8 +23,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Couvre l'**écran d'inventaire** ([InventoryScreen]), page plein écran du sac à dos : binding
- * `PlayerUiState` → UI de la liste des ressources. Depuis #104 l'écran ne porte plus que les Ressources
+ * Couvre l'**écran Ressources** ([ResourcesScreen]), page plein écran des ressources : binding
+ * `PlayerUiState` → UI de la liste des éléments. Depuis #104 l'écran ne porte plus que les Ressources
  * (le stock de bâtiments et le craft ont migré sur [BuildingsScreen]) : il n'a donc plus d'onglets ni
  * de bouton « Construire ». La fermeture passe par l'`IconButton` haut-droite ciblé par son
  * `contentDescription`, et les états Loading/Failed rendent leur message. Assertions sur l'arbre
@@ -32,7 +32,7 @@ import org.robolectric.annotation.Config
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class)
-class InventoryScreenTest {
+class ResourcesScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
@@ -52,7 +52,7 @@ class InventoryScreenTest {
     private fun render(state: PlayerUiState, onClose: () -> Unit = {}) {
         composeRule.setContent {
             HexaTheme {
-                InventoryScreen(state = state, onClose = onClose)
+                ResourcesScreen(state = state, onClose = onClose)
             }
         }
     }
@@ -77,7 +77,7 @@ class InventoryScreenTest {
         var closed = false
         render(ready(affordable), onClose = { closed = true })
 
-        composeRule.onNodeWithContentDescription(context.getString(R.string.inventory_close)).performClick()
+        composeRule.onNodeWithContentDescription(context.getString(R.string.resources_close)).performClick()
 
         assertTrue(closed)
     }
@@ -86,13 +86,13 @@ class InventoryScreenTest {
     fun `etat chargement affiche le message de chargement`() {
         render(PlayerUiState.Loading)
 
-        composeRule.onNodeWithText(context.getString(R.string.inventory_loading)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.overlay_loading)).assertIsDisplayed()
     }
 
     @Test
     fun `etat echec affiche le message d erreur`() {
         render(PlayerUiState.Failed)
 
-        composeRule.onNodeWithText(context.getString(R.string.inventory_error)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.overlay_error)).assertIsDisplayed()
     }
 }

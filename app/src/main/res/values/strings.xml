@@ -17,15 +17,17 @@
     <string name="loading_status">Localisation en cours…</string>
     <string name="loading_slow_hint">Vérifie que la localisation est activée et place-toi à l\'extérieur.</string>
 
-    <!-- Inventaire (sac à dos) : page plein écran des ressources, ouverte depuis la carte. -->
-    <string name="inventory_open">Ouvrir l\'inventaire</string>
-    <string name="inventory_close">Fermer l\'inventaire</string>
-    <string name="inventory_title">Inventaire</string>
-    <string name="inventory_loading">Chargement de l\'inventaire…</string>
-    <string name="inventory_error">Impossible de charger l\'inventaire.</string>
+    <!-- Ressources : page plein écran des cinq éléments, ouverte depuis la barre flottante. -->
+    <string name="resources_open">Ouvrir les ressources</string>
+    <string name="resources_close">Fermer les ressources</string>
+    <string name="resources_title">Ressources</string>
+
+    <!-- Pages plein écran (Ressources, Bâtiments) : messages d'état partagés par OverlayStateContent. -->
+    <string name="overlay_loading">Chargement…</string>
+    <string name="overlay_error">Impossible de charger les données.</string>
 
     <!-- Bâtiments : page plein écran (stock prêt à poser + craft de l'extracteur), ouverte depuis la
-         carte ; titre + fermeture propres (cf. PRD #5, user stories 8-11). -->
+         barre flottante ; titre + fermeture propres (cf. PRD #5, user stories 8-11). -->
     <string name="buildings_open">Ouvrir les bâtiments</string>
     <string name="buildings_title">Bâtiments</string>
     <string name="buildings_close">Fermer les bâtiments</string>

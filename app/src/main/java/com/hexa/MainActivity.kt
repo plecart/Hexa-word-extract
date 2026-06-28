@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Backpack
+import androidx.compose.material.icons.outlined.Diamond
 import androidx.compose.material.icons.outlined.Factory
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,7 +36,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.hexa.config.GameConfig
 import com.hexa.firstlaunch.FirstLaunchScreen
 import com.hexa.inventory.BuildingsScreen
-import com.hexa.inventory.InventoryScreen
+import com.hexa.inventory.ResourcesScreen
 import com.hexa.map.LocationPermissionGate
 import com.hexa.map.MapScreen
 import com.hexa.player.CollectHarvestUseCase
@@ -64,9 +64,9 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * Unique activité de l'application (single-activity). Fournit le token public au SDK Mapbox, pose le
- * thème Compose et affiche la carte plein écran avec, par-dessus, la page d'inventaire ouverte par un
- * bouton flottant. Au démarrage, l'amorçage silencieux du compte joueur ([PlayerViewModel]) alimente
- * l'inventaire en temps réel.
+ * thème Compose et affiche la carte plein écran avec, par-dessus, la page Ressources ouverte depuis la
+ * barre flottante. Au démarrage, l'amorçage silencieux du compte joueur ([PlayerViewModel]) alimente
+ * les ressources en temps réel.
  */
 class MainActivity : ComponentActivity() {
     private val playerViewModel: PlayerViewModel by viewModels { playerViewModelFactory }
@@ -120,8 +120,8 @@ private fun HexaRoot(viewModel: PlayerViewModel) {
  * Scène de jeu (états « fix connu ») : la carte **reste composée dessous** (son état caméra est
  * préservé) et une surcouche s'affiche selon l'état du compte. Tant que la base n'est pas posée
  * ([firstLaunch]), l'**écran de premier lancement** invite à la poser par-dessus la carte ; sinon
- * (base posée, ou amorçage en cours/échoué) c'est l'**inventaire** qui est superposable. La carte
- * reçoit les bâtiments posés à rendre en 3D ([PlayerViewModel.placedBuildings]).
+ * (base posée, ou amorçage en cours/échoué) ce sont les **pages de jeu** (Ressources, Bâtiments) qui
+ * sont superposables. La carte reçoit les bâtiments posés à rendre en 3D ([PlayerViewModel.placedBuildings]).
  */
 @Composable
 private fun GameScene(viewModel: PlayerViewModel, playerState: PlayerUiState, firstLaunch: Boolean) {
@@ -142,10 +142,10 @@ private fun GameScene(viewModel: PlayerViewModel, playerState: PlayerUiState, fi
 }
 
 /** Pages plein écran superposables à la carte, ouvertes depuis la barre flottante. */
-private enum class OverlayPanel { INVENTORY, BUILDINGS }
+private enum class OverlayPanel { RESOURCES, BUILDINGS }
 
 /**
- * Superpose à la carte les pages plein écran de jeu (inventaire, bâtiments), une fois la base posée (ou
+ * Superpose à la carte les pages plein écran de jeu (ressources, bâtiments), une fois la base posée (ou
  * pendant l'amorçage/échec). Une seule page est ouverte à la fois ([open]) ; chacune descend en fondu
  * sur la carte à l'ouverture et remonte à la fermeture. La **barre d'actions** (ancrée en bas, centrée)
  * fait le fondu inverse : elle disparaît dès qu'une page est ouverte et porte une action par page. Le
@@ -159,8 +159,8 @@ private fun GameOverlays(playerState: PlayerUiState, onCraftExtracteur: () -> Un
     var open by rememberSaveable { mutableStateOf<OverlayPanel?>(null) }
 
     Box(Modifier.fillMaxSize()) {
-        OverlayPage(visible = open == OverlayPanel.INVENTORY) {
-            InventoryScreen(
+        OverlayPage(visible = open == OverlayPanel.RESOURCES) {
+            ResourcesScreen(
                 state = playerState,
                 onClose = { open = null },
                 modifier = Modifier.fillMaxSize(),
@@ -189,9 +189,9 @@ private fun GameOverlays(playerState: PlayerUiState, onCraftExtracteur: () -> Un
                 actions =
                 listOf(
                     HexaAction(
-                        icon = Icons.Outlined.Backpack,
-                        contentDescription = stringResource(R.string.inventory_open),
-                        onClick = { open = OverlayPanel.INVENTORY },
+                        icon = Icons.Outlined.Diamond,
+                        contentDescription = stringResource(R.string.resources_open),
+                        onClick = { open = OverlayPanel.RESOURCES },
                     ),
                     HexaAction(
                         icon = Icons.Outlined.Factory,
