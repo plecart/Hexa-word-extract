@@ -33,11 +33,13 @@ import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 import com.mapbox.maps.extension.compose.annotation.ViewAnnotation
+import com.mapbox.maps.extension.compose.rememberMapState
 import com.mapbox.maps.extension.compose.style.MapStyle
 import com.mapbox.maps.plugin.animation.MapAnimationOptions
 import com.mapbox.maps.plugin.animation.easeTo
 import com.mapbox.maps.plugin.gestures.OnMapClickListener
 import com.mapbox.maps.plugin.gestures.OnScaleListener
+import com.mapbox.maps.plugin.gestures.generated.GesturesSettings
 import com.mapbox.maps.plugin.gestures.gestures
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -155,10 +157,30 @@ private fun ChaseCameraMap(
             }
         }
 
+    // Caméra verrouillée sur le joueur : on coupe via les **réglages de gestes** tout ce qui la
+    // décentrerait, la désorienterait ou la ferait « sauter » — pan, pan au pincement, rotation,
+    // inclinaison, zooms double-tap / quick-zoom. Seul le pincement à deux doigts subsiste pour zoomer
+    // (`pinchToZoomEnabled` laissé au défaut). Les réglages **doivent** passer par [MapState] : le
+    // wrapper Compose les applique et les ré-applique en continu, alors qu'un `gestures.updateSettings`
+    // ponctuel serait réinitialisé.
+    val mapState =
+        rememberMapState {
+            gesturesSettings = GesturesSettings {
+                scrollEnabled = false
+                pinchScrollEnabled = false
+                rotateEnabled = false
+                pitchEnabled = false
+                doubleTapToZoomInEnabled = false
+                doubleTouchToZoomOutEnabled = false
+                quickZoomEnabled = false
+            }
+        }
+
     Box(modifier = modifier) {
         MapboxMap(
             modifier = Modifier.fillMaxSize(),
             mapViewportState = viewportState,
+            mapState = mapState,
             style = { MapStyle(style = MapConfig.STYLE_URL) },
             // Ornements parasites masqués par lambda vide : la barre d'échelle n'apporte rien au jeu,
             // et la boussole est sans objet puisque la caméra suit le cap en permanence (tap-to-north
@@ -217,6 +239,8 @@ private fun ChaseCameraMap(
                     ExtractorPlacementMarker(onClick = { placementSheetOpen = true })
                 }
             }
+            // Bornes dures de zoom : aucun pincement ne peut sortir de [MIN_ZOOM, MAX_ZOOM]. Le verrou
+            // des gestes (pan, rotation…) vit, lui, dans `mapState.gesturesSettings` ci-dessus.
             MapEffect(Unit) { mapView ->
                 mapView.mapboxMap.setBounds(
                     CameraBoundsOptions.Builder()
@@ -224,27 +248,14 @@ private fun ChaseCameraMap(
                         .maxZoom(MapConfig.MAX_ZOOM)
                         .build(),
                 )
-                // Caméra verrouillée sur le joueur : on coupe tous les gestes qui la décentreraient,
-                // la désorienteraient ou la feraient « sauter » — pan, pan au pincement, rotation,
-                // inclinaison, et les zooms double-tap / quick-zoom (non câblés à la pose, ils
-                // seraient aussitôt ré-imposés par la poursuite). Seul le pincement à deux doigts
-                // subsiste pour zoomer (borné, cf. onScaleEnd) ; le cap reste piloté par la boussole.
-                mapView.gestures.updateSettings {
-                    scrollEnabled = false
-                    pinchScrollEnabled = false
-                    rotateEnabled = false
-                    pitchEnabled = false
-                    doubleTapToZoomInEnabled = false
-                    doubleTouchToZoomOutEnabled = false
-                    quickZoomEnabled = false
-                }
                 mapView.gestures.addOnScaleListener(
                     object : OnScaleListener {
                         override fun onScaleBegin(detector: StandardScaleGestureDetector) = Unit
 
                         override fun onScale(detector: StandardScaleGestureDetector) = Unit
 
-                        // Le pincement ajuste le zoom sans décentrer ; on répercute la valeur dans la pose.
+                        // Le pincement ajuste le zoom sans décentrer ; on répercute la valeur (bornée
+                        // par le contrôleur) dans la pose pour qu'elle persiste à la prochaine poursuite.
                         override fun onScaleEnd(detector: StandardScaleGestureDetector) =
                             viewModel.onUserZoom(mapView.mapboxMap.cameraState.zoom)
                     },
