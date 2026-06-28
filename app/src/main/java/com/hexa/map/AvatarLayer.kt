@@ -7,8 +7,10 @@ import com.mapbox.geojson.Point
 import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.layers.addLayer
+import com.mapbox.maps.extension.style.layers.generated.ModelLayer
 import com.mapbox.maps.extension.style.layers.generated.modelLayer
 import com.mapbox.maps.extension.style.layers.getLayer
+import com.mapbox.maps.extension.style.layers.getLayerAs
 import com.mapbox.maps.extension.style.layers.properties.generated.ModelType
 import com.mapbox.maps.extension.style.model.addModel
 import com.mapbox.maps.extension.style.model.model
@@ -28,8 +30,8 @@ private const val AVATAR_MODEL_LAYER_ID = "hexa-avatar-model-layer"
  *
  * Au premier appel, **enregistre** le `model.glb` de l'avatar puis crée la source GeoJSON et une couche
  * de modèle : le point porte le modèle ancré au sol ([ModelType.COMMON_3D]), mis à l'échelle de
- * [MapConfig.AVATAR_MODEL_SCALE], remonté d'une demi-hauteur ([MapConfig.AVATAR_MODEL_GROUND_LIFT_M])
- * pour poser sa base au sol, et orienté vers une **direction par défaut fixe**
+ * [MapConfig.AVATAR_MODEL_SCALE], remonté à sa **position de repos** de flottement ([avatarRestZ] :
+ * ancrage au sol + hauteur de repos), et orienté vers une **direction par défaut fixe**
  * ([MapConfig.AVATAR_MODEL_FACING_DEG] : le mesh a son avant modélisé vers +X). Ensuite, ne fait que
  * **réinjecter le point** dans la source existante — bien moins coûteux que de recréer la couche, pour
  * suivre la position sans saccade quand le joueur marche.
@@ -59,13 +61,39 @@ internal fun Style.showAvatar(position: LatLng?) {
                 // Avant du mesh modélisé vers +X : rotation par défaut (lacet) pour l'aligner sur la
                 // direction de référence. Les tranches d'orientation piloteront ce lacet dynamiquement.
                 modelRotation(listOf(0.0, 0.0, MapConfig.AVATAR_MODEL_FACING_DEG))
-                // Modèle centré sur son origine : ancré au sol, sa moitié basse s'enterrerait. On le
-                // remonte d'une demi-hauteur (en mètres, +Z = vers le haut) pour poser sa base au sol.
-                modelTranslation(listOf(0.0, 0.0, MapConfig.AVATAR_MODEL_GROUND_LIFT_M))
+                // Position de repos du flottement (+Z = vers le haut) : base posée au sol (demi-hauteur)
+                // puis remontée de la hauteur de repos. Le driver de frame (cf. MapScreen) ré-écrit
+                // ensuite ce Z à chaque frame pour l'oscillation ; il sert ici de valeur initiale.
+                modelTranslation(listOf(0.0, 0.0, avatarRestZ()))
             },
         )
     }
 }
+
+/**
+ * Applique le **flottement vertical** courant [offsetM] (en mètres) au modèle de l'avatar, en
+ * ré-écrivant la seule composante Z de `modelTranslation` de la couche existante :
+ * `translationZ = `[avatarRestZ]` + offsetM` (position de repos détachée du sol + oscillation).
+ *
+ * Conçu pour un appel **par frame** par le driver d'animation (cf. [com.hexa.map.MapScreen]) : ne
+ * touche ni la source, ni la position GPS, ni l'orientation — uniquement le décalage vertical, ajouté
+ * par-dessus le rendu posé par [showAvatar]. Sans effet tant que la couche n'existe pas (avatar pas
+ * encore affiché, faute de fix GPS) : l'appel est alors un no-op silencieux.
+ *
+ * @param offsetM décalage de flottement à appliquer, en mètres (cf. [avatarFloatOffsetMeters]).
+ */
+internal fun Style.floatAvatar(offsetM: Double) {
+    getLayerAs<ModelLayer>(AVATAR_MODEL_LAYER_ID)
+        ?.modelTranslation(listOf(0.0, 0.0, avatarRestZ() + offsetM))
+}
+
+/**
+ * Z de la **position de repos** du modèle de l'avatar, en mètres au-dessus du terrain : ancrage au sol
+ * ([MapConfig.AVATAR_MODEL_GROUND_LIFT_M]) plus la hauteur de lévitation
+ * ([MapConfig.AVATAR_FLOAT_REST_HEIGHT_M]). C'est le centre autour duquel l'oscillation de flottement
+ * joue (offset nul) ; la garantir ≥ amplitude empêche le modèle de passer sous le sol au bas du cycle.
+ */
+private fun avatarRestZ(): Double = MapConfig.AVATAR_MODEL_GROUND_LIFT_M + MapConfig.AVATAR_FLOAT_REST_HEIGHT_M
 
 /**
  * Enregistre dans le style le `model.glb` de l'avatar sous son chemin d'asset comme identifiant de

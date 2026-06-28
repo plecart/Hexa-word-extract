@@ -191,4 +191,28 @@ object MapConfig {
      * piloteront ce lacet dynamiquement (cap boussole / GPS). **Provisoire**.
      */
     const val AVATAR_MODEL_FACING_DEG: Double = 90.0
+
+    /**
+     * Hauteur de **repos** du flottement, en mètres : décalage vertical permanent ajouté **au-dessus**
+     * de l'ancrage au sol ([AVATAR_MODEL_GROUND_LIFT_M]) autour duquel l'avatar oscille (effet fantôme,
+     * cf. [avatarFloatOffsetMeters] / [Style.floatAvatar]). Maintenue **≥ [AVATAR_FLOAT_AMPLITUDE_M]**
+     * pour qu'au bas du cycle (offset = −amplitude) le modèle ne s'enfonce pas sous le sol. **À affiner
+     * à la validation terrain.** **Provisoire**.
+     */
+    const val AVATAR_FLOAT_REST_HEIGHT_M: Double = 0.7
+
+    /**
+     * Amplitude du flottement, en mètres : l'avatar oscille de ±cette valeur autour de sa position de
+     * repos ([AVATAR_FLOAT_REST_HEIGHT_M]). Faible devant la taille du modèle ([AVATAR_MODEL_SCALE])
+     * pour que l'effet « respire » sans sauter — perceptible mais discret. **À affiner à la validation
+     * terrain.** **Provisoire**.
+     */
+    const val AVATAR_FLOAT_AMPLITUDE_M: Double = 0.6
+
+    /**
+     * Période du flottement, en millisecondes : durée d'un cycle complet montée→descente. Lente pour
+     * une lévitation paisible (l'avatar « respire »), pas une oscillation nerveuse. **À affiner à la
+     * validation terrain.** **Provisoire**.
+     */
+    const val AVATAR_FLOAT_PERIOD_MS: Long = 2_800L
 }

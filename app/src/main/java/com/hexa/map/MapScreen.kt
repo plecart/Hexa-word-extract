@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
@@ -57,6 +58,9 @@ import kotlinx.coroutines.flow.StateFlow
  * l'ease-in-out, sans cesse relancé, figerait la caméra) et donne un suivi fluide.
  */
 private const val FOLLOW_EASE_MS = 200L
+
+/** Nanosecondes par milliseconde — convertit le temps de frame ([withFrameNanos]) en millisecondes. */
+private const val NANOS_PER_MS = 1_000_000.0
 
 /**
  * Écran carte : la **caméra de poursuite** à la troisième personne.
@@ -265,6 +269,23 @@ private fun ChaseCameraMap(
             // créée qu'une fois, ensuite seul le point est réinjecté (suivi fluide en marche).
             MapEffect(avatarPosition) { mapView ->
                 mapView.mapboxMap.getStyle { style -> style.showAvatar(avatarPosition) }
+            }
+            // Driver de flottement (effet fantôme) : à chaque frame, recalcule le décalage vertical
+            // sinusoïdal et le ré-applique au seul Z du modèle, **indépendamment** de la position GPS
+            // ci-dessus. Le flottement tourne donc en boucle, joueur immobile ou en marche. La boucle
+            // est portée par un MapEffect (accès au style + horloge de frame Compose) et s'annule
+            // proprement quand l'écran quitte la composition.
+            MapEffect(Unit) { mapView ->
+                val startNanos = withFrameNanos { it }
+                while (true) {
+                    val elapsedMs = (withFrameNanos { it } - startNanos) / NANOS_PER_MS
+                    val offsetM = avatarFloatOffsetMeters(
+                        elapsedMs = elapsedMs,
+                        amplitudeM = MapConfig.AVATAR_FLOAT_AMPLITUDE_M,
+                        periodMs = MapConfig.AVATAR_FLOAT_PERIOD_MS.toDouble(),
+                    )
+                    mapView.mapboxMap.getStyle { style -> style.floatAvatar(offsetM) }
+                }
             }
             // Marqueur « + » de pose, ancré au centre de la tuile courante tant qu'une pose est possible
             // ([placementCell] non nul). Un tap ouvre la liste des bâtiments ; la pose le fait disparaître
