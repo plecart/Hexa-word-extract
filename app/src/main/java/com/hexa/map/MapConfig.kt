@@ -51,8 +51,11 @@ object MapConfig {
 
     /**
      * Coefficient de lissage du cap de la boussole, dans `]0, 1]` (cf.
-     * [HeadingSmoother][com.hexa.location.HeadingSmoother]). Faible = caméra douce mais réactive
-     * avec retard ; élevé = réactive mais nerveuse. 0,15 amortit le bruit du capteur sans traîner.
+     * [HeadingSmoother][com.hexa.location.HeadingSmoother]). Faible = mouvement doux mais réactif
+     * avec retard ; élevé = réactif mais nerveux. 0,15 amortit le bruit du capteur sans traîner.
+     *
+     * **Plus consommé par la caméra** depuis #96 (le pilotage boussole du cap caméra a été retiré) :
+     * conservé pour l'orientation de l'avatar (#100), qui réutilisera le même pipeline boussole.
      */
     const val HEADING_SMOOTHING_FACTOR: Double = 0.15
 

@@ -21,12 +21,15 @@ import kotlinx.coroutines.flow.sample
  * est observée.
  *
  * Cette source émet le cap **brut** mais **rate-limité** : la boussole peut émettre à haute
- * fréquence ; on échantillonne à [SAMPLE_MS] pour ne pas saturer l'animation de caméra en aval
- * (chaque mesure relancerait l'interpolation et la figerait). Le lissage et la circularité sont
- * traités en aval par [HeadingSmoother][com.hexa.location.HeadingSmoother].
+ * fréquence ; on échantillonne à [SAMPLE_MS] pour ne pas saturer le consommateur en aval (une
+ * animation de pose relancée à chaque mesure se figerait). Le lissage et la circularité sont traités
+ * en aval par [HeadingSmoother][com.hexa.location.HeadingSmoother].
  *
  * Le cap est l'azimut de l'appareil tenu **à plat** (référentiel capteur par défaut) ; un éventuel
  * remappage d'axes pour une tenue verticale relève de la validation visuelle sur device.
+ *
+ * **Statut (#96)** : le pilotage boussole de la **caméra** a été retiré ; cette source n'a plus de
+ * consommateur actif et est **conservée pour l'orientation de l'avatar (#100)**.
  *
  * @param sensorManager service capteurs de l'app (obtenu via `Context.getSystemService`).
  */

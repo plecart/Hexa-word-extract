@@ -15,22 +15,22 @@ class ChaseCameraControllerTest : StringSpec({
     val paris = LatLng(48.8566, 2.3522)
 
     "sans zoom utilisateur, centre sur la position au pitch, cap et zoom configurés" {
-        val state = ChaseCameraController(config).cameraFor(position = paris, headingDeg = 90.0)
+        val state = ChaseCameraController(config).cameraFor(position = paris, bearingDeg = 90.0)
         state shouldBe CameraState(center = paris, zoomLevel = 17.0, pitchDeg = 60.0, bearingDeg = 90.0)
     }
 
     "un zoom utilisateur dans les bornes est respecté" {
-        val state = ChaseCameraController(config).cameraFor(paris, headingDeg = 0.0, userZoom = 16.0)
+        val state = ChaseCameraController(config).cameraFor(paris, bearingDeg = 0.0, userZoom = 16.0)
         state.zoomLevel shouldBe 16.0
     }
 
     "un zoom utilisateur au-delà du maximum est borné" {
-        val state = ChaseCameraController(config).cameraFor(paris, headingDeg = 0.0, userZoom = 25.0)
+        val state = ChaseCameraController(config).cameraFor(paris, bearingDeg = 0.0, userZoom = 25.0)
         state.zoomLevel shouldBe 19.0
     }
 
     "un zoom utilisateur en-deçà du minimum est borné" {
-        val state = ChaseCameraController(config).cameraFor(paris, headingDeg = 0.0, userZoom = 5.0)
+        val state = ChaseCameraController(config).cameraFor(paris, bearingDeg = 0.0, userZoom = 5.0)
         state.zoomLevel shouldBe 14.0
     }
 

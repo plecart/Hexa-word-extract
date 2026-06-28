@@ -5,7 +5,6 @@ package com.hexa.map
 import com.hexa.core.geo.LatLng
 import com.hexa.location.CameraState
 import com.hexa.location.ChaseCameraConfig
-import com.hexa.location.HeadingSource
 import com.hexa.location.PositionSource
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -29,11 +28,11 @@ private fun CoroutineScope.launchCollector(vm: ChaseCameraViewModel) {
 }
 
 /**
- * [ChaseCameraViewModel] est la glu d'app : il combine le flux de position et le flux de cap lissé,
- * délègue la pose à [com.hexa.location.ChaseCameraController] et relaie le zoom au pincement. La
- * caméra reste verrouillée sur le joueur (pas de mode libre ni de recentrage). On vérifie cette
- * orchestration avec des sources factices, sans device ni Mapbox — la pose elle-même est déjà testée
- * dans `:location`.
+ * [ChaseCameraViewModel] est la glu d'app : il combine le flux de position au **cap** et au **zoom**
+ * pilotés par l'utilisateur et délègue la pose à [com.hexa.location.ChaseCameraController]. La caméra
+ * reste verrouillée sur le joueur ; le cap part au **nord** et n'est plus piloté par la boussole
+ * (retiré en #96). On vérifie cette orchestration avec des sources factices, sans device ni Mapbox —
+ * la pose elle-même est déjà testée dans `:location`.
  */
 class ChaseCameraViewModelTest : StringSpec({
     val config = ChaseCameraConfig(pitchDeg = 60.0, followZoom = 17.0, minZoom = 14.0, maxZoom = 19.0)
@@ -43,22 +42,32 @@ class ChaseCameraViewModelTest : StringSpec({
     beforeTest { Dispatchers.setMain(StandardTestDispatcher()) }
     afterTest { Dispatchers.resetMain() }
 
-    fun viewModel(rawHeadingDeg: Double = 90.0) = ChaseCameraViewModel(
+    fun viewModel() = ChaseCameraViewModel(
         positionSource = PositionSource { flowOf(paris) },
-        headingSource = HeadingSource { flowOf(rawHeadingDeg) },
         config = config,
-        // Facteur 1 : le cap lissé adopte immédiatement le brut, simplifiant l'assertion.
-        headingSmoothingFactor = 1.0,
     )
 
-    "expose la pose centrée sur la position au cap lissé et au zoom configuré" {
+    "expose la pose centrée sur la position, cap au nord et zoom configuré tant qu'on n'a pas pivoté" {
         runTest {
-            val vm = viewModel(rawHeadingDeg = 90.0)
+            val vm = viewModel()
             backgroundScope.launchCollector(vm)
             advanceUntilIdle()
 
             vm.cameraState.value shouldBe
-                CameraState(center = paris, zoomLevel = 17.0, pitchDeg = 60.0, bearingDeg = 90.0)
+                CameraState(center = paris, zoomLevel = 17.0, pitchDeg = 60.0, bearingDeg = 0.0)
+        }
+    }
+
+    "un glisser de rotation répercute le cap sur la pose" {
+        runTest {
+            val vm = viewModel()
+            backgroundScope.launchCollector(vm)
+            advanceUntilIdle()
+
+            vm.onUserBearing(120.0)
+            advanceUntilIdle()
+
+            vm.cameraState.value?.bearingDeg shouldBe 120.0
         }
     }
 

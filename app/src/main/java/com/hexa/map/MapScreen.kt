@@ -1,7 +1,5 @@
 package com.hexa.map
 
-import android.content.Context
-import android.hardware.SensorManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -83,10 +81,10 @@ fun MapScreen(
 /**
  * Carte Mapbox plein écran avec **caméra de poursuite à la troisième personne**.
  *
- * La caméra suit la position GPS filtrée fournie par [ChaseCameraViewModel], inclinée et orientée
- * selon le cap lissé de la boussole. Elle est **verrouillée en permanence sur le joueur** : pan,
- * rotation et inclinaison manuels sont désactivés (aucun geste ne décentre le joueur) ; seul le zoom
- * au pincement reste actif et borné à [MapConfig.MIN_ZOOM]–[MapConfig.MAX_ZOOM].
+ * La caméra suit la position GPS filtrée fournie par [ChaseCameraViewModel], inclinée et orientée au
+ * nord (le pilotage boussole du cap a été retiré en #96). Elle est **verrouillée en permanence sur le
+ * joueur** : pan, rotation et inclinaison manuels sont désactivés (aucun geste ne décentre le
+ * joueur) ; seul le zoom au pincement reste actif et borné à [MapConfig.MIN_ZOOM]–[MapConfig.MAX_ZOOM].
  *
  * Le token public est fourni au SDK en amont (cf. [com.hexa.MainActivity]).
  */
@@ -100,7 +98,7 @@ private fun ChaseCameraMap(
     val context = LocalContext.current
     val app = context.applicationContext as HexaApplication
     val viewModel: ChaseCameraViewModel =
-        viewModel(factory = chaseCameraViewModelFactory(context, app.sharedPositionSource))
+        viewModel(factory = chaseCameraViewModelFactory(app.sharedPositionSource))
     val gridViewModel: HexGridViewModel =
         viewModel(factory = hexGridViewModelFactory(app.sharedCurrentTile, app.sharedGrid))
     val inspectionViewModel: TileInspectionViewModel =
@@ -286,23 +284,21 @@ private fun ChaseCameraMap(
 
 /**
  * Fabrique le [ChaseCameraViewModel] en câblant la position GPS filtrée **partagée**
- * ([positionSource], cf. [HexaApplication.sharedPositionSource]) et la boussole de l'appareil
- * ([CompassHeadingSource]) pour le cap, avec les réglages de [MapConfig]. La permission de
- * localisation est garantie en amont par [LocationPermissionGate].
+ * ([positionSource], cf. [HexaApplication.sharedPositionSource]) avec les réglages de [MapConfig]. Le
+ * cap n'est plus piloté par la boussole (retiré en #96) : il part au nord et est piloté par le
+ * glisser de l'utilisateur. La permission de localisation est garantie en amont par
+ * [LocationPermissionGate].
  */
-private fun chaseCameraViewModelFactory(context: Context, positionSource: PositionSource) = viewModelFactory {
+private fun chaseCameraViewModelFactory(positionSource: PositionSource) = viewModelFactory {
     initializer {
-        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         ChaseCameraViewModel(
             positionSource = positionSource,
-            headingSource = CompassHeadingSource(sensorManager),
             config = ChaseCameraConfig(
                 pitchDeg = MapConfig.PITCH,
                 followZoom = MapConfig.FOLLOW_ZOOM,
                 minZoom = MapConfig.MIN_ZOOM,
                 maxZoom = MapConfig.MAX_ZOOM,
             ),
-            headingSmoothingFactor = MapConfig.HEADING_SMOOTHING_FACTOR,
         )
     }
 }
