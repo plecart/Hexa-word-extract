@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeGesturesPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Backpack
+import androidx.compose.material.icons.outlined.Diamond
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -37,9 +37,9 @@ private const val CHIP_FILL_ALPHA = 0.14f
 /**
  * Une action de jeu présentée dans la [HexaActionBar] : un glyphe vectoriel cliquable, sans texte.
  *
- * @param icon glyphe vectoriel (p. ex. [Icons].Outlined.Backpack), teinté en accent par la barre.
+ * @param icon glyphe vectoriel (p. ex. [Icons].Outlined.Diamond), teinté en accent par la barre.
  * @param contentDescription libellé d'accessibilité déjà résolu (chaîne, lu par TalkBack) — décrit
- *   l'action, jamais l'icône (« Ouvrir l'inventaire », pas « sac à dos »).
+ *   l'action, jamais l'icône (« Ouvrir les ressources », pas « diamant »).
  * @param onClick invoqué à chaque tap sur l'item.
  */
 data class HexaAction(
@@ -107,7 +107,7 @@ private fun HexaActionBarItem(action: HexaAction) {
     )
 }
 
-/** Aperçu Studio : la barre avec son unique action (inventaire), sur fond DA. */
+/** Aperçu Studio : la barre avec son unique action (ressources), sur fond DA. */
 @Preview(name = "Barre d'actions", showBackground = true, backgroundColor = 0xFF0B0E13)
 @Composable
 private fun HexaActionBarPreview() {
@@ -116,8 +116,8 @@ private fun HexaActionBarPreview() {
             actions =
             listOf(
                 HexaAction(
-                    icon = Icons.Outlined.Backpack,
-                    contentDescription = "Ouvrir l'inventaire",
+                    icon = Icons.Outlined.Diamond,
+                    contentDescription = "Ouvrir les ressources",
                     onClick = {},
                 ),
             ),
