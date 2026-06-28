@@ -2,17 +2,8 @@ package com.hexa.map
 
 import android.content.Context
 import android.hardware.SensorManager
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeGesturesPadding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -20,29 +11,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.hexa.HexaApplication
-import com.hexa.R
 import com.hexa.core.geo.LatLng
-import com.hexa.location.CameraMode
 import com.hexa.location.ChaseCameraConfig
 import com.hexa.location.PositionSource
 import com.hexa.player.PlacedBuilding
-import com.hexa.ui.theme.HexaDimens
-import com.hexa.ui.theme.hexaGlowSurface
 import com.hexa.world.TileContent
-import com.mapbox.android.gestures.MoveGestureDetector
 import com.mapbox.android.gestures.StandardScaleGestureDetector
 import com.mapbox.geojson.Point
 import com.mapbox.maps.AnnotatedFeature
@@ -53,12 +33,13 @@ import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 import com.mapbox.maps.extension.compose.annotation.ViewAnnotation
+import com.mapbox.maps.extension.compose.rememberMapState
 import com.mapbox.maps.extension.compose.style.MapStyle
 import com.mapbox.maps.plugin.animation.MapAnimationOptions
 import com.mapbox.maps.plugin.animation.easeTo
 import com.mapbox.maps.plugin.gestures.OnMapClickListener
-import com.mapbox.maps.plugin.gestures.OnMoveListener
 import com.mapbox.maps.plugin.gestures.OnScaleListener
+import com.mapbox.maps.plugin.gestures.generated.GesturesSettings
 import com.mapbox.maps.plugin.gestures.gestures
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -69,9 +50,6 @@ import kotlinx.coroutines.flow.StateFlow
  * l'ease-in-out, sans cesse relancé, figerait la caméra) et donne un suivi fluide.
  */
 private const val FOLLOW_EASE_MS = 200L
-
-/** Glyphe « localiser » du contrôle de recentrage, centré dans sa cible tactile (cf. [ChaseCameraOverlay]). */
-private val RECENTER_ICON_SIZE = 28.dp
 
 /**
  * Écran carte : la **caméra de poursuite** à la troisième personne.
@@ -106,9 +84,9 @@ fun MapScreen(
  * Carte Mapbox plein écran avec **caméra de poursuite à la troisième personne**.
  *
  * La caméra suit la position GPS filtrée fournie par [ChaseCameraViewModel], inclinée et orientée
- * selon le cap lissé de la boussole. Un déplacement au doigt suspend la poursuite (mode libre) et
- * fait apparaître une icône de recentrage ; le zoom au pincement reste actif et borné à
- * [MapConfig.MIN_ZOOM]–[MapConfig.MAX_ZOOM] pendant la poursuite.
+ * selon le cap lissé de la boussole. Elle est **verrouillée en permanence sur le joueur** : pan,
+ * rotation et inclinaison manuels sont désactivés (aucun geste ne décentre le joueur) ; seul le zoom
+ * au pincement reste actif et borné à [MapConfig.MIN_ZOOM]–[MapConfig.MAX_ZOOM].
  *
  * Le token public est fourni au SDK en amont (cf. [com.hexa.MainActivity]).
  */
@@ -135,7 +113,6 @@ private fun ChaseCameraMap(
         )
 
     val camera by viewModel.cameraState.collectAsStateWithLifecycle()
-    val mode by viewModel.mode.collectAsStateWithLifecycle()
     val gridCells by gridViewModel.cells.collectAsStateWithLifecycle()
     val inspection by inspectionViewModel.inspection.collectAsStateWithLifecycle()
 
@@ -156,13 +133,12 @@ private fun ChaseCameraMap(
     var placementSheetOpen by rememberSaveable { mutableStateOf(false) }
 
     // Position de l'avatar : la **même** position GPS filtrée partagée que la caméra (une seule
-    // trajectoire). Indépendante du mode caméra : l'avatar reste visible même en mode libre, quand la
-    // pose de poursuite est nulle.
+    // trajectoire), suivie indépendamment de la pose de poursuite.
     val avatarPosition by remember { app.sharedPositionSource.positions() }
         .collectAsStateWithLifecycle(initialValue = null)
 
     // La grille suit le palier d'anneaux du zoom de poursuite courant (et du zoom au pincement, qui
-    // se répercute sur la pose). En mode libre, le dernier zoom de poursuite est conservé.
+    // se répercute sur la pose).
     LaunchedEffect(camera?.zoomLevel) {
         camera?.zoomLevel?.let(gridViewModel::onZoomChanged)
     }
@@ -181,10 +157,30 @@ private fun ChaseCameraMap(
             }
         }
 
+    // Caméra verrouillée sur le joueur : on coupe via les **réglages de gestes** tout ce qui la
+    // décentrerait, la désorienterait ou la ferait « sauter » — pan, pan au pincement, rotation,
+    // inclinaison, zooms double-tap / quick-zoom. Seul le pincement à deux doigts subsiste pour zoomer
+    // (`pinchToZoomEnabled` laissé au défaut). Les réglages **doivent** passer par [MapState] : le
+    // wrapper Compose les applique et les ré-applique en continu, alors qu'un `gestures.updateSettings`
+    // ponctuel serait réinitialisé.
+    val mapState =
+        rememberMapState {
+            gesturesSettings = GesturesSettings {
+                scrollEnabled = false
+                pinchScrollEnabled = false
+                rotateEnabled = false
+                pitchEnabled = false
+                doubleTapToZoomInEnabled = false
+                doubleTouchToZoomOutEnabled = false
+                quickZoomEnabled = false
+            }
+        }
+
     Box(modifier = modifier) {
         MapboxMap(
             modifier = Modifier.fillMaxSize(),
             mapViewportState = viewportState,
+            mapState = mapState,
             style = { MapStyle(style = MapConfig.STYLE_URL) },
             // Ornements parasites masqués par lambda vide : la barre d'échelle n'apporte rien au jeu,
             // et la boussole est sans objet puisque la caméra suit le cap en permanence (tap-to-north
@@ -200,8 +196,8 @@ private fun ChaseCameraMap(
                 true
             },
         ) {
-            // À chaque nouvelle pose de poursuite, glisser la caméra vers elle ; en mode libre
-            // (pose nulle), ne rien imposer pour laisser la carte là où l'utilisateur l'a déplacée.
+            // À chaque nouvelle pose de poursuite, glisser la caméra vers elle ; tant que la première
+            // pose n'est pas connue (pose nulle, avant le premier fix), ne rien imposer.
             MapEffect(camera) { mapView ->
                 val pose = camera ?: return@MapEffect
                 mapView.mapboxMap.easeTo(
@@ -243,6 +239,8 @@ private fun ChaseCameraMap(
                     ExtractorPlacementMarker(onClick = { placementSheetOpen = true })
                 }
             }
+            // Bornes dures de zoom : aucun pincement ne peut sortir de [MIN_ZOOM, MAX_ZOOM]. Le verrou
+            // des gestes (pan, rotation…) vit, lui, dans `mapState.gesturesSettings` ci-dessus.
             MapEffect(Unit) { mapView ->
                 mapView.mapboxMap.setBounds(
                     CameraBoundsOptions.Builder()
@@ -250,23 +248,14 @@ private fun ChaseCameraMap(
                         .maxZoom(MapConfig.MAX_ZOOM)
                         .build(),
                 )
-                mapView.gestures.addOnMoveListener(
-                    object : OnMoveListener {
-                        // Un déplacement au doigt rend la main à l'utilisateur (mode libre).
-                        override fun onMoveBegin(detector: MoveGestureDetector) = viewModel.onUserPan()
-
-                        override fun onMove(detector: MoveGestureDetector): Boolean = false
-
-                        override fun onMoveEnd(detector: MoveGestureDetector) = Unit
-                    },
-                )
                 mapView.gestures.addOnScaleListener(
                     object : OnScaleListener {
                         override fun onScaleBegin(detector: StandardScaleGestureDetector) = Unit
 
                         override fun onScale(detector: StandardScaleGestureDetector) = Unit
 
-                        // Le pincement ajuste le zoom sans quitter la poursuite ; on répercute la valeur.
+                        // Le pincement ajuste le zoom sans décentrer ; on répercute la valeur (bornée
+                        // par le contrôleur) dans la pose pour qu'elle persiste à la prochaine poursuite.
                         override fun onScaleEnd(detector: StandardScaleGestureDetector) =
                             viewModel.onUserZoom(mapView.mapboxMap.cameraState.zoom)
                     },
@@ -291,55 +280,6 @@ private fun ChaseCameraMap(
                     onDismiss = { placementSheetOpen = false },
                 )
             }
-        }
-
-        ChaseCameraOverlay(
-            mode = mode,
-            onRecenter = viewModel::recenter,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-        )
-    }
-}
-
-/**
- * Habillage interactif posé **au-dessus** de la carte de poursuite : en mode libre
- * ([CameraMode.FREE]), une **icône « localiser »** ramène la caméra sur l'avatar ; en poursuite
- * ([CameraMode.FOLLOW]), aucun contrôle (la caméra suit déjà). Contrôle de carte **distinct** de la
- * barre d'actions de jeu ([com.hexa.ui.theme.HexaActionBar]) : pastille ronde à la DA « glow » cyan,
- * dans une cible tactile ≥ [HexaDimens.minTouchTarget], portant sa description d'accessibilité.
- *
- * Stateless et sans dépendance Mapbox/GPS, donc rendable et testable hors de la coquille `MapboxMap`
- * (cf. convention d'extraction de #75) — c'est le seul bord de l'écran carte couvrable en JVM, le
- * cœur Mapbox (ordre des `MapEffect`, glu de tap) ne l'étant pas.
- *
- * Ancré en bas, il applique lui-même [safeGesturesPadding] pour rester **hors de la zone de geste
- * système** : en mode immersif (barres masquées), l'inset de barre de navigation est nul et seul
- * l'inset de geste écarte l'icône du swipe du bord.
- *
- * @param mode mode caméra courant ; décide la présence de l'icône de recentrage.
- * @param onRecenter invoqué au tap (restaure le cadrage de poursuite, cf. [ChaseCameraViewModel.recenter]).
- * @param modifier placement décidé par l'appelant (alignement, marges) ; appliqué avant les insets de
- *   geste, de sorte que la marge épouse le bord sûr (hors zone de swipe).
- */
-@Composable
-internal fun ChaseCameraOverlay(mode: CameraMode, onRecenter: () -> Unit, modifier: Modifier = Modifier) {
-    if (mode == CameraMode.FREE) {
-        val description = stringResource(R.string.recenter_camera)
-        Box(
-            modifier
-                .safeGesturesPadding()
-                .size(HexaDimens.minTouchTarget)
-                .hexaGlowSurface(shape = CircleShape, glow = MaterialTheme.colorScheme.primary)
-                .clickable(role = Role.Button, onClick = onRecenter)
-                .semantics(mergeDescendants = true) { contentDescription = description },
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Filled.MyLocation,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(RECENTER_ICON_SIZE),
-            )
         }
     }
 }
