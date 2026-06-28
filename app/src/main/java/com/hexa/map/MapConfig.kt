@@ -55,7 +55,7 @@ object MapConfig {
      * avec retard ; élevé = réactif mais nerveux. 0,15 amortit le bruit du capteur sans traîner.
      *
      * **Plus consommé par la caméra** depuis #96 (le pilotage boussole du cap caméra a été retiré) :
-     * conservé pour l'orientation de l'avatar (#100), qui réutilisera le même pipeline boussole.
+     * consommé désormais par l'**orientation de l'avatar** (#100), qui réutilise le même pipeline boussole.
      */
     const val HEADING_SMOOTHING_FACTOR: Double = 0.15
 
@@ -186,9 +186,10 @@ object MapConfig {
 
     /**
      * Lacet (rotation autour de +Z, en degrés) appliqué par défaut au modèle de l'avatar. Le mesh a son
-     * avant modélisé vers **+X** ; cette rotation l'aligne sur la direction de référence pour cette
-     * tranche à orientation fixe. **À valider sur device.** Les tranches d'orientation suivantes
-     * piloteront ce lacet dynamiquement (cap boussole / GPS). **Provisoire**.
+     * avant modélisé vers **+X** ; ce **calage** l'aligne sur la direction de référence. Le cap boussole
+     * lissé se **compose** ensuite avec ce calage pour orienter l'avatar dynamiquement (#100, cf.
+     * [avatarModelYawDeg]) ; le cap GPS viendra plus tard. **À valider sur device** (calage et signe de
+     * la rotation). **Provisoire**.
      */
     const val AVATAR_MODEL_FACING_DEG: Double = 90.0
 

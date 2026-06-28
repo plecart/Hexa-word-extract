@@ -38,7 +38,8 @@ private const val AVATAR_MODEL_LAYER_ID = "hexa-avatar-model-layer"
  *
  * Calque la mécanique de [Style.showBuildingModels] (modèle enregistré une fois, données réinjectées).
  * La couche de rendu reste **séparée de la logique de position** : elle ne reçoit qu'un point. La
- * rotation dynamique (cap boussole / GPS) viendra piloter `modelRotation` dans les tranches suivantes.
+ * rotation dynamique suit le **cap boussole lissé** via [rotateAvatar] (#100), appliquée par-dessus
+ * ce calage par défaut ; le cap GPS viendra plus tard.
  *
  * @param position position d'ancrage de l'avatar, ou `null` tant qu'aucun fix GPS n'est connu — la
  *   source est alors vide et rien n'est dessiné.
@@ -59,7 +60,7 @@ internal fun Style.showAvatar(position: LatLng?) {
                 modelType(ModelType.COMMON_3D)
                 modelScale(listOf(scale, scale, scale))
                 // Avant du mesh modélisé vers +X : rotation par défaut (lacet) pour l'aligner sur la
-                // direction de référence. Les tranches d'orientation piloteront ce lacet dynamiquement.
+                // direction de référence. Le cap boussole lissé pilote ensuite ce lacet via [rotateAvatar] (#100).
                 modelRotation(listOf(0.0, 0.0, MapConfig.AVATAR_MODEL_FACING_DEG))
                 // Position de repos du flottement (+Z = vers le haut) : base posée au sol (demi-hauteur)
                 // puis remontée de la hauteur de repos. Le driver de frame (cf. MapScreen) ré-écrit
@@ -83,8 +84,37 @@ internal fun Style.showAvatar(position: LatLng?) {
  * @param offsetM décalage de flottement à appliquer, en mètres (cf. [avatarFloatOffsetMeters]).
  */
 internal fun Style.floatAvatar(offsetM: Double) {
-    getLayerAs<ModelLayer>(AVATAR_MODEL_LAYER_ID)
-        ?.modelTranslation(listOf(0.0, 0.0, avatarRestZ() + offsetM))
+    updateAvatarLayer { modelTranslation(listOf(0.0, 0.0, avatarRestZ() + offsetM)) }
+}
+
+/**
+ * Applique l'**orientation** courante [yawDeg] (lacet autour de +Z, en degrés) au modèle de l'avatar,
+ * en ré-écrivant la seule composante Z de `modelRotation` de la couche existante.
+ *
+ * Conçu pour suivre le **cap boussole lissé** (cf. [com.hexa.map.MapScreen]) à chaque émission de cap :
+ * ne touche ni la source, ni la position GPS, ni le flottement. Le lacet (`modelRotation`) est une
+ * propriété **disjointe** du décalage vertical (`modelTranslation`, piloté en parallèle par
+ * [floatAvatar]) : les deux coexistent sur la même couche sans se clobber. No-op tant que la couche
+ * n'existe pas (cf. [updateAvatarLayer]).
+ *
+ * Reste un mutateur **volontairement bête**, symétrique de [floatAvatar] : il reçoit le lacet **déjà
+ * composé** avec le calage du mesh (cf. [avatarModelYawDeg]), toute la logique vivant dans cette
+ * fonction pure testée.
+ *
+ * @param yawDeg lacet à écrire sur la composante Z de `modelRotation`, en degrés (cf. [avatarModelYawDeg]).
+ */
+internal fun Style.rotateAvatar(yawDeg: Double) {
+    updateAvatarLayer { modelRotation(listOf(0.0, 0.0, yawDeg)) }
+}
+
+/**
+ * Applique [mutation] à la couche modèle de l'avatar **si elle existe** : point unique de la mutation
+ * ciblée d'une propriété de la couche déjà posée (cf. [floatAvatar] pour `modelTranslation`,
+ * [rotateAvatar] pour `modelRotation`). Récupère la [ModelLayer] par son identifiant et n'agit que si
+ * elle est présente — **no-op silencieux** tant que l'avatar n'est pas affiché (faute de fix GPS).
+ */
+private inline fun Style.updateAvatarLayer(mutation: ModelLayer.() -> Unit) {
+    getLayerAs<ModelLayer>(AVATAR_MODEL_LAYER_ID)?.mutation()
 }
 
 /**

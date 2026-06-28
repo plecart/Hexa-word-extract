@@ -21,15 +21,16 @@ import kotlinx.coroutines.flow.sample
  * est observée.
  *
  * Cette source émet le cap **brut** mais **rate-limité** : la boussole peut émettre à haute
- * fréquence ; on échantillonne à [SAMPLE_MS] pour ne pas saturer le consommateur en aval (une
- * animation de pose relancée à chaque mesure se figerait). Le lissage et la circularité sont traités
- * en aval par [HeadingSmoother][com.hexa.location.HeadingSmoother].
+ * fréquence ; on échantillonne à [SAMPLE_MS] pour ne pas saturer le consommateur en aval (l'avatar
+ * réorienté à chaque mesure). Le lissage et la circularité sont traités en aval par
+ * [HeadingSmoother][com.hexa.location.HeadingSmoother].
  *
  * Le cap est l'azimut de l'appareil tenu **à plat** (référentiel capteur par défaut) ; un éventuel
  * remappage d'axes pour une tenue verticale relève de la validation visuelle sur device.
  *
- * **Statut (#96)** : le pilotage boussole de la **caméra** a été retiré ; cette source n'a plus de
- * consommateur actif et est **conservée pour l'orientation de l'avatar (#100)**.
+ * **Statut (#100)** : le pilotage boussole de la **caméra** a été retiré (#96) ; cette source oriente
+ * désormais l'**avatar à l'arrêt** (cf. [com.hexa.map.MapScreen], via
+ * [headingSource][com.hexa.HexaApplication.headingSource]).
  *
  * @param sensorManager service capteurs de l'app (obtenu via `Context.getSystemService`).
  */
@@ -38,7 +39,7 @@ class CompassHeadingSource(private val sensorManager: SensorManager) : HeadingSo
     override fun headings(): Flow<Double> = callbackFlow {
         val rotationVector = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         if (rotationVector == null) {
-            // Appareil sans capteur d'orientation : flux vide, la caméra garde le cap d'amorçage.
+            // Appareil sans capteur d'orientation : flux vide, l'avatar garde son calage par défaut.
             close()
             return@callbackFlow
         }
@@ -67,7 +68,7 @@ class CompassHeadingSource(private val sensorManager: SensorManager) : HeadingSo
         const val ORIENTATION_SIZE = 3
         const val AZIMUTH = 0
 
-        /** Période d'échantillonnage du cap (ms) : ~10 Hz, fluide sans saturer la caméra ni le CPU. */
+        /** Période d'échantillonnage du cap (ms) : ~10 Hz, fluide sans saturer le consommateur ni le CPU. */
         const val SAMPLE_MS = 100L
     }
 }
