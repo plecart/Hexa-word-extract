@@ -23,14 +23,17 @@ object MapConfig {
     /** Longitude du centre par défaut au lancement (Paris). Provisoire, cf. [DEFAULT_CENTER_LAT]. */
     const val DEFAULT_CENTER_LON: Double = 2.3522
 
-    /** Zoom minimal autorisé au pincement — empêche de dézoomer au-delà de l'échelle de quartier. */
-    const val MIN_ZOOM: Double = 14.0
+    /**
+     * Zoom minimal autorisé au pincement — borne de **dézoom** : empêche de s'éloigner au-delà de
+     * ~2 rues autour du joueur (échelle de jeu serrée), plutôt que l'échelle de quartier.
+     */
+    const val MIN_ZOOM: Double = 17.0
 
     /** Zoom maximal autorisé au pincement — échelle rue, cohérente avec les hexagones H3 res-10. */
     const val MAX_ZOOM: Double = 19.0
 
     /** Zoom appliqué au lancement, à mi-plage de [MIN_ZOOM]–[MAX_ZOOM]. */
-    const val DEFAULT_ZOOM: Double = 17.0
+    const val DEFAULT_ZOOM: Double = 18.0
 
     /**
      * Inclinaison de la caméra de poursuite, en degrés (vue troisième personne). Choisie dans la
@@ -107,17 +110,15 @@ object MapConfig {
      * Paliers de zoom → nombre d'anneaux de la grille, **ordonnés du plus zoomé au plus large**.
      * Chaque palier `(zoom plancher, anneaux)` s'applique tant que le zoom reste au-dessus du plancher.
      * Plus on dézoome, plus on affiche d'anneaux pour garder la grille pleine écran ; la grille n'est
-     * recalculée que lorsque le zoom **franchit** un palier, pas à chaque micro-variation. Calés sur la
-     * tuile res-10 (~130 m de large, ~2,6× la res-11) : à tuile plus large, le même nombre d'anneaux
-     * remplit l'écran à un zoom ~1,4 niveau plus bas, d'où des planchers abaissés d'autant (arrondis à
-     * 0,5 : 18→16,5 et 16,5→15). Les trois
-     * paliers couvrent : `≥ 16,5` échelle rue (19 cellules), `[15 ; 16,5[` (37 cellules), `[14 ; 15[`
-     * échelle quartier (61 cellules).
+     * recalculée que lorsque le zoom **franchit** un palier, pas à chaque micro-variation. Les trois
+     * paliers se répartissent sur la plage de dézoom **resserrée** [MIN_ZOOM]–[MAX_ZOOM] (≈2 rues au
+     * plus large) : `≥ 18` échelle rue / poursuite (19 cellules), `[17,5 ; 18[` (37 cellules),
+     * `[17 ; 17,5[` dézoom maximal (61 cellules).
      */
     val GRID_RING_STEPS: List<Pair<Double, Int>> =
         listOf(
-            16.5 to GRID_MIN_RINGS,
-            15.0 to 3,
+            18.0 to GRID_MIN_RINGS,
+            17.5 to 3,
             MIN_ZOOM to GRID_MAX_RINGS,
         )
 
