@@ -37,12 +37,12 @@ object MapConfig {
 
     /**
      * Inclinaison **minimale** de la caméra de poursuite, en degrés — appliquée au zoom le plus large
-     * ([MIN_ZOOM]). Pitch faible, vue quasi plongeante / top-down : on lit la grille hexagonale et on
-     * se repère. Le pitch est **couplé au zoom** par
+     * ([MIN_ZOOM]). Pitch le plus faible : vue la plus **en surplomb** (plongeante, sans aller jusqu'au
+     * top-down) pour lire la grille hexagonale et se repérer. Le pitch est **couplé au zoom** par
      * [ChaseCameraController][com.hexa.location.ChaseCameraController], qui interpole linéairement
      * jusqu'à [MAX_PITCH]. **À affiner à la validation terrain.** **Provisoire.**
      */
-    const val MIN_PITCH: Double = 30.0
+    const val MIN_PITCH: Double = 40.0
 
     /**
      * Inclinaison **maximale** de la caméra de poursuite, en degrés — appliquée au zoom le plus
@@ -50,7 +50,7 @@ object MapConfig {
      * profondeur. Borne haute du couplage pitch↔zoom (cf. [MIN_PITCH]). **À affiner à la validation
      * terrain.** **Provisoire.**
      */
-    const val MAX_PITCH: Double = 65.0
+    const val MAX_PITCH: Double = 72.0
 
     /**
      * Zoom maintenu en poursuite tant que l'utilisateur n'a pas pincé. Resserré au point de vue de jeu
