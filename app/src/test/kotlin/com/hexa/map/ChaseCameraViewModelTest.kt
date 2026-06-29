@@ -35,7 +35,14 @@ private fun CoroutineScope.launchCollector(vm: ChaseCameraViewModel) {
  * la pose elle-même est déjà testée dans `:location`.
  */
 class ChaseCameraViewModelTest : StringSpec({
-    val config = ChaseCameraConfig(pitchDeg = 60.0, followZoom = 17.0, minZoom = 14.0, maxZoom = 19.0)
+    val config =
+        ChaseCameraConfig(
+            minPitchDeg = 20.0,
+            maxPitchDeg = 70.0,
+            followZoom = 17.0,
+            minZoom = 14.0,
+            maxZoom = 19.0,
+        )
     val paris = LatLng(48.8566, 2.3522)
 
     // viewModelScope s'exécute sur Dispatchers.Main : on le branche sur le planificateur de test.
@@ -53,8 +60,9 @@ class ChaseCameraViewModelTest : StringSpec({
             backgroundScope.launchCollector(vm)
             advanceUntilIdle()
 
+            // followZoom = 17 → pitch interpolé = 20 + ((17 − 14) / (19 − 14)) × 50 = 50°.
             vm.cameraState.value shouldBe
-                CameraState(center = paris, zoomLevel = 17.0, pitchDeg = 60.0, bearingDeg = 0.0)
+                CameraState(center = paris, zoomLevel = 17.0, pitchDeg = 50.0, bearingDeg = 0.0)
         }
     }
 
@@ -95,5 +103,13 @@ class ChaseCameraViewModelTest : StringSpec({
 
             vm.cameraState.value?.zoomLevel shouldBe 19.0
         }
+    }
+
+    "délègue la courbe pitch↔zoom au contrôleur (pilotage du pitch en direct au pincement)" {
+        // On vérifie la **délégation** aux deux bornes ; la forme de la courbe (milieu, débordement)
+        // est déjà couverte côté `:location` (ChaseCameraControllerTest).
+        val vm = viewModel()
+        vm.pitchForZoom(14.0) shouldBe 20.0
+        vm.pitchForZoom(19.0) shouldBe 70.0
     }
 })

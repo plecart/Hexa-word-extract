@@ -66,6 +66,14 @@ class ChaseCameraViewModel(
         userZoom.value = zoomLevel
     }
 
+    /**
+     * Pitch couplé au [zoomLevel] sur la **même courbe** que la pose de poursuite (cf.
+     * [ChaseCameraController.pitchForZoom]). Exposé pour le **pilotage en direct du pincement** : pendant
+     * le geste, [MapScreen] lit le zoom courant de la carte et applique ce pitch image par image, sans
+     * attendre la pose suivante — le pitch reste collé au zoom au lieu de le rattraper après coup.
+     */
+    fun pitchForZoom(zoomLevel: Double): Double = controller.pitchForZoom(zoomLevel)
+
     private companion object {
         /** Cap d'amorçage : nord, tant que l'utilisateur n'a pas pivoté la caméra au glisser. */
         const val NORTH_BEARING_DEG = 0.0
