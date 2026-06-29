@@ -56,10 +56,10 @@ fun LoadingScreen(modifier: Modifier = Modifier) {
 }
 
 /**
- * Contenu sans état du splash : fond anthracite plein écran, **wordmark « HEXA »** (placeholder, en
- * attendant un asset de marque), puis un panneau DA ([hexaGlowSurface]) portant l'indicateur de
- * progression cyan et le statut « Localisation en cours… ». Quand [showSlowHint], un indice d'aide
- * s'ajoute sous le statut.
+ * Contenu sans état du splash : fond anthracite plein écran, **logo de marque** ([BrandLogo],
+ * placeholder en attendant un asset dédié), puis un panneau DA ([hexaGlowSurface]) portant
+ * l'indicateur de progression cyan et le statut « Localisation en cours… ». Quand [showSlowHint], un
+ * indice d'aide s'ajoute sous le statut.
  *
  * Applique [safeDrawingPadding] — cohérent avec [com.hexa.firstlaunch.FirstLaunchPanel] — pour rester
  * hors des barres système transitoires du mode immersif.
@@ -80,11 +80,7 @@ internal fun LoadingScreenContent(showSlowHint: Boolean, modifier: Modifier = Mo
             verticalArrangement = Arrangement.spacedBy(24.dp),
             modifier = Modifier.padding(32.dp),
         ) {
-            Text(
-                text = stringResource(R.string.loading_wordmark),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            BrandLogo()
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp),

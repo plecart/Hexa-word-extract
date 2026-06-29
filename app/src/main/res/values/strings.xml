@@ -14,6 +14,9 @@
     <!-- Écran de chargement au lancement : affiché jusqu'au premier fix GPS, jamais un centre
          arbitraire (#61). Le wordmark est un placeholder en attendant un asset de marque dédié. -->
     <string name="loading_wordmark" translatable="false">HEXA</string>
+    <!-- contentDescription stable du logo de chargement : survit au remplacement du contenu visuel
+         placeholder par l'asset de marque réel (cf. BrandLogo, #103). -->
+    <string name="loading_logo_description" translatable="false">HEXA</string>
     <string name="loading_status">Localisation en cours…</string>
     <string name="loading_slow_hint">Vérifie que la localisation est activée et place-toi à l\'extérieur.</string>
 

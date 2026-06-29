@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ApplicationProvider
 import com.hexa.R
@@ -34,6 +35,15 @@ class LoadingScreenContentTest {
         composeRule.setContent {
             HexaTheme { LoadingScreenContent(showSlowHint = showSlowHint) }
         }
+    }
+
+    @Test
+    fun `affiche le logo de marque`() {
+        render(showSlowHint = false)
+
+        composeRule
+            .onNodeWithContentDescription(context.getString(R.string.loading_logo_description))
+            .assertIsDisplayed()
     }
 
     @Test
