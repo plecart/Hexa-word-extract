@@ -131,6 +131,10 @@ private fun ChaseCameraMap(
     // Rotation au glisser en cours : tant qu'elle dure, le suivi GPS est suspendu (le geste est seul
     // maître de la caméra), pour que le cap n'oscille pas entre le geste et la pose suivie.
     var rotating by remember { mutableStateOf(false) }
+    // Pincement (zoom) en cours : pendant le geste, le pitch est piloté **en direct**, collé au zoom
+    // (cf. l'OnScaleListener) ; comme pour la rotation, on suspend alors le suivi GPS pour qu'aucun tick
+    // ne ré-impose l'ancien pitch et ne décolle la caméra de la courbe pitch↔zoom.
+    var scaling by remember { mutableStateOf(false) }
     // Taille de la vue carte (px), captée par `onSizeChanged` ; son centre sert de point focal des
     // gestes (cf. le `LaunchedEffect` plus bas).
     var mapViewSize by remember { mutableStateOf(IntSize.Zero) }
@@ -251,10 +255,11 @@ private fun ChaseCameraMap(
             // Suivi : à chaque nouvelle pose, glisser la caméra vers elle (centre, zoom, **cap**) ; tant
             // que la première pose n'est pas connue (pose nulle, avant le premier fix), ne rien imposer.
             // Le cap, persisté au relâcher du glisser, est ré-appliqué ici pour survivre au suivi GPS.
-            // **Suspendu pendant une rotation** ([rotating]) : le geste est alors seul maître de la
-            // caméra, sinon chaque point GPS ré-imposerait l'ancien cap et le ferait osciller.
-            MapEffect(camera, rotating) { mapView ->
-                if (rotating) return@MapEffect
+            // **Suspendu pendant une rotation ([rotating]) ou un pincement ([scaling])** : le geste est
+            // alors seul maître de la caméra, sinon chaque point GPS ré-imposerait l'ancien cap/pitch et
+            // ferait osciller (cap) ou décollerait le pitch de la courbe pendant le zoom.
+            MapEffect(camera, rotating, scaling) { mapView ->
+                if (rotating || scaling) return@MapEffect
                 val pose = camera ?: return@MapEffect
                 mapView.mapboxMap.easeTo(
                     CameraOptions.Builder()
@@ -344,14 +349,26 @@ private fun ChaseCameraMap(
                 )
                 mapView.gestures.addOnScaleListener(
                     object : OnScaleListener {
-                        override fun onScaleBegin(detector: StandardScaleGestureDetector) = Unit
+                        // Début du pincement : on suspend le suivi GPS le temps du geste (cf. [scaling]),
+                        // pour piloter le pitch en direct sans qu'un tick GPS ne le ré-impose.
+                        override fun onScaleBegin(detector: StandardScaleGestureDetector) {
+                            scaling = true
+                        }
 
-                        override fun onScale(detector: StandardScaleGestureDetector) = Unit
+                        // À chaque frame du pincement, le pitch suit le zoom courant sur **la même
+                        // courbe** que la pose (cf. [ChaseCameraViewModel.pitchForZoom]) : il reste collé
+                        // au zoom en direct, au lieu d'être rattrapé après coup par l'animation de pose.
+                        override fun onScale(detector: StandardScaleGestureDetector) {
+                            val pitch = viewModel.pitchForZoom(mapView.mapboxMap.cameraState.zoom)
+                            mapView.mapboxMap.setCamera(CameraOptions.Builder().pitch(pitch).build())
+                        }
 
-                        // Le pincement ajuste le zoom sans décentrer ; on répercute la valeur (bornée
-                        // par le contrôleur) dans la pose pour qu'elle persiste à la prochaine poursuite.
-                        override fun onScaleEnd(detector: StandardScaleGestureDetector) =
+                        // Fin du pincement : on persiste le zoom (borné par le contrôleur) dans la pose
+                        // pour la prochaine poursuite et le palier de grille, puis on rend la main au suivi.
+                        override fun onScaleEnd(detector: StandardScaleGestureDetector) {
                             viewModel.onUserZoom(mapView.mapboxMap.cameraState.zoom)
+                            scaling = false
+                        }
                     },
                 )
             }

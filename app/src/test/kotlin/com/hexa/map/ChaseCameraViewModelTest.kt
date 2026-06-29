@@ -104,4 +104,12 @@ class ChaseCameraViewModelTest : StringSpec({
             vm.cameraState.value?.zoomLevel shouldBe 19.0
         }
     }
+
+    "délègue la courbe pitch↔zoom au contrôleur (pilotage du pitch en direct au pincement)" {
+        // On vérifie la **délégation** aux deux bornes ; la forme de la courbe (milieu, débordement)
+        // est déjà couverte côté `:location` (ChaseCameraControllerTest).
+        val vm = viewModel()
+        vm.pitchForZoom(14.0) shouldBe 20.0
+        vm.pitchForZoom(19.0) shouldBe 70.0
+    }
 })

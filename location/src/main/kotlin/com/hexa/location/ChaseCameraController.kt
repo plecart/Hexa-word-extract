@@ -39,16 +39,23 @@ class ChaseCameraController(private val config: ChaseCameraConfig) {
      * le plus large, vue plongeante) et [ChaseCameraConfig.maxPitchDeg] (au zoom le plus rapproché, vue
      * rasante). Croissant continûment avec le zoom, sans palier.
      *
-     * [zoom] est le zoom **déjà borné** à `[minZoom, maxZoom]` par [cameraFor] : la fraction
-     * d'interpolation reste donc dans `[0, 1]` et le pitch dans `[minPitchDeg, maxPitchDeg]` — borné
-     * sans clamp supplémentaire, même si le zoom utilisateur débordait. Si la plage de zoom est nulle
-     * (`minZoom == maxZoom`, config dégénérée), il n'y a pas de zoom à interpoler : on rend le pitch
-     * minimal.
+     * Exposé publiquement car c'est la **source unique** de la courbe pitch↔zoom : [cameraFor] s'en sert
+     * pour la pose de poursuite, et `:app` l'applique **image par image pendant le pincement** pour que
+     * le pitch reste collé au zoom en direct (cf. `ChaseCameraViewModel.pitchForZoom`), sur exactement
+     * la même courbe.
+     *
+     * [zoom] est **borné** à `[minZoom, maxZoom]` avant interpolation : la fraction reste dans `[0, 1]`
+     * et le pitch dans `[minPitchDeg, maxPitchDeg]`, même si l'appelant fournit un zoom qui déborde. Si
+     * la plage de zoom est nulle (`minZoom == maxZoom`, config dégénérée), il n'y a pas de zoom à
+     * interpoler : on rend le pitch minimal.
+     *
+     * @param zoom niveau de zoom (sera borné aux bornes de la config).
+     * @return le pitch couplé, en degrés, dans `[minPitchDeg, maxPitchDeg]`.
      */
-    private fun pitchForZoom(zoom: Double): Double {
+    fun pitchForZoom(zoom: Double): Double {
         val zoomSpan = config.maxZoom - config.minZoom
         if (zoomSpan == 0.0) return config.minPitchDeg
-        val fraction = (zoom - config.minZoom) / zoomSpan
+        val fraction = (zoom.coerceIn(config.minZoom, config.maxZoom) - config.minZoom) / zoomSpan
         return config.minPitchDeg + fraction * (config.maxPitchDeg - config.minPitchDeg)
     }
 }

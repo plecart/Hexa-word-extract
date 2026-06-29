@@ -33,24 +33,9 @@ class ChaseCameraControllerTest : StringSpec({
         state shouldBe CameraState(center = paris, zoomLevel = 17.0, pitchDeg = 50.0, bearingDeg = 90.0)
     }
 
-    "au zoom minimal (vue la plus large), le pitch vaut le pitch minimal (vue plongeante)" {
-        val state = ChaseCameraController(config).cameraFor(paris, bearingDeg = 0.0, userZoom = 14.0)
-        state.pitchDeg shouldBe 20.0
-    }
-
-    "au zoom maximal (vue la plus rapprochée), le pitch vaut le pitch maximal (vue rasante)" {
-        val state = ChaseCameraController(config).cameraFor(paris, bearingDeg = 0.0, userZoom = 19.0)
-        state.pitchDeg shouldBe 70.0
-    }
-
-    "à un zoom intermédiaire, le pitch est interpolé proportionnellement, sans palier" {
-        // zoom = 16,5 → t = (16,5 − 14) / 5 = 0,5 → pitch = 20 + 0,5 × 50 = 45° (milieu de plage).
-        val state = ChaseCameraController(config).cameraFor(paris, bearingDeg = 0.0, userZoom = 16.5)
-        state.pitchDeg shouldBe 45.0
-    }
-
-    "un zoom au-delà des bornes borne aussi le pitch au pitch maximal" {
-        // Le zoom déborde (25 > 19) mais est ramené à 19 → le pitch reste borné au maximum (70°).
+    "un zoom au-delà des bornes borne le zoom ET en dérive le pitch (pitch maximal)" {
+        // Intégration : cameraFor passe le zoom **borné** (25 → 19) à la courbe → pitch maximal (70°).
+        // La courbe elle-même (bornes/milieu/débordement) est couverte par les tests `pitchForZoom`.
         val state = ChaseCameraController(config).cameraFor(paris, bearingDeg = 0.0, userZoom = 25.0)
         state.zoomLevel shouldBe 19.0
         state.pitchDeg shouldBe 70.0
@@ -62,14 +47,22 @@ class ChaseCameraControllerTest : StringSpec({
         state.pitchDeg shouldBe 20.0
     }
 
+    "pitchForZoom expose la courbe : bornes min/max et milieu interpolé" {
+        val controller = ChaseCameraController(config)
+        controller.pitchForZoom(14.0) shouldBe 20.0
+        controller.pitchForZoom(19.0) shouldBe 70.0
+        controller.pitchForZoom(16.5) shouldBe 45.0
+    }
+
+    "pitchForZoom borne lui-même un zoom hors plage avant d'interpoler" {
+        val controller = ChaseCameraController(config)
+        controller.pitchForZoom(25.0) shouldBe 70.0
+        controller.pitchForZoom(5.0) shouldBe 20.0
+    }
+
     "un zoom utilisateur dans les bornes est respecté" {
         val state = ChaseCameraController(config).cameraFor(paris, bearingDeg = 0.0, userZoom = 16.0)
         state.zoomLevel shouldBe 16.0
-    }
-
-    "un zoom utilisateur au-delà du maximum est borné" {
-        val state = ChaseCameraController(config).cameraFor(paris, bearingDeg = 0.0, userZoom = 25.0)
-        state.zoomLevel shouldBe 19.0
     }
 
     "un zoom utilisateur en-deçà du minimum est borné" {
