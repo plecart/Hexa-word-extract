@@ -91,8 +91,9 @@ class MainActivity : ComponentActivity() {
  * ([LocationPermissionGate]) enveloppe le tout — refus → écran dédié inchangé. Une fois la permission
  * accordée, tant que la position du joueur n'est pas connue, l'**écran de chargement** ([LoadingScreen])
  * masque carte **et** overlays — on ne montre jamais un centre arbitraire ni la pose de base avant le
- * fix. Au premier fix, la bascule vers le jeu se fait en **fondu** ([Crossfade]) ; la carte ([GameScene])
- * apparaît alors centrée sur le joueur.
+ * fix. La bascule vers le jeu attend la **fin du remplissage** de la barre de chargement
+ * ([LoadingScreen.onLoadingComplete]) — et non le fix GPS brut — pour que les 20 % finaux soient vus ;
+ * elle se fait alors en **fondu** ([Crossfade]) et la carte ([GameScene]) apparaît centrée sur le joueur.
  */
 @Composable
 private fun HexaRoot(viewModel: PlayerViewModel) {
@@ -102,9 +103,16 @@ private fun HexaRoot(viewModel: PlayerViewModel) {
     LocationPermissionGate(modifier = Modifier.fillMaxSize()) {
         val premierFix by app.premierFix.collectAsStateWithLifecycle()
         val stage = startupStage(premierFix, playerState)
-        Crossfade(targetState = stage == StartupStage.LOADING, label = "startup-loading") { isLoading ->
+        // Latch : la barre n'atteint 100 % qu'après le fix ; une fois pleine, on ne revient jamais au
+        // chargement. `rememberSaveable` évite de rejouer le remplissage après un changement de config.
+        var loadingComplete by rememberSaveable { mutableStateOf(false) }
+        Crossfade(targetState = !loadingComplete, label = "startup-loading") { isLoading ->
             if (isLoading) {
-                LoadingScreen(modifier = Modifier.fillMaxSize())
+                LoadingScreen(
+                    fixAcquired = premierFix != null,
+                    onLoadingComplete = { loadingComplete = true },
+                    modifier = Modifier.fillMaxSize(),
+                )
             } else {
                 GameScene(
                     viewModel = viewModel,
