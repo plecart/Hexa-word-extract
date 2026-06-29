@@ -12,15 +12,21 @@ import io.kotest.matchers.shouldBe
  * exacts, qui restent libres de réglage.
  */
 class MapCameraConfigTest : StringSpec({
-    "le pitch de poursuite reste dans la plage troisième personne (55–65°)" {
-        (MapConfig.PITCH in 55.0..65.0) shouldBe true
+    "les bornes de pitch sont ordonnées et dans la plage de pitch Mapbox (0–85°)" {
+        // Couplage pitch↔zoom : minimal au plus large (plongée), maximal au plus rapproché (horizon).
+        // On vérifie le contrat — bornes ordonnées et physiquement valides — pas les degrés exacts,
+        // qui restent provisoires (à affiner sur device).
+        (MapConfig.MIN_PITCH in 0.0..MapConfig.MAX_PITCH) shouldBe true
+        (MapConfig.MAX_PITCH <= 85.0) shouldBe true
     }
 
     "les réglages caméra forment une configuration de contrôleur valide" {
-        // ChaseCameraConfig valide ses invariants (zoom de poursuite dans les bornes) à la construction.
+        // ChaseCameraConfig valide ses invariants (bornes de pitch ordonnées, zoom de poursuite dans
+        // les bornes) à la construction.
         shouldNotThrowAny {
             ChaseCameraConfig(
-                pitchDeg = MapConfig.PITCH,
+                minPitchDeg = MapConfig.MIN_PITCH,
+                maxPitchDeg = MapConfig.MAX_PITCH,
                 followZoom = MapConfig.FOLLOW_ZOOM,
                 minZoom = MapConfig.MIN_ZOOM,
                 maxZoom = MapConfig.MAX_ZOOM,

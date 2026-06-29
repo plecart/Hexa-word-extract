@@ -36,10 +36,21 @@ object MapConfig {
     const val DEFAULT_ZOOM: Double = 18.0
 
     /**
-     * Inclinaison de la caméra de poursuite, en degrés (vue troisième personne). Choisie dans la
-     * plage 55–65° du game design : assez rasante pour donner du relief, sans masquer l'avant.
+     * Inclinaison **minimale** de la caméra de poursuite, en degrés — appliquée au zoom le plus large
+     * ([MIN_ZOOM]). Pitch faible, vue quasi plongeante / top-down : on lit la grille hexagonale et on
+     * se repère. Le pitch est **couplé au zoom** par
+     * [ChaseCameraController][com.hexa.location.ChaseCameraController], qui interpole linéairement
+     * jusqu'à [MAX_PITCH]. **À affiner à la validation terrain.** **Provisoire.**
      */
-    const val PITCH: Double = 60.0
+    const val MIN_PITCH: Double = 30.0
+
+    /**
+     * Inclinaison **maximale** de la caméra de poursuite, en degrés — appliquée au zoom le plus
+     * rapproché ([MAX_ZOOM]). Pitch élevé, caméra redressée vers l'horizon : on voit le décor et la
+     * profondeur. Borne haute du couplage pitch↔zoom (cf. [MIN_PITCH]). **À affiner à la validation
+     * terrain.** **Provisoire.**
+     */
+    const val MAX_PITCH: Double = 65.0
 
     /**
      * Zoom maintenu en poursuite tant que l'utilisateur n'a pas pincé. Resserré au point de vue de jeu

@@ -470,7 +470,8 @@ private fun chaseCameraViewModelFactory(positionSource: PositionSource) = viewMo
         ChaseCameraViewModel(
             positionSource = positionSource,
             config = ChaseCameraConfig(
-                pitchDeg = MapConfig.PITCH,
+                minPitchDeg = MapConfig.MIN_PITCH,
+                maxPitchDeg = MapConfig.MAX_PITCH,
                 followZoom = MapConfig.FOLLOW_ZOOM,
                 minZoom = MapConfig.MIN_ZOOM,
                 maxZoom = MapConfig.MAX_ZOOM,
