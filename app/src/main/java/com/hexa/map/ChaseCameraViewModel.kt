@@ -23,8 +23,8 @@ import kotlinx.coroutines.flow.stateIn
  * glu mince et testable avec des sources factices.
  *
  * Le cap n'est **plus piloté par la boussole** (retiré en #96) : [CompassHeadingSource] et
- * [HeadingSmoother][com.hexa.location.HeadingSmoother] restent disponibles pour l'orientation de
- * l'avatar (#100), et ne servent plus à la caméra.
+ * [HeadingSmoother][com.hexa.location.HeadingSmoother] servent désormais l'orientation de l'avatar
+ * (#100, cf. [MapScreen]), et non plus la caméra.
  *
  * @param positionSource source de la position suivie (position GPS réelle filtrée et partagée).
  * @param config paramètres de cadrage injectés depuis [MapConfig].

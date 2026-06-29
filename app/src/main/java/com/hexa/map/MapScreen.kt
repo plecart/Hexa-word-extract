@@ -19,13 +19,17 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.IntSize
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.hexa.HexaApplication
 import com.hexa.core.geo.LatLng
 import com.hexa.location.ChaseCameraConfig
+import com.hexa.location.HeadingSmoother.smoothedHeading
 import com.hexa.location.PositionSource
 import com.hexa.player.PlacedBuilding
 import com.hexa.world.TileContent
@@ -100,6 +104,10 @@ fun MapScreen(
  * au centre. Pan et inclinaison manuels restent désactivés ; le zoom au pincement reste actif et borné
  * à [MapConfig.MIN_ZOOM]–[MapConfig.MAX_ZOOM].
  *
+ * L'**avatar**, lui, est orienté par la **boussole** : son `modelRotation` suit le cap lissé (cf.
+ * [Style.rotateAvatar] / [avatarModelYawDeg]), **indépendamment de la caméra** — faire pivoter la
+ * caméra au glisser ne change pas l'orientation de l'avatar.
+ *
  * Le token public est fourni au SDK en amont (cf. [com.hexa.MainActivity]).
  */
 @Composable
@@ -111,6 +119,9 @@ private fun ChaseCameraMap(
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as HexaApplication
+    // Cycle de vie de l'écran : borne la collecte de la boussole au premier plan (cf. le MapEffect
+    // d'orientation de l'avatar), pour ne pas laisser tourner le capteur quand l'écran n'est plus visible.
+    val lifecycleOwner = LocalLifecycleOwner.current
     // Seuil de désambiguïsation tap ↔ rotation (px) : en-deçà, le geste reste un tap (inspection) ;
     // au-delà, le geste bascule en rotation de la caméra (cf. [detectDragRotation]).
     val touchSlopPx = LocalViewConfiguration.current.touchSlop
@@ -270,11 +281,28 @@ private fun ChaseCameraMap(
             MapEffect(avatarPosition) { mapView ->
                 mapView.mapboxMap.getStyle { style -> style.showAvatar(avatarPosition) }
             }
-            // Driver de flottement (effet fantôme) : à chaque frame, recalcule le décalage vertical
-            // sinusoïdal et le ré-applique au seul Z du modèle, **indépendamment** de la position GPS
-            // ci-dessus. Le flottement tourne donc en boucle, joueur immobile ou en marche. La boucle
-            // est portée par un MapEffect (accès au style + horloge de frame Compose) et s'annule
-            // proprement quand l'écran quitte la composition.
+            // Oriente l'avatar selon le **cap boussole lissé** (lissage = opérateur de flux, contrat de
+            // la source inchangé, cf. [HexaApplication.headingSource]), composé avec le calage du mesh
+            // ([avatarModelYawDeg]) : tourner le téléphone sur place tourne l'avatar. Le cap est collecté
+            // **dans le MapEffect** et appliqué **directement** au `modelRotation` (Z) — jamais routé par
+            // un `State` Compose, qui recomposerait tout l'écran à chaque émission (~10 Hz). Propriété
+            // disjointe du flottement (`modelTranslation`) → coexistence sans clobber ; **indépendant de
+            // la caméra** (le cap ne touche jamais la pose). [repeatOnLifecycle] arrête la boussole hors
+            // premier plan. Tant qu'aucun cap n'est connu, le calage par défaut posé par showAvatar tient.
+            MapEffect(Unit) { mapView ->
+                lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    app.headingSource.headings()
+                        .smoothedHeading(MapConfig.HEADING_SMOOTHING_FACTOR)
+                        .collect { heading ->
+                            val yaw = avatarModelYawDeg(heading, MapConfig.AVATAR_MODEL_FACING_DEG)
+                            mapView.mapboxMap.getStyle { style -> style.rotateAvatar(yaw) }
+                        }
+                }
+            }
+            // Driver de flottement (effet fantôme #98) : à chaque frame, recalcule le décalage vertical
+            // sinusoïdal et le ré-applique au seul Z de `modelTranslation`, **indépendamment** de la
+            // position GPS et de l'orientation ci-dessus. Tourne en boucle, joueur immobile ou en marche ;
+            // s'annule proprement à la sortie de composition.
             MapEffect(Unit) { mapView ->
                 val startNanos = withFrameNanos { it }
                 while (true) {

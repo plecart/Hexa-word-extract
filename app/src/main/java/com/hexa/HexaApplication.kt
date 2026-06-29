@@ -1,14 +1,18 @@
 package com.hexa
 
 import android.app.Application
+import android.content.Context
+import android.hardware.SensorManager
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.PersistentCacheSettings
 import com.hexa.core.geo.LatLng
+import com.hexa.location.HeadingSource
 import com.hexa.location.PositionSource
 import com.hexa.location.SharedPositionSource
 import com.hexa.location.firstFixPosition
+import com.hexa.map.CompassHeadingSource
 import com.hexa.map.CurrentTileTracker.currentTile
 import com.hexa.map.FusedLocationSource
 import com.hexa.map.H3Grid
@@ -62,6 +66,20 @@ class HexaApplication : Application() {
             ),
             scope = appScope,
         )
+    }
+
+    /**
+     * Source du **cap boussole** de l'appareil, consommée par l'**orientation de l'avatar à l'arrêt**
+     * (#100, cf. [com.hexa.map.MapScreen]) après le retrait du pilotage boussole de la caméra (#96).
+     * Émet le cap **brut** ([CompassHeadingSource], capteur de vecteur de rotation) ; le lissage est
+     * appliqué en aval par l'opérateur de flux
+     * [smoothedHeading][com.hexa.location.HeadingSmoother.smoothedHeading], laissant le contrat de la
+     * source inchangé (le point d'application migrera dans le sélecteur hybride #102). Construite
+     * paresseusement au premier accès. Un seul consommateur (l'avatar) → **pas de partage à chaud**,
+     * à la différence de [sharedPositionSource].
+     */
+    val headingSource: HeadingSource by lazy {
+        CompassHeadingSource(getSystemService(Context.SENSOR_SERVICE) as SensorManager)
     }
 
     /**
