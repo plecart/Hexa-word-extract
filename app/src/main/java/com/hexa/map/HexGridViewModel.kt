@@ -12,7 +12,8 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 
 /**
- * État de la grille hexagonale affichée autour du joueur.
+ * État de la grille hexagonale destinée à l'affichage autour du joueur (alimente la source de
+ * [Style.showHexGrid] ; le rendu visible est réintroduit en #126).
  *
  * Orchestre les contrats purs : à partir de la **tuile courante** partagée ([currentTile], déjà
  * lissée par hystérésis en amont, cf. [com.hexa.HexaApplication.sharedCurrentTile]), il déduit le

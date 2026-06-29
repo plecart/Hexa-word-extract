@@ -3,13 +3,16 @@ package com.hexa.map
 import com.hexa.core.geo.LatLng
 
 /**
- * État visuel d'une cellule de la grille, qui détermine son rendu (cf. [Style.showHexGrid]).
+ * État visuel d'une cellule de la grille, **porté dans la source** de la grille ([Style.showHexGrid])
+ * comme fondation du rendu.
  *
- * - [NORMALE] : cellule ordinaire de la grille (contour seul).
- * - [COURANTE] : cellule sous le joueur, surlignée distinctement.
+ * - [NORMALE] : cellule ordinaire de la grille.
+ * - [COURANTE] : cellule sous le joueur, destinée à un léger surlignage.
  *
- * Les tuiles **bâties** ne sont plus distinguées sur la grille : un bâtiment posé est rendu par son
- * **modèle 3D** (cf. [Style.showBuildingModels]), qui rend le remplissage redondant.
+ * Depuis #125, l'habillage cyan est retiré et **aucune couche ne rend encore cet état** ; #126
+ * (recoloration des hexagones) rebranchera un remplissage piloté par cet état (léger surlignage de la
+ * tuile courante) et par le contenu de la tuile. Les tuiles **bâties** ne sont pas distinguées ici :
+ * un bâtiment posé est rendu par son **modèle 3D** (cf. [Style.showBuildingModels]).
  */
 enum class TileState {
     NORMALE,

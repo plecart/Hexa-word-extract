@@ -125,24 +125,6 @@ object MapConfig {
             MIN_ZOOM to GRID_MAX_RINGS,
         )
 
-    /** Couleur du tracé de la grille — cyan vif, contrasté sur le fond monochrome. **Provisoire**. */
-    const val GRID_LINE_COLOR: String = "#00E5FF"
-
-    /** Épaisseur du tracé de la grille, en points — fin mais lisible. **Provisoire**. */
-    const val GRID_LINE_WIDTH: Double = 1.5
-
-    /** Opacité du tracé de la grille, dans `[0, 1]` — surcouche visible sans masquer la carte. **Provisoire**. */
-    const val GRID_LINE_OPACITY: Double = 0.85
-
-    /**
-     * Remplissage de la **tuile courante** (sous le joueur) — cyan translucide, accordé à
-     * [GRID_LINE_COLOR] : surligne la cellule sans masquer la carte dessous. **Provisoire**.
-     */
-    const val TILE_CURRENT_FILL_COLOR: String = "rgba(0, 229, 255, 0.25)"
-
-    /** Remplissage des **tuiles normales** — transparent : seule leur ligne de contour les dessine. */
-    const val TILE_NORMAL_FILL_COLOR: String = "rgba(0, 0, 0, 0.0)"
-
     /**
      * Facteur d'échelle appliqué au `model.glb` d'un bâtiment posé sur la carte (couche de modèles 3D,
      * cf. [Style.showBuildingModels]). Le glb placeholder est modélisé à l'unité ; ce facteur le porte
