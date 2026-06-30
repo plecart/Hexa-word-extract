@@ -30,3 +30,15 @@ data class ElementDeposit(
  * @property deposits gisements présents sur la tuile ; vide si la tuile ne contient rien.
  */
 data class TileContent(val deposits: List<ElementDeposit>)
+
+/**
+ * L'élément **le plus rare** présent sur la tuile, ou `null` si elle ne contient aucun gisement.
+ *
+ * La rareté suit l'ordre déclaré de [Element] (croissante, cf. [Element]) : le plus rare est celui
+ * de plus grand `ordinal` parmi les gisements présents. La sélection se fait sur l'`ordinal`
+ * **indépendamment de l'ordre de [deposits]** — robuste si cet ordre venait à changer. Pure,
+ * déterministe, sans dépendance de rendu : elle alimente la recoloration des hexagones (#126), où la
+ * teinte d'une tuile vient de l'identité de son élément le plus rare.
+ */
+val TileContent.rarestElement: Element?
+    get() = deposits.maxByOrNull { it.element.ordinal }?.element
