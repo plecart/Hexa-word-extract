@@ -48,20 +48,19 @@ class HexGridViewModelTest : StringSpec({
         }
     }
 
-    "teinte chaque cellule selon son état et son contenu : surlignage de la courante, teinte du plus rare sinon" {
+    "teinte chaque cellule selon son contenu, sans traitement spécial de la tuile courante" {
         runTest {
             val grid = FakeHexGrid()
-            // La courante (48) porte un gisement commun, sa voisine (49) un gisement rare : on vérifie
-            // que le surlignage de la courante prime sur sa teinte de ressource, et que la voisine prend
-            // bien la teinte de son élément.
+            // La cellule courante (48) et sa voisine (49) portent chacune un gisement : toutes deux
+            // sont teintées par leur élément, la courante n'étant pas distinguée des autres.
             val content = mapOf(48L to tile(Element.CENDRITE), 49L to tile(Element.ECHOFER))
             val vm = HexGridViewModel(MutableStateFlow(48L), grid) { content[it] ?: tile() }
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
 
             val byCell = vm.cells.value.associateBy { it.outline.first().latDeg.toLong() }
-            byCell[48L]?.fillColorRgba shouldBe tileFillColor(TileState.COURANTE, tile(Element.CENDRITE))
-            byCell[49L]?.fillColorRgba shouldBe tileFillColor(TileState.NORMALE, tile(Element.ECHOFER))
+            byCell[48L]?.fillColorRgba shouldBe tileFillColor(tile(Element.CENDRITE))
+            byCell[49L]?.fillColorRgba shouldBe tileFillColor(tile(Element.ECHOFER))
         }
     }
 

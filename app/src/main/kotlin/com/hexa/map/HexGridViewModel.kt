@@ -19,10 +19,11 @@ import kotlinx.coroutines.flow.stateIn
  * Orchestre les contrats purs : à partir de la **tuile courante** partagée ([currentTile], déjà
  * lissée par hystérésis en amont, cf. [com.hexa.HexaApplication.sharedCurrentTile]), il déduit le
  * disque de cellules visibles au zoom courant ([VisibleCells]) et expose chacune avec sa **teinte de
- * remplissage** déjà résolue ([tileFillColor], depuis son état [tileState] et son contenu [contentOf]).
- * Le suivi de tuile, la classification, la sélection du plus rare et le mapping couleur vivant ailleurs
- * (purs, testés isolément), ce ViewModel reste une glu mince et testable avec une fausse grille, un faux
- * générateur de contenu et un flux de tuile courante factice.
+ * remplissage** déjà résolue ([tileFillColor], depuis son contenu [contentOf]). La tuile courante ne
+ * sert qu'à **centrer** le disque : elle n'est pas teintée différemment des autres. Le suivi de tuile,
+ * la sélection du plus rare et le mapping couleur vivant ailleurs (purs, testés isolément), ce ViewModel
+ * reste une glu mince et testable avec une fausse grille, un faux générateur de contenu et un flux de
+ * tuile courante factice.
  *
  * Pour rester fluide, la grille n'est **recalculée que lorsque c'est nécessaire** : quand la tuile
  * courante change, ou quand le zoom franchit un palier d'anneaux — pas à chaque point GPS ni à
@@ -55,7 +56,7 @@ class HexGridViewModel(
             zoom.distinctUntilChangedBy(VisibleCells::ringsForZoom),
         ) { current, zoomLevel ->
             VisibleCells.cellsAround(current, zoomLevel, grid).map { cell ->
-                GridCell(grid.outline(cell), tileFillColor(tileState(cell, current), contentOf(cell)))
+                GridCell(grid.outline(cell), tileFillColor(contentOf(cell)))
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(MapConfig.SOURCE_STOP_TIMEOUT_MS), emptyList())
 

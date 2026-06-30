@@ -9,28 +9,25 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
- * Teinte de remplissage **rgba** d'une cellule de la grille selon son état et son contenu (#126).
- * Pure et testable sans Mapbox : c'est la frontière stable entre les contrats de domaine (état de
- * tuile, gisements) et la couche de rendu, qui n'a plus qu'à poser la couleur produite.
+ * Teinte de remplissage **rgba** d'une cellule de la grille selon son seul contenu (#126). Pure et
+ * testable sans Mapbox : c'est la frontière stable entre les contrats de domaine (gisements de la
+ * tuile) et la couche de rendu, qui n'a plus qu'à poser la couleur produite.
  *
- * Priorité des rôles :
- * 1. **Tuile courante** ([TileState.COURANTE]) → surlignage [HexaGridColors.currentTile], **quel que
- *    soit son contenu** : il prime sur la teinte de ressource pour que le joueur se repère toujours.
- * 2. **Tuile à gisement(s)** → couleur d'identité ([ObjectAssets]) de son élément **le plus rare**
- *    ([TileContent.rarestElement]), atténuée à [HexaGridColors.resourceFillAlpha] (teinte subtile).
- * 3. **Tuile sans gisement** → [HexaGridColors.emptyTile], neutre quasi invisible (fondu dans la carte).
+ * Toutes les tuiles sont traitées à l'identique — **y compris celle sous le joueur** (l'avatar 3D
+ * marque déjà sa position ; aucun surlignage de tuile) :
+ * - **Tuile à gisement(s)** → couleur d'identité ([ObjectAssets]) de son élément **le plus rare**
+ *   ([TileContent.rarestElement]), atténuée à [HexaGridColors.resourceFillAlpha] (teinte subtile).
+ * - **Tuile sans gisement** → [HexaGridColors.emptyTile], neutre quasi invisible (fondu dans la carte).
  *
- * @param state état visuel de la cellule (courante ou normale).
  * @param content contenu de la tuile (ses gisements ; vide si elle ne contient rien).
  * @return la couleur au format `rgba(r, g, b, a)` attendu par `fill-color` (alpha porté par la couleur).
  */
-fun tileFillColor(state: TileState, content: TileContent): String = when (state) {
-    TileState.COURANTE -> HexaGridColors.currentTile
-    TileState.NORMALE ->
-        content.rarestElement
-            ?.let { ObjectAssets.of(it).color.copy(alpha = HexaGridColors.resourceFillAlpha) }
-            ?: HexaGridColors.emptyTile
-}.toRgba()
+fun tileFillColor(content: TileContent): String {
+    val color = content.rarestElement
+        ?.let { ObjectAssets.of(it).color.copy(alpha = HexaGridColors.resourceFillAlpha) }
+        ?: HexaGridColors.emptyTile
+    return color.toRgba()
+}
 
 /**
  * Couleur Compose → `rgba(r, g, b, a)`, format attendu par `fill-color` Mapbox (alpha dans `[0, 1]`).

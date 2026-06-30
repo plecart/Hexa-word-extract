@@ -59,28 +59,24 @@ object HexaBuildingColors {
 }
 
 /**
- * Teintes de **remplissage des hexagones** de la grille (#126), accordées au fond de carte pour s'y
- * fondre. Trois rôles, du plus discret au plus marqué :
- * - [emptyTile] : tuile sans gisement — anthracite quasi invisible, fondu complet dans le fond.
+ * Teintes de **remplissage des hexagones** de la grille (#126). Le fond de carte du projet est un style
+ * monochrome **clair** (blancs / gris pâles) : les teintes sont donc calées pour s'y détacher sans le
+ * surcharger. Toutes les tuiles sont traitées pareil — **y compris celle sous le joueur** (pas de
+ * surlignage : l'avatar 3D marque déjà sa position). Deux rôles :
+ * - [emptyTile] : tuile sans gisement — neutre **quasi invisible**, fondu complet dans le fond clair.
  * - une tuile à gisement(s) reprend la **couleur d'identité** ([HexaElementColors] via [ObjectAssets])
- *   de son élément le plus rare, atténuée à [resourceFillAlpha] pour rester subtile (teinte non
- *   stockée ici : dérivée au point d'usage, cf. [com.hexa.map.tileFillColor]).
- * - [currentTile] : tuile sous le joueur — surlignage **neutre achromatique**, volontairement distinct
- *   des cinq teintes de ressource (toutes chromatiques) pour rester repérable sans les imiter.
+ *   de son élément le plus rare, atténuée à [resourceFillAlpha] en pastel subtil (teinte non stockée
+ *   ici : dérivée au point d'usage, cf. [com.hexa.map.tileFillColor]).
  *
- * Valeurs calées à l'œil, **à affiner à la validation DA sur device** (subtilité, fondu, contraste du
- * surlignage). L'alpha est porté par le canal alpha des couleurs (et par [resourceFillAlpha]).
- * **Provisoire.**
+ * Valeurs calées à l'œil sur device, **à affiner à la validation DA**. L'alpha est porté par le canal
+ * alpha de la couleur (et par [resourceFillAlpha]). **Provisoire.**
  */
 object HexaGridColors {
-    /** Surlignage de la tuile courante : [Ink] glacé à faible alpha, achromatique → distinct des ressources. */
-    val currentTile = Ink.copy(alpha = 0.20f)
+    /** Tuile sans gisement : [Anthracite] à très faible alpha, quasi invisible — fondu dans le fond clair. */
+    val emptyTile = Anthracite.copy(alpha = 0.05f)
 
-    /** Tuile sans gisement : l'[Anthracite] **du fond de carte** à très faible alpha, quasi invisible. */
-    val emptyTile = Anthracite.copy(alpha = 0.08f)
-
-    /** Alpha appliqué à la couleur d'identité de l'élément le plus rare : teinte subtile, sans surcharger. */
-    val resourceFillAlpha = 0.18f
+    /** Alpha appliqué à la couleur d'identité de l'élément le plus rare : pastel subtil, sans surcharger. */
+    val resourceFillAlpha = 0.25f
 }
 
 /**
