@@ -64,7 +64,4 @@ object PlayerDocumentMapper {
 
     /** Lit un compteur, 0 par défaut s'il est absent (schéma tolérant). */
     private fun Map<*, *>.count(key: String): Long = (this[key] as? Number)?.toLong() ?: 0L
-
-    private val Element.fieldKey: String get() = name.lowercase()
-    private val BuildingType.fieldKey: String get() = name.lowercase()
 }
