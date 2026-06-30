@@ -126,6 +126,33 @@ class PlayerViewModelTest : StringSpec({
             ready.inventory[Element.CENDRITE] shouldBe 150L
             ready.inventory[Element.GIVRELIN] shouldBe 60L
             ready.builtBuildings.getValue(BuildingType.EXTRACTEUR) shouldBe 1
+            viewModel.craftShortfall.value shouldBe null // un succès n'expose aucun manquant
+        }
+    }
+
+    "un craft refusé faute de ressources expose le détail des manquants, sans débit" {
+        runTest(dispatcher) {
+            val poor = Player.newPlayer(clock.instant())
+                .copy(inventory = Inventory.of(mapOf(Element.CENDRITE to 30, Element.GIVRELIN to 40)))
+            val repository = ObservablePlayerRepository(poor)
+            val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
+            val viewModel =
+                PlayerViewModel(
+                    useCase,
+                    repository,
+                    ObservableBuildingsRepository(),
+                    craftFor(repository),
+                    placeFor(repository),
+                    harvestFor(repository),
+                )
+            advanceUntilIdle()
+            viewModel.craftShortfall.value shouldBe null
+
+            viewModel.craftExtracteur()
+            advanceUntilIdle()
+
+            viewModel.craftShortfall.value shouldBe mapOf(Element.CENDRITE to 70L) // 100 - 30 ; GIVRELIN couvert
+            (viewModel.state.value as PlayerUiState.Ready).inventory[Element.CENDRITE] shouldBe 30L // inchangé
         }
     }
 

@@ -2,6 +2,7 @@ package com.hexa.player
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hexa.config.Element
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -98,6 +99,16 @@ class PlayerViewModel(
             .map { (it as? PlayerUiState.Ready)?.builtBuildings?.get(BuildingType.EXTRACTEUR) ?: 0 }
             .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
+    private val _craftShortfall = MutableStateFlow<Map<Element, Long>?>(null)
+
+    /**
+     * Détail du dernier craft **refusé faute de ressources** : pour chaque élément en déficit, le
+     * nombre d'unités manquantes (cf. [CraftOutcome.Refused.missing]) ; `null` tant qu'aucun refus
+     * n'est en attente d'affichage. Le verdict renvoyé par [CraftBuildingUseCase] devient ainsi
+     * **observable par l'UI** (motivation du refus) au lieu d'être avalé ; un craft réussi l'efface.
+     */
+    val craftShortfall: StateFlow<Map<Element, Long>?> = _craftShortfall.asStateFlow()
+
     init {
         viewModelScope.launch {
             val (id, player) =
@@ -134,18 +145,22 @@ class PlayerViewModel(
     }
 
     /**
-     * Construit un extracteur : débite l'inventaire, crédite le stock, persiste. Le résultat **remonte
-     * seul** par l'observation du document ([observePlayer]) — pas de mutation directe de [state] ici.
-     * Un échec (réseau, ressources insuffisantes en cas de course) ne fait pas régresser l'affichage.
+     * Construit un extracteur. Sur **succès**, le débit/crédit **remonte seul** par l'observation du
+     * document ([observePlayer]) — pas de mutation directe de [state] ici — et [craftShortfall] est
+     * effacé. Un **refus faute de ressources** n'écrit rien et expose ses manquants via [craftShortfall]
+     * (motivation côté UI). Un échec d'I/O (réseau) ne fait pas régresser l'affichage.
      */
     fun craftExtracteur() {
         viewModelScope.launch {
             try {
-                craftBuilding(BuildingType.EXTRACTEUR)
+                _craftShortfall.value = when (val outcome = craftBuilding(BuildingType.EXTRACTEUR)) {
+                    is CraftOutcome.Built -> null
+                    is CraftOutcome.Refused -> outcome.missing
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                // Le craft a échoué : on conserve le dernier état connu, sans régression.
+                // Le craft a échoué (I/O) : on conserve le dernier état connu, sans régression.
             }
         }
     }
