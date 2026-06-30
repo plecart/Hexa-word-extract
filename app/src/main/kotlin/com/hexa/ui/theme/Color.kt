@@ -59,6 +59,27 @@ object HexaBuildingColors {
 }
 
 /**
+ * Teintes de **remplissage des hexagones** de la grille (#126). Le fond de carte du projet est un style
+ * monochrome **clair** (blancs / gris pâles) : les teintes sont donc calées pour s'y détacher sans le
+ * surcharger. Toutes les tuiles sont traitées pareil — **y compris celle sous le joueur** (pas de
+ * surlignage : l'avatar 3D marque déjà sa position). Deux rôles :
+ * - [emptyTile] : tuile sans gisement — neutre **quasi invisible**, fondu complet dans le fond clair.
+ * - une tuile à gisement(s) reprend la **couleur d'identité** ([HexaElementColors] via [ObjectAssets])
+ *   de son élément le plus rare, atténuée à [resourceFillAlpha] en pastel subtil (teinte non stockée
+ *   ici : dérivée au point d'usage, cf. [com.hexa.map.tileFillColor]).
+ *
+ * Valeurs calées à l'œil sur device, **à affiner à la validation DA**. L'alpha est porté par le canal
+ * alpha de la couleur (et par [resourceFillAlpha]). **Provisoire.**
+ */
+object HexaGridColors {
+    /** Tuile sans gisement : [Anthracite] à très faible alpha, quasi invisible — fondu dans le fond clair. */
+    val emptyTile = Anthracite.copy(alpha = 0.05f)
+
+    /** Alpha appliqué à la couleur d'identité de l'élément le plus rare : pastel subtil, sans surcharger. */
+    val resourceFillAlpha = 0.25f
+}
+
+/**
  * Schéma de couleurs sombre **unique** de l'application, branché par [HexaTheme]. Pas de variante
  * claire : la DA est exclusivement sombre. Les slots non renseignés gardent les valeurs sombres
  * Material 3 par défaut.

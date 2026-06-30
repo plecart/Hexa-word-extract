@@ -141,7 +141,13 @@ private fun ChaseCameraMap(
     val viewModel: ChaseCameraViewModel =
         viewModel(factory = chaseCameraViewModelFactory(app.sharedPositionSource))
     val gridViewModel: HexGridViewModel =
-        viewModel(factory = hexGridViewModelFactory(app.sharedCurrentTile, app.sharedGrid))
+        viewModel(
+            factory = hexGridViewModelFactory(
+                app.sharedCurrentTile,
+                app.sharedGrid,
+                app.sharedWorldGenerator::contentOf,
+            ),
+        )
     val inspectionViewModel: TileInspectionViewModel =
         viewModel(
             factory = tileInspectionViewModelFactory(
@@ -498,15 +504,17 @@ private fun chaseCameraViewModelFactory(positionSource: PositionSource) = viewMo
 }
 
 /**
- * Fabrique le [HexGridViewModel] en câblant la **tuile courante partagée** ([currentTile]) et
- * l'intégration H3 de production partagée ([grid]) — les mêmes que celles servies à l'inspection de
- * tuile, pour un suivi unique.
+ * Fabrique le [HexGridViewModel] en câblant la **tuile courante partagée** ([currentTile]), l'intégration
+ * H3 de production partagée ([grid]) et le **même** générateur de monde partagé ([contentOf], cf.
+ * [com.hexa.HexaApplication.sharedWorldGenerator]) que l'inspection de tuile — un seul suivi, une seule
+ * source de contenu, pour que la teinte d'une tuile et son inspection concordent toujours.
  */
-private fun hexGridViewModelFactory(currentTile: StateFlow<Long?>, grid: HexGrid) = viewModelFactory {
-    initializer {
-        HexGridViewModel(currentTile = currentTile, grid = grid)
+private fun hexGridViewModelFactory(currentTile: StateFlow<Long?>, grid: HexGrid, contentOf: (Long) -> TileContent) =
+    viewModelFactory {
+        initializer {
+            HexGridViewModel(currentTile = currentTile, grid = grid, contentOf = contentOf)
+        }
     }
-}
 
 /**
  * Fabrique le [TileInspectionViewModel] en câblant la **même** intégration H3 partagée ([grid]), le
