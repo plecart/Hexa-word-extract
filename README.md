@@ -139,7 +139,7 @@ poursuite reste testable hors device. Le générateur
 procédural du monde vit dans `:domain` et consomme `:core` ; la bibliothèque H3 (native) reste hors
 de `:domain`, derrière le port [`TileCenterLocator`](domain/src/main/kotlin/com/hexa/world/TileCenterLocator.kt),
 si bien que `:domain` reste partageable plus tard avec un serveur. L'**unique** intégration H3 de
-production vit dans `:app` ([`HexGrid`](app/src/main/java/com/hexa/map/HexGrid.kt) / `H3Grid`) : elle
+production vit dans `:app` ([`HexGrid`](app/src/main/kotlin/com/hexa/map/HexGrid.kt) / `H3Grid`) : elle
 dessine la grille hexagonale autour du joueur **et** implémente `TileCenterLocator` pour le
 générateur, évitant une seconde intégration native.
 
