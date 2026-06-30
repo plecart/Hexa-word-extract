@@ -41,7 +41,7 @@ object BuildingDocumentMapper {
      * H3 n'est pas un champ : il est fourni par l'appelant via [cell] (= identifiant du document Firestore).
      */
     fun fromDocument(cell: String, data: Map<String, Any?>): PlacedBuilding? {
-        val type = (data[FIELD_TYPE] as? String)?.toPlacedBuildingTypeOrNull() ?: return null
+        val type = (data[FIELD_TYPE] as? String)?.toEnumOrNull<PlacedBuildingType>() ?: return null
         val placedAt = (data[FIELD_PLACED_AT] as? Timestamp)?.toInstant() ?: return null
         val lastCollectedAt = (data[FIELD_LAST_COLLECTED_AT] as? Timestamp)?.toInstant() ?: return null
         return PlacedBuilding(cell, type, placedAt, lastCollectedAt)
@@ -52,13 +52,4 @@ object BuildingDocumentMapper {
 
     /** Instant reconstruit depuis le Timestamp Firestore, nanosecondes comprises. */
     private fun Timestamp.toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
-
-    private val PlacedBuildingType.fieldKey: String get() = name.lowercase()
-
-    /**
-     * Type relu depuis son libellé contractuel ([fieldKey]) — inverse de [fieldKey] — ou `null` si le
-     * libellé ne correspond à aucun type connu (forward-compat : type retiré/renommé côté serveur).
-     */
-    private fun String.toPlacedBuildingTypeOrNull(): PlacedBuildingType? =
-        PlacedBuildingType.entries.firstOrNull { it.name == uppercase() }
 }

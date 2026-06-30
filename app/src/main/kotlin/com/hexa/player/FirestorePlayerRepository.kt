@@ -41,9 +41,5 @@ class FirestorePlayerRepository(
         awaitClose { registration.remove() }
     }
 
-    private fun document(id: PlayerId) = firestore.collection(COLLECTION_PLAYERS).document(id.value)
-
-    private companion object {
-        const val COLLECTION_PLAYERS = "players"
-    }
+    private fun document(id: PlayerId) = FirestorePaths.player(firestore, id)
 }
