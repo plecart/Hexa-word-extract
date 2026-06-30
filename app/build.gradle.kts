@@ -25,21 +25,47 @@ val mapboxPublicToken: String =
 // packaging, et `H3Core.newInstance()` (qui lit la lib en ressource) échoue sur Android. On extrait
 // les `.so` Android du jar vers un dossier `jniLibs` généré : ils sont alors packagés comme libs
 // natives standard et chargeables via `System.loadLibrary` (`H3Core.newSystemInstance()`).
-val h3JniLibsDir = layout.buildDirectory.dir("generated/h3-jniLibs")
-val abiByH3Platform = mapOf("android-arm64" to "arm64-v8a", "android-arm" to "armeabi-v7a")
-val extractH3Natives by tasks.registering(Copy::class) {
-    val h3Jars = configurations.named("releaseRuntimeClasspath").map { classpath ->
-        classpath.files.filter { it.name.startsWith("h3-") && it.extension == "jar" }
-    }
-    from(h3Jars.map { jars -> jars.map(::zipTree) }) {
-        abiByH3Platform.keys.forEach { include("$it/libh3-java.so") }
-        eachFile {
-            val abi = abiByH3Platform.getValue(path.substringBefore('/'))
-            relativePath = RelativePath(true, abi, "libh3-java.so")
+//
+// L'extraction est branchée **par variante** (cf. `androidComponents` plus bas) : chaque variante lit
+// le jar H3 de son propre `RuntimeClasspath` et alimente son propre `jniLibs`. Un build debug ne
+// dépend donc plus de la résolvabilité d'un classpath release ; si H3 était un jour scopé par
+// variante, chaque APK embarquerait quand même ses `.so` (sinon : `UnsatisfiedLinkError` au runtime).
+abstract class ExtractH3NativesTask
+@javax.inject.Inject
+constructor(
+    private val fileSystemOperations: FileSystemOperations,
+    private val archiveOperations: ArchiveOperations,
+) : DefaultTask() {
+    /** Jars H3 filtrés du `RuntimeClasspath` de la variante construite ; porteurs des `.so` natifs. */
+    @get:Classpath
+    abstract val h3Jars: ConfigurableFileCollection
+
+    /** Dossier `jniLibs` généré, câblé par la variant API d'AGP au `jniLibs` de la variante. */
+    @get:OutputDirectory
+    abstract val jniLibsDir: DirectoryProperty
+
+    @TaskAction
+    fun extract() {
+        fileSystemOperations.copy {
+            from(h3Jars.files.map(archiveOperations::zipTree)) {
+                ABI_BY_H3_PLATFORM.keys.forEach { include("$it/$H3_SO_NAME") }
+                eachFile {
+                    val abi = ABI_BY_H3_PLATFORM.getValue(path.substringBefore('/'))
+                    relativePath = RelativePath(true, abi, H3_SO_NAME)
+                }
+                includeEmptyDirs = false
+            }
+            into(jniLibsDir)
         }
-        includeEmptyDirs = false
     }
-    into(h3JniLibsDir)
+
+    private companion object {
+        /** Nom du `.so` H3, identique en source (dans le jar) et en sortie (dans `jniLibs`). */
+        const val H3_SO_NAME = "libh3-java.so"
+
+        /** Plateforme H3 (préfixe dans le jar) → ABI Android (dossier dans `jniLibs`). */
+        val ABI_BY_H3_PLATFORM = mapOf("android-arm64" to "arm64-v8a", "android-arm" to "armeabi-v7a")
+    }
 }
 
 android {
@@ -82,9 +108,6 @@ android {
         unitTests.all { it.useJUnitPlatform() }
     }
 
-    // Les `.so` H3 extraits (cf. extractH3Natives) sont packagés comme libs natives de l'APK.
-    sourceSets.getByName("main").jniLibs.srcDir(h3JniLibsDir)
-
     packaging {
         resources {
             // H3 embarque ses natifs desktop en ressources du classpath : inutiles sur Android (seuls
@@ -94,8 +117,24 @@ android {
     }
 }
 
-// L'extraction des natifs H3 doit précéder le packaging des jniLibs.
-tasks.named("preBuild").configure { dependsOn(extractH3Natives) }
+// Branche l'extraction des natifs H3 par variante : chaque variante enregistre sa propre tâche, lisant
+// le jar H3 de son `RuntimeClasspath`, et l'expose à son `jniLibs` via la variant API (generated source
+// directory — AGP câble la dépendance de tâche et le dossier de sortie). AGP n'exécute la tâche d'une
+// variante que lorsque cette variante est construite : `assembleDebug` ne touche pas le classpath release.
+androidComponents {
+    onVariants { variant ->
+        val variantName = variant.name
+        val extractH3Natives =
+            tasks.register<ExtractH3NativesTask>("extractH3Natives${variantName.replaceFirstChar(Char::uppercase)}") {
+                h3Jars.from(
+                    configurations.named("${variantName}RuntimeClasspath").map { classpath ->
+                        classpath.files.filter { it.name.startsWith("h3-") && it.extension == "jar" }
+                    },
+                )
+            }
+        variant.sources.jniLibs?.addGeneratedSourceDirectory(extractH3Natives, ExtractH3NativesTask::jniLibsDir)
+    }
+}
 
 dependencies {
     // Modèles et configuration d'équilibrage, hébergés dans le module Kotlin pur :domain.
