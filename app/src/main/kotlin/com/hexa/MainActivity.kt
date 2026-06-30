@@ -33,6 +33,7 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.hexa.config.Element
 import com.hexa.config.GameConfig
 import com.hexa.firstlaunch.FirstLaunchScreen
 import com.hexa.inventory.BuildingsScreen
@@ -133,6 +134,7 @@ private fun HexaRoot(viewModel: PlayerViewModel) {
  */
 @Composable
 private fun GameScene(viewModel: PlayerViewModel, playerState: PlayerUiState, firstLaunch: Boolean) {
+    val craftShortfall by viewModel.craftShortfall.collectAsStateWithLifecycle()
     Box(Modifier.fillMaxSize()) {
         MapScreen(
             placedBuildings = viewModel.placedBuildings,
@@ -144,7 +146,7 @@ private fun GameScene(viewModel: PlayerViewModel, playerState: PlayerUiState, fi
         if (firstLaunch) {
             FirstLaunchScreen(modifier = Modifier.fillMaxSize())
         } else {
-            GameOverlays(playerState, onCraftExtracteur = viewModel::craftExtracteur)
+            GameOverlays(playerState, craftShortfall, onCraftExtracteur = viewModel::craftExtracteur)
         }
     }
 }
@@ -160,10 +162,16 @@ private enum class OverlayPanel { RESOURCES, BUILDINGS }
  * bouton retour système referme la page courante (même transition) plutôt que de quitter l'app.
  *
  * @param playerState état du compte joueur, transmis aux deux pages.
+ * @param craftShortfall détail du dernier craft refusé (manquants par élément), `null` sinon — affiché
+ *   par la page Bâtiments pour motiver le refus.
  * @param onCraftExtracteur déclenche le craft d'un extracteur depuis la page Bâtiments.
  */
 @Composable
-private fun GameOverlays(playerState: PlayerUiState, onCraftExtracteur: () -> Unit) {
+private fun GameOverlays(
+    playerState: PlayerUiState,
+    craftShortfall: Map<Element, Long>?,
+    onCraftExtracteur: () -> Unit,
+) {
     var open by rememberSaveable { mutableStateOf<OverlayPanel?>(null) }
 
     Box(Modifier.fillMaxSize()) {
@@ -181,6 +189,7 @@ private fun GameOverlays(playerState: PlayerUiState, onCraftExtracteur: () -> Un
                 onClose = { open = null },
                 onCraftExtracteur = onCraftExtracteur,
                 modifier = Modifier.fillMaxSize(),
+                craftShortfall = craftShortfall,
             )
         }
 
