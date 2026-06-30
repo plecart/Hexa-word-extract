@@ -56,13 +56,5 @@ class FirestoreBuildingsRepository(
         awaitClose { registration.remove() }
     }
 
-    private fun buildings(id: PlayerId) = firestore
-        .collection(COLLECTION_PLAYERS)
-        .document(id.value)
-        .collection(COLLECTION_BUILDINGS)
-
-    private companion object {
-        const val COLLECTION_PLAYERS = "players"
-        const val COLLECTION_BUILDINGS = "buildings"
-    }
+    private fun buildings(id: PlayerId) = FirestorePaths.buildings(firestore, id)
 }
