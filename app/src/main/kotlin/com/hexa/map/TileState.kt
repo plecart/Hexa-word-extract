@@ -3,16 +3,15 @@ package com.hexa.map
 import com.hexa.core.geo.LatLng
 
 /**
- * État visuel d'une cellule de la grille, **porté dans la source** de la grille ([Style.showHexGrid])
- * comme fondation du rendu.
+ * État visuel d'une cellule de la grille : avec son contenu, il détermine la teinte de remplissage de
+ * la tuile (cf. [tileFillColor]).
  *
- * - [NORMALE] : cellule ordinaire de la grille.
- * - [COURANTE] : cellule sous le joueur, destinée à un léger surlignage.
+ * - [NORMALE] : cellule ordinaire — teintée par son contenu (élément le plus rare, ou neutre si vide).
+ * - [COURANTE] : cellule sous le joueur — porte un **léger surlignage** distinct des teintes de
+ *   ressource, pour rester repérable (#126).
  *
- * Depuis #125, l'habillage cyan est retiré et **aucune couche ne rend encore cet état** ; #126
- * (recoloration des hexagones) rebranchera un remplissage piloté par cet état (léger surlignage de la
- * tuile courante) et par le contenu de la tuile. Les tuiles **bâties** ne sont pas distinguées ici :
- * un bâtiment posé est rendu par son **modèle 3D** (cf. [Style.showBuildingModels]).
+ * Les tuiles **bâties** ne sont pas distinguées ici : un bâtiment posé est rendu par son **modèle 3D**
+ * (cf. [Style.showBuildingModels]).
  */
 enum class TileState {
     NORMALE,
@@ -20,12 +19,13 @@ enum class TileState {
 }
 
 /**
- * Une cellule de la grille prête à dessiner : son [outline] (sommets du contour) et son [state].
+ * Une cellule de la grille prête à dessiner : son [outline] (sommets du contour) et sa [fillColorRgba]
+ * (teinte de remplissage déjà résolue depuis l'état et le contenu, cf. [tileFillColor]).
  *
  * @property outline sommets du contour de la cellule, dans l'ordre (cf. [HexGrid.outline]).
- * @property state état visuel de la cellule.
+ * @property fillColorRgba couleur de remplissage au format `rgba(r, g, b, a)`, prête pour `fill-color`.
  */
-data class GridCell(val outline: List<LatLng>, val state: TileState)
+data class GridCell(val outline: List<LatLng>, val fillColorRgba: String)
 
 /**
  * Classe une cellule en son état visuel : la cellule sous le joueur est [TileState.COURANTE], toutes

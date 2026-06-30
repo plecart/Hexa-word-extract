@@ -2,7 +2,9 @@
 
 package com.hexa.map
 
+import com.hexa.config.Element
 import com.hexa.core.geo.LatLng
+import com.hexa.world.TileContent
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -19,11 +21,12 @@ import kotlinx.coroutines.test.setMain
 
 /**
  * [HexGridViewModel] est la glu d'app de la grille : à partir de la tuile courante partagée, il déduit
- * le disque de cellules au zoom courant et expose chacune avec son état visuel. On vérifie cette
- * orchestration avec une fausse grille — sans device ni H3 —, en s'assurant que la grille ne se
- * recalcule que lorsque la **tuile courante** ou le **palier de zoom** change, et que la cellule sous
- * le joueur reçoit l'état courant. Le suivi de la tuile courante (hystérésis) est testé à part
- * (`CurrentTileTrackerTest`).
+ * le disque de cellules au zoom courant et expose chacune avec sa **teinte de remplissage** (état +
+ * contenu, cf. [tileFillColor]). On vérifie cette orchestration avec une fausse grille et un faux
+ * générateur de contenu — sans device ni H3 —, en s'assurant que la grille ne se recalcule que lorsque
+ * la **tuile courante** ou le **palier de zoom** change, et que chaque cellule reçoit la bonne teinte.
+ * Le suivi de la tuile courante (hystérésis) est testé à part (`CurrentTileTrackerTest`), le mapping
+ * couleur aussi (`TileFillTest`).
  */
 class HexGridViewModelTest : StringSpec({
     // viewModelScope tourne sur Dispatchers.Main : on le branche sur le planificateur de test.
@@ -33,7 +36,7 @@ class HexGridViewModelTest : StringSpec({
     "expose le disque autour de la cellule courante, au rayon du zoom de poursuite" {
         runTest {
             val grid = FakeHexGrid()
-            val vm = HexGridViewModel(MutableStateFlow(48L), grid)
+            val vm = HexGridViewModel(MutableStateFlow(48L), grid, emptyContent)
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
 
@@ -45,18 +48,20 @@ class HexGridViewModelTest : StringSpec({
         }
     }
 
-    "classe la cellule courante COURANTE et les autres NORMALE" {
+    "teinte chaque cellule selon son état et son contenu : surlignage de la courante, teinte du plus rare sinon" {
         runTest {
             val grid = FakeHexGrid()
-            val vm = HexGridViewModel(MutableStateFlow(48L), grid)
+            // La courante (48) porte un gisement commun, sa voisine (49) un gisement rare : on vérifie
+            // que le surlignage de la courante prime sur sa teinte de ressource, et que la voisine prend
+            // bien la teinte de son élément.
+            val content = mapOf(48L to tile(Element.CENDRITE), 49L to tile(Element.ECHOFER))
+            val vm = HexGridViewModel(MutableStateFlow(48L), grid) { content[it] ?: tile() }
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
 
-            // Robuste au nombre d'anneaux du palier de poursuite : la cellule courante est COURANTE,
-            // toutes les autres NORMALE, quel que soit le rayon du disque.
             val byCell = vm.cells.value.associateBy { it.outline.first().latDeg.toLong() }
-            byCell[48L]?.state shouldBe TileState.COURANTE
-            byCell.filterKeys { it != 48L }.values.forEach { it.state shouldBe TileState.NORMALE }
+            byCell[48L]?.fillColorRgba shouldBe tileFillColor(TileState.COURANTE, tile(Element.CENDRITE))
+            byCell[49L]?.fillColorRgba shouldBe tileFillColor(TileState.NORMALE, tile(Element.ECHOFER))
         }
     }
 
@@ -64,7 +69,7 @@ class HexGridViewModelTest : StringSpec({
         runTest {
             val grid = FakeHexGrid()
             val currentTile = MutableStateFlow<Long?>(48L)
-            val vm = HexGridViewModel(currentTile, grid)
+            val vm = HexGridViewModel(currentTile, grid, emptyContent)
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
             grid.lastCenter shouldBe 48L
@@ -79,7 +84,7 @@ class HexGridViewModelTest : StringSpec({
     "ne recalcule pas la grille tant que le zoom reste dans le même palier" {
         runTest {
             val grid = FakeHexGrid()
-            val vm = HexGridViewModel(MutableStateFlow(48L), grid)
+            val vm = HexGridViewModel(MutableStateFlow(48L), grid, emptyContent)
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
             // On se cale d'abord dans le palier ≥ 18 (2 anneaux), puis on observe.
@@ -98,7 +103,7 @@ class HexGridViewModelTest : StringSpec({
     "recalcule la grille quand le zoom franchit un palier" {
         runTest {
             val grid = FakeHexGrid()
-            val vm = HexGridViewModel(MutableStateFlow(48L), grid)
+            val vm = HexGridViewModel(MutableStateFlow(48L), grid, emptyContent)
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
 
@@ -110,6 +115,9 @@ class HexGridViewModelTest : StringSpec({
         }
     }
 })
+
+/** Générateur de contenu neutre : toutes les tuiles vides (la coloration n'est pas le sujet du test). */
+private val emptyContent: (Long) -> TileContent = { tile() }
 
 /** Un collecteur de fond active la chaîne (StateFlow `WhileSubscribed`) le temps du test. */
 private fun CoroutineScope.launchCells(vm: HexGridViewModel) = launch { vm.cells.collect {} }

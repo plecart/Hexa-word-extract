@@ -3,8 +3,6 @@ package com.hexa.map
 import com.hexa.config.Element
 import com.hexa.ui.theme.HexaGridColors
 import com.hexa.ui.theme.ObjectAssets
-import com.hexa.world.ElementDeposit
-import com.hexa.world.TileContent
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -40,7 +38,3 @@ class TileFillTest : StringSpec({
             tileFillColor(TileState.NORMALE, tile(Element.ECHOFER))
     }
 })
-
-/** Construit le contenu d'une tuile à partir d'éléments présents (aucun = tuile vide). */
-private fun tile(vararg elements: Element): TileContent =
-    TileContent(elements.map { ElementDeposit(it, richness = 0.5, ratePerHour = 1) })
