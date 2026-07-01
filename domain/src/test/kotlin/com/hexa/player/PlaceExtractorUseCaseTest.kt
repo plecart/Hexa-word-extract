@@ -13,7 +13,9 @@ import java.time.ZoneOffset
  * La décision (tuile courante, occupation, stock) est couverte par [PlacementRulesTest] ; ici on
  * vérifie l'orchestration I/O autour de [PlacementRules] : une pose autorisée décrémente le stock et
  * crée le document `extracteur` (`lastCollectedAt = now`), un refus n'écrit **rien** (stock intact),
- * et l'unicité « un bâtiment par tuile » fait échouer proprement une pose sur une tuile bâtie.
+ * l'unicité « un bâtiment par tuile » fait échouer proprement une pose sur une tuile bâtie, et la pose
+ * **hors de la tuile courante** est refusée — le use case dérive `isCurrentTile` de la tuile courante
+ * réelle ([CurrentTileGateway]), il ne fait plus confiance à l'appelant (couture de sécurité, cf. #137).
  * L'horloge est injectée pour fixer l'instant de pose de façon testable.
  */
 class PlaceExtractorUseCaseTest : StringSpec({
@@ -23,6 +25,9 @@ class PlaceExtractorUseCaseTest : StringSpec({
     val clock = Clock.fixed(placedAt, ZoneOffset.UTC)
     val cell = "8a1fb46622dffff"
 
+    /** Tuile courante = la cellule visée : la condition « tuile courante » est satisfaite. */
+    val here = CurrentTileGateway { cell }
+
     fun playerWithStock(stock: Int): Player =
         Player.newPlayer(createdAt).copy(builtBuildings = mapOf(BuildingType.EXTRACTEUR to stock))
 
@@ -31,11 +36,26 @@ class PlaceExtractorUseCaseTest : StringSpec({
             val players = FakePlayerRepository(mapOf(uid to playerWithStock(2)))
             val buildings = FakeBuildingsRepository()
 
-            val decision = PlaceExtractorUseCase(FakeAuthGateway(uid), players, buildings, clock)(cell)
+            val decision = PlaceExtractorUseCase(FakeAuthGateway(uid), players, buildings, here, clock)(cell)
 
             decision shouldBe PlacementDecision.Placeable
             players.stored(uid)!!.builtBuildings.getValue(BuildingType.EXTRACTEUR) shouldBe 1
             buildings.buildingsOf(uid) shouldBe mapOf(cell to PlacedBuilding.extracteur(cell, placedAt))
+        }
+    }
+
+    "refuse hors de la tuile courante : aucune écriture, stock intact" {
+        runTest {
+            val players = FakePlayerRepository(mapOf(uid to playerWithStock(2)))
+            val buildings = FakeBuildingsRepository()
+            val elsewhere = CurrentTileGateway { "8a1fb46622cffff" } // le joueur est sur une autre tuile
+
+            val decision = PlaceExtractorUseCase(FakeAuthGateway(uid), players, buildings, elsewhere, clock)(cell)
+
+            decision shouldBe PlacementDecision.Refused(PlacementRefusal.NOT_CURRENT_TILE)
+            players.saved shouldBe emptyList()
+            players.stored(uid)!!.builtBuildings.getValue(BuildingType.EXTRACTEUR) shouldBe 2
+            buildings.buildingsOf(uid) shouldBe emptyMap()
         }
     }
 
@@ -46,7 +66,7 @@ class PlaceExtractorUseCaseTest : StringSpec({
             val existing = PlacedBuilding.base(cell, placedAt)
             buildings.place(uid, existing)
 
-            val decision = PlaceExtractorUseCase(FakeAuthGateway(uid), players, buildings, clock)(cell)
+            val decision = PlaceExtractorUseCase(FakeAuthGateway(uid), players, buildings, here, clock)(cell)
 
             decision shouldBe PlacementDecision.Refused(PlacementRefusal.TILE_OCCUPIED)
             players.saved shouldBe emptyList()
@@ -60,7 +80,7 @@ class PlaceExtractorUseCaseTest : StringSpec({
             val players = FakePlayerRepository(mapOf(uid to playerWithStock(0)))
             val buildings = FakeBuildingsRepository()
 
-            val decision = PlaceExtractorUseCase(FakeAuthGateway(uid), players, buildings, clock)(cell)
+            val decision = PlaceExtractorUseCase(FakeAuthGateway(uid), players, buildings, here, clock)(cell)
 
             decision shouldBe PlacementDecision.Refused(PlacementRefusal.NO_STOCK)
             players.saved shouldBe emptyList()
@@ -70,8 +90,13 @@ class PlaceExtractorUseCaseTest : StringSpec({
 
     "document joueur absent : échoue (amorçage requis avant toute pose)" {
         runTest {
-            val useCase =
-                PlaceExtractorUseCase(FakeAuthGateway(uid), FakePlayerRepository(), FakeBuildingsRepository(), clock)
+            val useCase = PlaceExtractorUseCase(
+                FakeAuthGateway(uid),
+                FakePlayerRepository(),
+                FakeBuildingsRepository(),
+                here,
+                clock,
+            )
 
             shouldThrow<IllegalStateException> { useCase(cell) }
         }

@@ -9,9 +9,12 @@ import com.hexa.player.PlacementRules
  * si elle est libre et qu'il reste des extracteurs en stock — ou `null` si aucune pose n'est possible.
  *
  * Glu **pure** entre l'état observable de la carte (tuile courante, bâtiments posés, stock) et le cœur
- * de décision [PlacementRules] : la tuile candidate étant par construction la tuile courante, la
- * condition « tuile courante » est satisfaite ; restent l'occupation (la tuile porte-t-elle déjà un
- * bâtiment) et le stock. Le résultat pilote l'apparition du marqueur « + » sur la carte.
+ * de décision [PlacementRules] : cette glu ne considère **que** la tuile courante (elle *construit* sa
+ * cellule candidate depuis [currentTile]), donc la condition « tuile courante » est structurellement
+ * satisfaite — `isCurrentTile = true` ici n'est pas une garde court-circuitée mais un fait ; restent
+ * l'occupation et le stock. La garde contre une cellule **arbitraire** (couture de sécurité) vit, elle,
+ * dans [com.hexa.player.PlaceExtractorUseCase], qui compare la cellule visée à la tuile courante réelle
+ * (cf. #137). Le résultat pilote l'apparition du marqueur « + » sur la carte.
  *
  * @param currentTile tuile courante du joueur (cf. [com.hexa.HexaApplication.sharedCurrentTile]) ;
  *   `null` tant qu'aucune position n'est connue.

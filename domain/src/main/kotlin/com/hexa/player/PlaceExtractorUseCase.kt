@@ -12,14 +12,18 @@ import java.time.Clock
  * ([Craft]), qui l'incrémente.
  *
  * La décision est déléguée à [PlacementRules] et **rien n'est écrit en cas de refus** (calque de
- * [CraftBuildingUseCase] : décider d'abord, persister seulement si succès). L'affordance n'étant
- * offerte que sur la tuile courante, ce cas d'usage revalide uniquement les **invariants de données**
- * — occupation (lue via [BuildingsRepository.building], qui réalise « un bâtiment par tuile » sans
- * écraser) et stock — en tenant la tuile courante pour acquise.
+ * [CraftBuildingUseCase] : décider d'abord, persister seulement si succès). Les **trois** conditions
+ * sont réellement évaluées : la tuile visée est comparée à la **tuile courante réelle** du joueur
+ * ([currentTile]) — le use case ne fait pas confiance à l'appelant pour cette garde —, l'occupation
+ * est lue via [BuildingsRepository.building] (qui réalise « un bâtiment par tuile » sans écraser), et
+ * le stock via le document. C'est la couture de sécurité qu'un futur backend autoritaire ré-appliquera
+ * (cf. #137).
  *
  * @property auth source de l'identité (compte anonyme), pour retrouver l'uid du document joueur.
  * @property players accès au document joueur (stock `builtBuildings`).
  * @property buildings sous-collection des bâtiments posés (lecture d'occupation + écriture).
+ * @property currentTile tuile courante réelle du joueur, pour valider qu'on pose bien « sous ses pieds »
+ *   (index H3 textuel, cf. [CurrentTileGateway]).
  * @property clock horloge fournissant l'instant de pose (`placedAt`/`lastCollectedAt`), injectée pour
  *   la testabilité.
  */
@@ -27,12 +31,15 @@ class PlaceExtractorUseCase(
     private val auth: AuthGateway,
     private val players: PlayerRepository,
     private val buildings: BuildingsRepository,
+    private val currentTile: CurrentTileGateway,
     private val clock: Clock,
 ) {
     /**
      * Pose un extracteur sur la tuile [cell].
      *
-     * @param cell index H3 de la tuile courante du joueur (= ID du document bâtiment).
+     * @param cell index H3 de la tuile visée (= ID du document bâtiment). Refusé
+     *   ([PlacementRefusal.NOT_CURRENT_TILE]) s'il ne coïncide pas avec la tuile courante réelle du
+     *   joueur ([currentTile]).
      * @return la [PlacementDecision] : [PlacementDecision.Placeable] si la pose a eu lieu (stock
      *   décrémenté, document créé), sinon [PlacementDecision.Refused] avec sa raison — aucune écriture.
      * @throws IllegalStateException si le document joueur n'existe pas encore (amorçage requis).
@@ -45,7 +52,11 @@ class PlaceExtractorUseCase(
         val stock = player.stockOf(BuildingType.EXTRACTEUR)
         val occupied = buildings.building(id, cell) != null
 
-        val decision = PlacementRules.decide(isCurrentTile = true, isTileOccupied = occupied, stock = stock)
+        val decision = PlacementRules.decide(
+            isCurrentTile = cell == currentTile.currentCell(),
+            isTileOccupied = occupied,
+            stock = stock,
+        )
         if (decision is PlacementDecision.Placeable) {
             players.save(id, player.decrementStock(BuildingType.EXTRACTEUR))
             buildings.place(id, PlacedBuilding.extracteur(cell, clock.instant()))

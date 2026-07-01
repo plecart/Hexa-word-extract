@@ -136,7 +136,8 @@ class PlayerViewModelTest : StringSpec({
             val repository = ObservablePlayerRepository(initial)
             val buildings = ObservableBuildingsRepository()
             val useCase = EnsurePlayerUseCase(AuthGateway { uid }, repository, clock)
-            val place = PlaceExtractorUseCase(AuthGateway { uid }, repository, buildings, clock)
+            val place =
+                PlaceExtractorUseCase(AuthGateway { uid }, repository, buildings, CurrentTileGateway { cell }, clock)
             val viewModel =
                 PlayerViewModel(useCase, repository, buildings, craftFor(repository), place, harvestFor(repository))
             advanceUntilIdle()
@@ -240,6 +241,7 @@ private fun placeFor(repository: PlayerRepository) = PlaceExtractorUseCase(
     AuthGateway { PlayerId("uid-1") },
     repository,
     ObservableBuildingsRepository(),
+    CurrentTileGateway { null },
     Clock.systemUTC(),
 )
 
