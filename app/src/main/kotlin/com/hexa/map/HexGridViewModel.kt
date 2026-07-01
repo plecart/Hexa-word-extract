@@ -19,7 +19,8 @@ import kotlinx.coroutines.flow.stateIn
  * lissée par hystérésis en amont, cf. [com.hexa.HexaApplication.sharedCurrentTile]), il déduit le
  * disque de cellules du **rayon fixe** de la grille ([VisibleCells], [MapConfig.GRID_RENDER_RINGS]) et
  * expose chacune avec sa **teinte de remplissage** déjà résolue ([tileFillColor], depuis son contenu
- * [contentOf]). La tuile courante ne sert qu'à **centrer** le disque : elle n'est pas teintée
+ * [contentOf]) et **estompée selon sa distance en anneaux au joueur** ([HexGrid.gridDistance]). La tuile
+ * courante ne sert qu'à **centrer** le disque et d'**origine du fondu** : elle n'est pas teintée
  * différemment des autres. Le suivi de tuile, la sélection du plus rare et le mapping couleur vivant
  * ailleurs (purs, testés isolément), ce ViewModel reste une glu mince et testable avec une fausse
  * grille, un faux générateur de contenu et un flux de tuile courante factice.
@@ -49,7 +50,7 @@ class HexGridViewModel(
     val cells: StateFlow<List<GridCell>> =
         currentTile.filterNotNull().distinctUntilChanged().map { current ->
             VisibleCells.cellsAround(current, grid).map { cell ->
-                GridCell(grid.outline(cell), tileFillColor(contentOf(cell)))
+                GridCell(grid.outline(cell), tileFillColor(contentOf(cell), grid.gridDistance(current, cell)))
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(MapConfig.SOURCE_STOP_TIMEOUT_MS), emptyList())
 }

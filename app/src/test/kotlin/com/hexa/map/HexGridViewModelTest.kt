@@ -49,19 +49,20 @@ class HexGridViewModelTest : StringSpec({
         }
     }
 
-    "teinte chaque cellule selon son contenu, sans traitement spécial de la tuile courante" {
+    "teinte chaque cellule selon son contenu et l'estompe selon sa distance au joueur" {
         runTest {
             val grid = FakeHexGrid()
-            // La cellule courante (48) et sa voisine (49) portent chacune un gisement : toutes deux
-            // sont teintées par leur élément, la courante n'étant pas distinguée des autres.
+            // La cellule courante (48, distance 0) et sa voisine (49, distance 1) portent chacune un
+            // gisement : toutes deux teintées par leur élément (la courante non distinguée), mais la
+            // voisine est atténuée par le fondu-distance.
             val content = mapOf(48L to tile(Element.CENDRITE), 49L to tile(Element.ECHOFER))
             val vm = HexGridViewModel(MutableStateFlow(48L), grid) { content[it] ?: tile() }
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
 
             val byCell = vm.cells.value.associateBy { it.outline.first().latDeg.toLong() }
-            byCell[48L]?.fillColorRgba shouldBe tileFillColor(tile(Element.CENDRITE))
-            byCell[49L]?.fillColorRgba shouldBe tileFillColor(tile(Element.ECHOFER))
+            byCell[48L]?.fillColorRgba shouldBe tileFillColor(tile(Element.CENDRITE), distanceRings = 0)
+            byCell[49L]?.fillColorRgba shouldBe tileFillColor(tile(Element.ECHOFER), distanceRings = 1)
         }
     }
 
