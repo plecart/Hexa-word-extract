@@ -18,6 +18,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlin.math.abs
 
 /**
  * [HexGridViewModel] est la glu d'app de la grille : à partir de la tuile courante partagée, il déduit
@@ -145,4 +146,7 @@ private class FakeHexGrid : HexGrid {
     override fun centerOf(h3Index: Long): LatLng = LatLng(h3Index.toDouble(), 0.0)
 
     override fun toH3String(cell: Long): String = cell.toString()
+
+    // Distance déterministe cohérente avec `disk` (cellules contiguës center+i) : l'écart d'index.
+    override fun gridDistance(a: Long, b: Long): Int = abs(a - b).toInt()
 }

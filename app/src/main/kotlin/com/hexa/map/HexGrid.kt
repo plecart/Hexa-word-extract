@@ -30,6 +30,14 @@ interface HexGrid : TileCenterLocator {
     fun outline(cell: Long): List<LatLng>
 
     /**
+     * Distance en **anneaux H3** (nombre de pas de grille) entre deux cellules : 0 si identiques,
+     * 1 pour des voisines immédiates, k au k-ième anneau. Symétrique. C'est la mesure sur laquelle
+     * repose le fondu de la grille avec l'éloignement au joueur (cf. [GridFade]) ; réutilisable par
+     * la tranche d'interaction (portée d'action, etc.).
+     */
+    fun gridDistance(a: Long, b: Long): Int
+
+    /**
      * Index H3 de la cellule sous sa forme **textuelle canonique** (hexadécimal). C'est le format
      * contractuel de `Player.baseCell` et de l'ID de document `buildings/{h3Index}` : il fait le pont
      * entre la grille (qui manipule des `Long`) et le document joueur (qui stocke des `String`).
@@ -58,6 +66,8 @@ class H3Grid(
 
     override fun outline(cell: Long): List<LatLng> =
         h3.cellToBoundary(cell).map { LatLng(latDeg = it.lat, lngDeg = it.lng) }
+
+    override fun gridDistance(a: Long, b: Long): Int = h3.gridDistance(a, b).toInt()
 
     override fun centerOf(h3Index: Long): LatLng =
         h3.cellToLatLng(h3Index).let { LatLng(latDeg = it.lat, lngDeg = it.lng) }

@@ -62,6 +62,8 @@ private class RecordingGrid(private val onDisk: (center: Long, rings: Int) -> Li
 
     override fun outline(cell: Long): List<LatLng> = error("non utilisé")
 
+    override fun gridDistance(a: Long, b: Long): Int = error("non utilisé")
+
     override fun centerOf(h3Index: Long): LatLng = error("non utilisé")
 
     override fun toH3String(cell: Long): String = error("non utilisé")

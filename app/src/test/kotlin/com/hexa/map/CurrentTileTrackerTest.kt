@@ -91,6 +91,8 @@ private class LinearFakeGrid(
 
     override fun toH3String(cell: Long): String = cell.toString()
 
+    override fun gridDistance(a: Long, b: Long): Int = error("non utilisé")
+
     companion object {
         const val CELL_A = 1L
         const val CELL_B = 2L

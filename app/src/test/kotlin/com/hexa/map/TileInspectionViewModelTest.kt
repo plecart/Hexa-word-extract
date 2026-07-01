@@ -112,4 +112,6 @@ private class FakeInspectionGrid : HexGrid {
     override fun centerOf(h3Index: Long): LatLng = LatLng(h3Index.toDouble(), 0.0)
 
     override fun toH3String(cell: Long): String = cell.toString()
+
+    override fun gridDistance(a: Long, b: Long): Int = error("non utilisé")
 }
