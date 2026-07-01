@@ -34,7 +34,7 @@ class HexGridViewModelTest : StringSpec({
     beforeTest { Dispatchers.setMain(StandardTestDispatcher()) }
     afterTest { Dispatchers.resetMain() }
 
-    "expose le disque autour de la cellule courante, au rayon du zoom de poursuite" {
+    "expose le disque de rayon fixe autour de la cellule courante, indépendant du zoom" {
         runTest {
             val grid = FakeHexGrid()
             val vm = HexGridViewModel(MutableStateFlow(48L), grid, emptyContent)
@@ -42,8 +42,8 @@ class HexGridViewModelTest : StringSpec({
             advanceUntilIdle()
 
             grid.lastCenter shouldBe 48L
-            grid.lastRings shouldBe VisibleCells.ringsForZoom(MapConfig.FOLLOW_ZOOM)
-            vm.cells.value shouldHaveSize VisibleCells.ringsForZoom(MapConfig.FOLLOW_ZOOM)
+            grid.lastRings shouldBe MapConfig.GRID_RENDER_RINGS
+            vm.cells.value shouldHaveSize MapConfig.GRID_RENDER_RINGS
             // Chaque cellule du disque devient une GridCell ; la première est celle de la cellule courante.
             vm.cells.value.first().outline shouldBe listOf(LatLng(48.0, 0.0))
         }
@@ -81,37 +81,20 @@ class HexGridViewModelTest : StringSpec({
         }
     }
 
-    "ne recalcule pas la grille tant que le zoom reste dans le même palier" {
+    "ne recalcule pas la grille tant que la tuile courante ne change pas (même valeur ré-émise)" {
         runTest {
             val grid = FakeHexGrid()
-            val vm = HexGridViewModel(MutableStateFlow(48L), grid, emptyContent)
+            val currentTile = MutableStateFlow<Long?>(48L)
+            val vm = HexGridViewModel(currentTile, grid, emptyContent)
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
-            // On se cale d'abord dans le palier ≥ 18 (2 anneaux), puis on observe.
-            vm.onZoomChanged(19.0)
-            advanceUntilIdle()
-            val callsInPalier = grid.diskCalls
+            val calls = grid.diskCalls
 
-            // Un autre zoom du même palier (≥ 18 → 2 anneaux) : aucun recalcul.
-            vm.onZoomChanged(18.5)
+            // La même tuile ré-émise ne déclenche aucun recalcul (grille figée sur la tuile courante).
+            currentTile.value = 48L
             advanceUntilIdle()
 
-            grid.diskCalls shouldBe callsInPalier
-        }
-    }
-
-    "recalcule la grille quand le zoom franchit un palier" {
-        runTest {
-            val grid = FakeHexGrid()
-            val vm = HexGridViewModel(MutableStateFlow(48L), grid, emptyContent)
-            backgroundScope.launchCells(vm)
-            advanceUntilIdle()
-
-            vm.onZoomChanged(MapConfig.MAX_ZOOM)
-            advanceUntilIdle()
-
-            grid.lastRings shouldBe MapConfig.GRID_MIN_RINGS
-            vm.cells.value shouldHaveSize MapConfig.GRID_MIN_RINGS
+            grid.diskCalls shouldBe calls
         }
     }
 })
