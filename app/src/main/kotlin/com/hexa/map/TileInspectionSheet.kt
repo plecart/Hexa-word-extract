@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import com.hexa.R
 import com.hexa.config.Element
 import com.hexa.inventory.labelOf
+import com.hexa.player.PlacementDecision
+import com.hexa.player.PlacementRefusal
 import com.hexa.ui.theme.ElementObject
 import com.hexa.ui.theme.HexaTheme
 import com.hexa.ui.theme.ObjectAssets
@@ -67,6 +69,7 @@ internal fun TileInspectionContent(inspection: TileInspection, modifier: Modifie
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         InspectionHeader(isCurrent = inspection.isCurrent)
+        PlacementStatus(inspection.placement)
         if (inspection.isEmpty) {
             EmptyTile()
         } else {
@@ -74,6 +77,48 @@ internal fun TileInspectionContent(inspection: TileInspection, modifier: Modifie
                 inspection.deposits.forEach { DepositRow(it) }
             }
         }
+    }
+}
+
+/**
+ * Ligne de **statut de pose** : indique en clair si un extracteur peut être posé sur la tuile
+ * inspectée, ou la raison du refus. Indépendante du contenu de la tuile (présente aussi sur une tuile
+ * vide). Panneau distinct dont le liseré prend l'accent `primary` quand la pose est possible, la
+ * bordure neutre sinon — l'habillage reste validé à l'œil, seul le texte est couvert par les tests.
+ */
+@Composable
+private fun PlacementStatus(placement: PlacementDecision) {
+    val placeable = placement == PlacementDecision.Placeable
+    // Halo d'accent quand la pose est possible ; bordure glacée neutre par défaut sinon (défaut de
+    // hexaGlowSurface, non recopié ici pour ne pas dupliquer la couleur de bordure).
+    val panel = if (placeable) {
+        Modifier.hexaGlowSurface(shape = MaterialTheme.shapes.small, glow = MaterialTheme.colorScheme.primary)
+    } else {
+        Modifier.hexaGlowSurface(shape = MaterialTheme.shapes.small)
+    }
+    Text(
+        text = placementStatusLabel(placement),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(panel)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        style = MaterialTheme.typography.bodyLarge,
+        color = if (placeable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+/**
+ * Traduit une [PlacementDecision] en libellé affichable. Le `when` sur [PlacementRefusal] est
+ * **exhaustif** (sans `else`) : c'est le consommateur qui donne un rôle à chaque raison de refus —
+ * ajouter une raison au domaine casse la compilation ici tant qu'on ne l'a pas libellée.
+ */
+@Composable
+private fun placementStatusLabel(placement: PlacementDecision): String = when (placement) {
+    PlacementDecision.Placeable -> stringResource(R.string.placement_status_placeable)
+    is PlacementDecision.Refused -> when (placement.reason) {
+        PlacementRefusal.NOT_CURRENT_TILE -> stringResource(R.string.placement_status_not_current_tile)
+        PlacementRefusal.TILE_OCCUPIED -> stringResource(R.string.placement_status_tile_occupied)
+        PlacementRefusal.NO_STOCK -> stringResource(R.string.placement_status_no_stock)
     }
 }
 
@@ -157,8 +202,9 @@ private fun EmptyTile() {
 }
 
 /**
- * Aperçu Studio du panneau peuplé : la tuile courante avec trois gisements de raretés différentes,
- * pour vérifier d'un coup d'œil l'identité colorée, le badge et le format richesse/vitesse.
+ * Aperçu Studio du panneau peuplé : la tuile courante avec trois gisements de raretés différentes et
+ * une pose possible, pour vérifier d'un coup d'œil l'identité colorée, le badge, la ligne de statut de
+ * pose et le format richesse/vitesse.
  */
 @Preview(name = "Inspection — tuile peuplée", showBackground = true, backgroundColor = 0xFF0B0E13)
 @Composable
@@ -172,16 +218,23 @@ private fun PopulatedTilePreview() {
                     ElementDeposit(Element.NYCTITE, richness = 0.13, ratePerHour = 1),
                 ),
                 isCurrent = true,
+                placement = PlacementDecision.Placeable,
             ),
         )
     }
 }
 
-/** Aperçu Studio de l'état vide. */
+/** Aperçu Studio de l'état vide, sur une tuile distante (pose refusée : pas la tuile courante). */
 @Preview(name = "Inspection — tuile vide", showBackground = true, backgroundColor = 0xFF0B0E13)
 @Composable
 private fun EmptyTilePreview() {
     HexaTheme {
-        TileInspectionContent(TileInspection(deposits = emptyList(), isCurrent = false))
+        TileInspectionContent(
+            TileInspection(
+                deposits = emptyList(),
+                isCurrent = false,
+                placement = PlacementDecision.Refused(PlacementRefusal.NOT_CURRENT_TILE),
+            ),
+        )
     }
 }

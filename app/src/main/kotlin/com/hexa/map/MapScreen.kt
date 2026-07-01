@@ -53,7 +53,6 @@ import com.mapbox.maps.plugin.gestures.OnMapClickListener
 import com.mapbox.maps.plugin.gestures.OnScaleListener
 import com.mapbox.maps.plugin.gestures.generated.GesturesSettings
 import com.mapbox.maps.plugin.gestures.gestures
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -74,15 +73,17 @@ private const val NANOS_PER_MS = 1_000_000.0
  * composé qu'une fois la position du joueur connue, ce qui permet d'amorcer le viewport directement
  * sur lui (jamais de centre arbitraire visible).
  *
- * @param placedBuildings flux des bâtiments posés, rendus en **modèles 3D** sur la carte (cf.
+ * @param placedBuildings flux des bâtiments posés, rendus en **modèles 3D** sur la carte et source
+ *   d'occupation de la décision de pose affichée par l'inspection (cf.
  *   [com.hexa.player.PlayerViewModel.placedBuildings]).
  * @param extractorStock flux du nombre d'extracteurs prêts à poser, qui conditionne l'apparition du
- *   marqueur « + » sur la tuile courante (cf. [com.hexa.player.PlayerViewModel.extractorStock]).
+ *   marqueur « + » sur la tuile courante **et** le statut de pose de l'inspection (cf.
+ *   [com.hexa.player.PlayerViewModel.extractorStock]).
  * @param onPlaceExtracteur pose un extracteur sur la tuile dont l'index H3 est fourni.
  */
 @Composable
 fun MapScreen(
-    placedBuildings: Flow<List<PlacedBuilding>>,
+    placedBuildings: StateFlow<List<PlacedBuilding>>,
     extractorStock: StateFlow<Int>,
     onPlaceExtracteur: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -112,7 +113,7 @@ fun MapScreen(
  */
 @Composable
 private fun ChaseCameraMap(
-    placedBuildings: Flow<List<PlacedBuilding>>,
+    placedBuildings: StateFlow<List<PlacedBuilding>>,
     extractorStock: StateFlow<Int>,
     onPlaceExtracteur: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -154,6 +155,8 @@ private fun ChaseCameraMap(
                 app.sharedGrid,
                 app.sharedWorldGenerator::contentOf,
                 app.sharedCurrentTile,
+                placedBuildings,
+                extractorStock,
             ),
         )
 
@@ -163,7 +166,7 @@ private fun ChaseCameraMap(
 
     // Bâtiments posés → placements de modèles 3D : la résolution cellule → centre (H3 natif) passe par
     // l'intégration partagée de l'application, la même que la grille et l'inspection.
-    val buildings by placedBuildings.collectAsStateWithLifecycle(initialValue = emptyList())
+    val buildings by placedBuildings.collectAsStateWithLifecycle()
     val placements = remember(buildings) { buildingPlacements(buildings, app.centerOfCell) }
 
     // Pose d'un extracteur : la tuile courante porte un marqueur « + » dès qu'elle est libre et qu'il
@@ -521,13 +524,23 @@ private fun hexGridViewModelFactory(currentTile: StateFlow<Long?>, grid: HexGrid
  * **même** générateur de monde partagé ([contentOf], cf. [com.hexa.HexaApplication.sharedWorldGenerator])
  * et la **même** tuile courante partagée ([currentTile]) que la grille : la résolution tap → cellule,
  * le contenu de tuile et la récolte partagent une seule façade native et un seul générateur.
+ * [placedBuildings] et [extractorStock] — les **mêmes** flux que le marqueur « + » — alimentent la
+ * décision de pose affichée par l'inspection (cf. #110).
  */
 private fun tileInspectionViewModelFactory(
     grid: HexGrid,
     contentOf: (Long) -> TileContent,
     currentTile: StateFlow<Long?>,
+    placedBuildings: StateFlow<List<PlacedBuilding>>,
+    extractorStock: StateFlow<Int>,
 ) = viewModelFactory {
     initializer {
-        TileInspectionViewModel(grid = grid, contentOf = contentOf, currentTile = currentTile)
+        TileInspectionViewModel(
+            grid = grid,
+            contentOf = contentOf,
+            currentTile = currentTile,
+            placedBuildings = placedBuildings,
+            extractorStock = extractorStock,
+        )
     }
 }

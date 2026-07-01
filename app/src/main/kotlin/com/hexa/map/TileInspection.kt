@@ -1,5 +1,6 @@
 package com.hexa.map
 
+import com.hexa.player.PlacementDecision
 import com.hexa.world.ElementDeposit
 
 /**
@@ -13,10 +14,14 @@ import com.hexa.world.ElementDeposit
  *   contient rien ([isEmpty]) — l'état vide explicite demandé par l'inspection.
  * @property isCurrent `true` si la tuile inspectée est la **tuile courante du joueur** (badge « vous
  *   êtes ici »).
+ * @property placement possibilité de poser un extracteur sur la tuile inspectée, ou sa raison de refus
+ *   (cf. [placementDecisionFor]) — affichée en clair par l'inspection, indépendamment du contenu de la
+ *   tuile ; « pose possible » n'apparaît que sur une tuile courante, libre et approvisionnée.
  */
 data class TileInspection(
     val deposits: List<ElementDeposit>,
     val isCurrent: Boolean,
+    val placement: PlacementDecision,
 ) {
     /** La tuile ne contient aucun gisement : le panneau affiche son état vide. */
     val isEmpty: Boolean get() = deposits.isEmpty()

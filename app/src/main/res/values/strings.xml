@@ -55,6 +55,13 @@
     <!-- Vitesse d\'extraction d\'un gisement, en unités par heure (ex. « 42 u/h »). -->
     <string name="tile_deposit_rate">%1$d u/h</string>
 
+    <!-- Statut de pose affiché dans l'inspection de tuile : possibilité de poser un extracteur, ou sa
+         raison de refus (#110). Registre « vous », comme le badge « Vous êtes ici ». -->
+    <string name="placement_status_placeable">Pose possible</string>
+    <string name="placement_status_not_current_tile">Pose impossible : vous n\'êtes pas sur cette tuile</string>
+    <string name="placement_status_tile_occupied">Pose impossible : tuile déjà occupée</string>
+    <string name="placement_status_no_stock">Pose impossible : aucun extracteur en stock</string>
+
     <!-- Pose d'un bâtiment : marqueur « + » sur la tuile courante et liste des bâtiments à poser (#24). -->
     <string name="placement_marker_description">Poser un bâtiment sur cette tuile</string>
     <string name="placement_sheet_title">Bâtiments disponibles</string>
