@@ -264,6 +264,9 @@ private val playerViewModelFactory =
                     auth = auth,
                     players = repository,
                     buildings = buildings,
+                    // Tuile courante réelle : la cellule H3 sous le joueur, dérivée du suivi GPS partagé —
+                    // le use case y compare la cellule visée (couture de validation, cf. #137).
+                    currentTile = { app.sharedCurrentTile.value?.let(app.sharedGrid::toH3String) },
                     clock = clock,
                 ),
                 collectHarvest = CollectHarvestUseCase(
