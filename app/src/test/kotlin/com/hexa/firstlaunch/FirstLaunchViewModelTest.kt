@@ -171,4 +171,6 @@ private class FakeGrid : HexGrid {
     override fun disk(center: Long, rings: Int): List<Long> = error("non utilisé")
 
     override fun outline(cell: Long): List<LatLng> = error("non utilisé")
+
+    override fun gridDistance(a: Long, b: Long): Int = error("non utilisé")
 }

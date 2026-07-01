@@ -18,6 +18,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlin.math.abs
 
 /**
  * [HexGridViewModel] est la glu d'app de la grille : à partir de la tuile courante partagée, il déduit
@@ -33,7 +34,7 @@ class HexGridViewModelTest : StringSpec({
     beforeTest { Dispatchers.setMain(StandardTestDispatcher()) }
     afterTest { Dispatchers.resetMain() }
 
-    "expose le disque autour de la cellule courante, au rayon du zoom de poursuite" {
+    "expose le disque de rayon fixe autour de la cellule courante, indépendant du zoom" {
         runTest {
             val grid = FakeHexGrid()
             val vm = HexGridViewModel(MutableStateFlow(48L), grid, emptyContent)
@@ -41,26 +42,27 @@ class HexGridViewModelTest : StringSpec({
             advanceUntilIdle()
 
             grid.lastCenter shouldBe 48L
-            grid.lastRings shouldBe VisibleCells.ringsForZoom(MapConfig.FOLLOW_ZOOM)
-            vm.cells.value shouldHaveSize VisibleCells.ringsForZoom(MapConfig.FOLLOW_ZOOM)
+            grid.lastRings shouldBe MapConfig.GRID_RENDER_RINGS
+            vm.cells.value shouldHaveSize MapConfig.GRID_RENDER_RINGS
             // Chaque cellule du disque devient une GridCell ; la première est celle de la cellule courante.
             vm.cells.value.first().outline shouldBe listOf(LatLng(48.0, 0.0))
         }
     }
 
-    "teinte chaque cellule selon son contenu, sans traitement spécial de la tuile courante" {
+    "teinte chaque cellule selon son contenu et l'estompe selon sa distance au joueur" {
         runTest {
             val grid = FakeHexGrid()
-            // La cellule courante (48) et sa voisine (49) portent chacune un gisement : toutes deux
-            // sont teintées par leur élément, la courante n'étant pas distinguée des autres.
+            // La cellule courante (48, distance 0) et sa voisine (49, distance 1) portent chacune un
+            // gisement : toutes deux teintées par leur élément (la courante non distinguée), mais la
+            // voisine est atténuée par le fondu-distance.
             val content = mapOf(48L to tile(Element.CENDRITE), 49L to tile(Element.ECHOFER))
             val vm = HexGridViewModel(MutableStateFlow(48L), grid) { content[it] ?: tile() }
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
 
             val byCell = vm.cells.value.associateBy { it.outline.first().latDeg.toLong() }
-            byCell[48L]?.fillColorRgba shouldBe tileFillColor(tile(Element.CENDRITE))
-            byCell[49L]?.fillColorRgba shouldBe tileFillColor(tile(Element.ECHOFER))
+            byCell[48L]?.fillColorRgba shouldBe tileFillColor(tile(Element.CENDRITE), distanceRings = 0)
+            byCell[49L]?.fillColorRgba shouldBe tileFillColor(tile(Element.ECHOFER), distanceRings = 1)
         }
     }
 
@@ -80,37 +82,20 @@ class HexGridViewModelTest : StringSpec({
         }
     }
 
-    "ne recalcule pas la grille tant que le zoom reste dans le même palier" {
+    "ne recalcule pas la grille tant que la tuile courante ne change pas (même valeur ré-émise)" {
         runTest {
             val grid = FakeHexGrid()
-            val vm = HexGridViewModel(MutableStateFlow(48L), grid, emptyContent)
+            val currentTile = MutableStateFlow<Long?>(48L)
+            val vm = HexGridViewModel(currentTile, grid, emptyContent)
             backgroundScope.launchCells(vm)
             advanceUntilIdle()
-            // On se cale d'abord dans le palier ≥ 18 (2 anneaux), puis on observe.
-            vm.onZoomChanged(19.0)
-            advanceUntilIdle()
-            val callsInPalier = grid.diskCalls
+            val calls = grid.diskCalls
 
-            // Un autre zoom du même palier (≥ 18 → 2 anneaux) : aucun recalcul.
-            vm.onZoomChanged(18.5)
+            // La même tuile ré-émise ne déclenche aucun recalcul (grille figée sur la tuile courante).
+            currentTile.value = 48L
             advanceUntilIdle()
 
-            grid.diskCalls shouldBe callsInPalier
-        }
-    }
-
-    "recalcule la grille quand le zoom franchit un palier" {
-        runTest {
-            val grid = FakeHexGrid()
-            val vm = HexGridViewModel(MutableStateFlow(48L), grid, emptyContent)
-            backgroundScope.launchCells(vm)
-            advanceUntilIdle()
-
-            vm.onZoomChanged(MapConfig.MAX_ZOOM)
-            advanceUntilIdle()
-
-            grid.lastRings shouldBe MapConfig.GRID_MIN_RINGS
-            vm.cells.value shouldHaveSize MapConfig.GRID_MIN_RINGS
+            grid.diskCalls shouldBe calls
         }
     }
 })
@@ -145,4 +130,7 @@ private class FakeHexGrid : HexGrid {
     override fun centerOf(h3Index: Long): LatLng = LatLng(h3Index.toDouble(), 0.0)
 
     override fun toH3String(cell: Long): String = cell.toString()
+
+    // Distance déterministe cohérente avec `disk` (cellules contiguës center+i) : l'écart d'index.
+    override fun gridDistance(a: Long, b: Long): Int = abs(a - b).toInt()
 }

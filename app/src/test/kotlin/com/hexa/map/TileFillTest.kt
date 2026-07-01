@@ -8,21 +8,32 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 
 /**
- * Mapping **pur** contenu de tuile → teinte de remplissage rgba (#126). Sans device ni Mapbox : on
- * vérifie la *logique* de coloration (élément le plus rare, neutre) ; la subtilité des teintes et leur
- * fondu dans la carte relèvent de la validation DA à l'œil. Les attentes sont dérivées des **tokens**
- * ([HexaGridColors], [ObjectAssets]) et non de valeurs en dur, pour rester vertes quand la DA affine
- * les teintes sur device. Toutes les tuiles sont traitées pareil — pas de surlignage de la courante.
+ * Mapping **pur** contenu de tuile + distance → teinte de remplissage rgba (#126 teinte, #127 fondu).
+ * Sans device ni Mapbox : on vérifie la *logique* de coloration (élément le plus rare, neutre) et sa
+ * **composition** avec le fondu-distance ([GridFade]) ; la subtilité des teintes et leur fondu dans la
+ * carte relèvent de la validation DA à l'œil. Les attentes sont dérivées des **tokens** ([HexaGridColors],
+ * [ObjectAssets]) et de [GridFade], non de valeurs en dur, pour rester vertes quand la DA affine les
+ * teintes. Toutes les tuiles sont traitées pareil — pas de surlignage de la courante.
  */
 class TileFillTest : StringSpec({
-    "une tuile à gisements prend la teinte de son élément le plus rare, à l'alpha subtil de ressource" {
-        // Cendrite (commun) + Échofer (rare) : seule la couleur du plus rare doit ressortir.
-        tileFillColor(tile(Element.CENDRITE, Element.ECHOFER)) shouldBe
+    "à la tuile du joueur (distance 0), la teinte de #126 est préservée sans atténuation" {
+        // Cendrite (commun) + Échofer (rare) : la couleur du plus rare, à l'alpha de ressource, intacte.
+        tileFillColor(tile(Element.CENDRITE, Element.ECHOFER), distanceRings = 0) shouldBe
             ObjectAssets.of(Element.ECHOFER).color.copy(alpha = HexaGridColors.resourceFillAlpha).toRgba()
+        // Une tuile sans gisement garde la couleur neutre de #126.
+        tileFillColor(tile(), distanceRings = 0) shouldBe HexaGridColors.emptyTile.toRgba()
     }
 
-    "une tuile sans gisement prend la couleur neutre, distincte d'une tuile à ressource" {
-        tileFillColor(tile()) shouldBe HexaGridColors.emptyTile.toRgba()
-        tileFillColor(tile()) shouldNotBe tileFillColor(tile(Element.CENDRITE))
+    "une tuile à gisement reste distincte d'une tuile vide, à distance égale" {
+        tileFillColor(tile(Element.CENDRITE), distanceRings = 0) shouldNotBe
+            tileFillColor(tile(), distanceRings = 0)
+    }
+
+    "l'alpha de teinte se compose avec le fondu-distance : plus loin, plus estompé" {
+        val distance = 3
+        val rare = ObjectAssets.of(Element.ECHOFER).color.copy(alpha = HexaGridColors.resourceFillAlpha)
+        // L'alpha de teinte est multiplié par le facteur de fondu de GridFade à cette distance.
+        tileFillColor(tile(Element.ECHOFER), distanceRings = distance) shouldBe
+            rare.copy(alpha = rare.alpha * GridFade.factorFor(distance)).toRgba()
     }
 })

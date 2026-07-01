@@ -4,6 +4,7 @@ import com.hexa.config.GameConfig
 import com.hexa.core.geo.LatLng
 import com.hexa.world.TileCenterLocator
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.inspectors.forAll
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -36,6 +37,18 @@ class HexGridTest : StringSpec({
     "le contour d'une cellule hexagonale a six sommets" {
         val cell = grid.cellAt(paris)
         grid.outline(cell) shouldHaveSize 6
+    }
+
+    "la distance en anneaux vaut 0 pour la cellule elle-même, 1 pour une voisine, k au k-ième anneau" {
+        val center = grid.cellAt(paris)
+        grid.gridDistance(center, center) shouldBe 0
+        // Toute cellule du disque de 1 anneau autre que le centre est une voisine immédiate (distance 1).
+        grid.disk(center, rings = 1).filter { it != center }.forAll { grid.gridDistance(center, it) shouldBe 1 }
+        // Une cellule strictement au 2ᵉ anneau (dans le disque de 2 mais pas celui de 1) est à distance 2.
+        val ringTwo = grid.disk(center, rings = 2).first { it !in grid.disk(center, rings = 1) }
+        grid.gridDistance(center, ringTwo) shouldBe 2
+        // La distance est symétrique.
+        grid.gridDistance(ringTwo, center) shouldBe 2
     }
 
     "convertit une cellule en son index H3 textuel canonique (hexadécimal), stable et distinct" {

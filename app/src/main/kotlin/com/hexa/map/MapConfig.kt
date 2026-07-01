@@ -114,27 +114,14 @@ object MapConfig {
      */
     const val TILE_HYSTERESIS_MARGIN_M: Double = 8.0
 
-    /** Nombre d'anneaux minimal de la grille (zoom le plus rapproché) — 2 anneaux ≈ 19 cellules. */
-    const val GRID_MIN_RINGS: Int = 2
-
-    /** Nombre d'anneaux maximal de la grille (zoom le plus large) — 4 anneaux ≈ 61 cellules. */
-    const val GRID_MAX_RINGS: Int = 4
-
     /**
-     * Paliers de zoom → nombre d'anneaux de la grille, **ordonnés du plus zoomé au plus large**.
-     * Chaque palier `(zoom plancher, anneaux)` s'applique tant que le zoom reste au-dessus du plancher.
-     * Plus on dézoome, plus on affiche d'anneaux pour garder la grille pleine écran ; la grille n'est
-     * recalculée que lorsque le zoom **franchit** un palier, pas à chaque micro-variation. Les trois
-     * paliers se répartissent sur la plage de dézoom **resserrée** [MIN_ZOOM]–[MAX_ZOOM] (≈2 rues au
-     * plus large) : `≥ 18` échelle rue / poursuite (19 cellules), `[17,5 ; 18[` (37 cellules),
-     * `[17 ; 17,5[` dézoom maximal (61 cellules).
+     * Rayon **fixe** de la grille rendue, en anneaux H3 autour de la tuile courante (centre inclus) :
+     * 5 anneaux = un disque de 91 cellules (diamètre 11 hexagones), **indépendant du zoom**. Remplace
+     * les anciens paliers zoom → anneaux : la grille couvre toujours la même étendue autour du joueur,
+     * et c'est le **fondu avec la distance** ([GridFade]) qui efface les tuiles lointaines pour ne pas
+     * surcharger la carte. **À affiner à la validation terrain.**
      */
-    val GRID_RING_STEPS: List<Pair<Double, Int>> =
-        listOf(
-            18.0 to GRID_MIN_RINGS,
-            17.5 to 3,
-            MIN_ZOOM to GRID_MAX_RINGS,
-        )
+    const val GRID_RENDER_RINGS: Int = 5
 
     /**
      * Facteur d'échelle appliqué au `model.glb` d'un bâtiment posé sur la carte (couche de modèles 3D,

@@ -182,12 +182,6 @@ private fun ChaseCameraMap(
     val avatarPosition by remember { app.sharedPositionSource.positions() }
         .collectAsStateWithLifecycle(initialValue = null)
 
-    // La grille suit le palier d'anneaux du zoom de poursuite courant (et du zoom au pincement, qui
-    // se répercute sur la pose).
-    LaunchedEffect(camera?.zoomLevel) {
-        camera?.zoomLevel?.let(gridViewModel::onZoomChanged)
-    }
-
     // Viewport amorcé **directement sur le joueur** : cet écran n'étant composé qu'une fois le premier
     // fix connu (cf. machine à états de démarrage), la position partagée est déjà disponible, et la
     // carte s'affiche centrée sur lui sans glisser depuis un centre de repli. [MapConfig.DEFAULT_CENTER]
@@ -278,7 +272,8 @@ private fun ChaseCameraMap(
                 )
             }
             // Redessine la grille hexagonale à chaque nouvel ensemble de cellules (changement de
-            // tuile courante ou de palier de zoom) ; la source GeoJSON n'est créée qu'une fois.
+            // tuile courante ; le rayon rendu est fixe, indépendant du zoom) ; la source GeoJSON n'est
+            // créée qu'une fois.
             MapEffect(gridCells) { mapView ->
                 mapView.mapboxMap.getStyle { style -> style.showHexGrid(gridCells) }
             }
