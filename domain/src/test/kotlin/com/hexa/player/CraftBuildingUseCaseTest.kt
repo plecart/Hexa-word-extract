@@ -9,36 +9,40 @@ import java.time.Instant
 
 /**
  * Persistance du craft (cf. PRD #5, user stories 8-11) avec des doubles en mémoire : un craft réussi
- * écrit le document débité+crédité, un craft refusé n'écrit rien. La décision (suffisance, montants)
- * est couverte par [CraftTest] ; ici on vérifie l'orchestration I/O autour de [Craft].
+ * écrit le document débité+crédité **et renvoie [CraftOutcome.Built]**, un craft refusé n'écrit rien
+ * **et renvoie [CraftOutcome.Refused] avec le détail des manquants**. La décision (suffisance,
+ * montants) est couverte par [CraftTest] ; ici on vérifie l'orchestration I/O autour de [Craft] et la
+ * remontée du verdict à l'appelant (la couture de sécurité que l'UI exploite, cf. #137).
  */
 class CraftBuildingUseCaseTest : StringSpec({
     val uid = PlayerId("uid-123")
     val createdAt = Instant.parse("2026-06-14T10:15:30Z")
 
-    "craft réussi : persiste le document avec l'inventaire débité et le stock crédité" {
+    "craft réussi : renvoie Built et persiste le document débité + crédité" {
         runTest {
             val players = FakePlayerRepository(mapOf(uid to Player.newPlayer(createdAt)))
             val useCase = CraftBuildingUseCase(FakeAuthGateway(uid), players)
 
-            useCase(BuildingType.EXTRACTEUR)
+            val outcome = useCase(BuildingType.EXTRACTEUR)
 
             val stored = players.stored(uid)!!
+            outcome shouldBe CraftOutcome.Built(stored)
             stored.inventory[Element.CENDRITE] shouldBe 150L // 250 - 100
             stored.inventory[Element.GIVRELIN] shouldBe 60L // 100 - 40
             stored.builtBuildings.getValue(BuildingType.EXTRACTEUR) shouldBe 1
         }
     }
 
-    "craft refusé faute de ressources : aucune écriture, document inchangé" {
+    "craft refusé faute de ressources : renvoie Refused(manquants), aucune écriture, document inchangé" {
         runTest {
             val poor = Player.newPlayer(createdAt)
                 .copy(inventory = Inventory.of(mapOf(Element.CENDRITE to 30, Element.GIVRELIN to 40)))
             val players = FakePlayerRepository(mapOf(uid to poor))
             val useCase = CraftBuildingUseCase(FakeAuthGateway(uid), players)
 
-            useCase(BuildingType.EXTRACTEUR)
+            val outcome = useCase(BuildingType.EXTRACTEUR)
 
+            outcome shouldBe CraftOutcome.Refused(mapOf(Element.CENDRITE to 70L)) // 100 - 30 ; GIVRELIN couvert
             players.saved shouldBe emptyList()
             players.stored(uid) shouldBe poor
         }

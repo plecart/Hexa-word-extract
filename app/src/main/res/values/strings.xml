@@ -39,6 +39,10 @@
     <string name="inventory_craft_button">Construire</string>
     <!-- Recette : quantité possédée puis requise pour une ressource, ex. « 120 / 100 ». -->
     <string name="inventory_craft_amount">%1$d / %2$d</string>
+    <!-- Craft refusé faute de ressources : titre du détail des manquants, puis une ligne par élément. -->
+    <string name="inventory_craft_insufficient">Ressources insuffisantes :</string>
+    <!-- Un élément manquant : nombre d'unités en déficit puis son nom, ex. « 70 Cendrite ». -->
+    <string name="inventory_craft_missing_item">%1$d %2$s</string>
 
     <!-- Inspection de tuile : bottom sheet ouvert au tap sur la carte (#19). -->
     <string name="tile_inspection_title">Contenu de la tuile</string>
