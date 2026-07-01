@@ -1,6 +1,8 @@
 package com.hexa.map
 
 import com.hexa.player.PlacedBuilding
+import com.hexa.player.PlacementDecision
+import com.hexa.player.PlacementRefusal
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import java.time.Instant
@@ -50,5 +52,45 @@ class ExtractorPlacementTest : StringSpec({
             extractorStock = 0,
             toH3String = toH3String,
         ) shouldBe null
+    }
+
+    // placementDecisionFor : cœur de glu partagé entre le marqueur « + » et l'inspection. On y vérifie
+    // ce qu'il ajoute à PlacementRules.decide (couvert par PlacementRulesTest) : la dérivation de
+    // l'occupation depuis les bâtiments posés, et le passage des trois conditions à la décision — un cas
+    // par issue possible de PlacementDecision.
+    "placementDecisionFor refuse hors de la tuile courante" {
+        placementDecisionFor(
+            isCurrent = false,
+            cell = "h3-100",
+            placedBuildings = emptyList(),
+            stock = 1,
+        ) shouldBe PlacementDecision.Refused(PlacementRefusal.NOT_CURRENT_TILE)
+    }
+
+    "placementDecisionFor lit l'occupation dans les bâtiments posés sur la cellule" {
+        placementDecisionFor(
+            isCurrent = true,
+            cell = "h3-100",
+            placedBuildings = listOf(PlacedBuilding.base("h3-100", now)),
+            stock = 1,
+        ) shouldBe PlacementDecision.Refused(PlacementRefusal.TILE_OCCUPIED)
+    }
+
+    "placementDecisionFor ignore les bâtiments posés sur d'autres cellules" {
+        placementDecisionFor(
+            isCurrent = true,
+            cell = "h3-100",
+            placedBuildings = listOf(PlacedBuilding.base("h3-999", now)),
+            stock = 1,
+        ) shouldBe PlacementDecision.Placeable
+    }
+
+    "placementDecisionFor refuse quand le stock est vide" {
+        placementDecisionFor(
+            isCurrent = true,
+            cell = "h3-100",
+            placedBuildings = emptyList(),
+            stock = 0,
+        ) shouldBe PlacementDecision.Refused(PlacementRefusal.NO_STOCK)
     }
 })
